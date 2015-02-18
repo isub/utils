@@ -4,7 +4,7 @@
 #include "base64/base64.h"
 
 #define MYSMTP_EXPORT
-#include "MySMTP.h"
+#include "mysmtp.h"
 
 #pragma comment(lib, "Ws2_32.lib")
 

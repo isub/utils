@@ -17,7 +17,7 @@
 #endif
 
 struct FILE_LIST_SPEC SFileListInfo {
-	std::string m_strFileType;		/* тип файлов исходных данных "file", "ftp" или "sftp" */
+	std::string m_strFileType;		/* тип файлов исходных данных "file", "ftp", "sftp", "ftps" */
 	std::string m_strHost;			/* имя хоста-хранилища исходных данных */
 	std::string m_strUserName;		/* имя пользователя для доступа к хосту-хранилищу исходных данных */
 	std::string m_strPassword;		/* пароль пользователя для доступа к хосту-хранилищу исходных данных */

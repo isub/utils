@@ -20,6 +20,7 @@ public:
 	int LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam = 0);
 	int GetParamValue (const char *p_pcszName, std::vector<std::string> &p_vectValueList);
 	int GetParamValue (const char *p_pcszName, std::string &p_strValue);
+	int SetParamValue (const char *p_pcszName, std::string &p_strValue);
 	void SetDebugLevel (int p_iDebugLevel);
 public:
 	CConfig (int p_iDebugLevel = 0);

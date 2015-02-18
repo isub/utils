@@ -8,7 +8,6 @@
 #	define	F_OK	0
 #else
 #	include <sys/time.h>
-#	include <unistd.h>
 #	define	snprintf_(a,b,c,d)	snprintf(a,b,c,d)
 #	define	vsnprintf_(a,b,c,d)	vsnprintf(a,b,c,d)
 #	define	INVALID_HANDLE_VALUE	-1
@@ -25,7 +24,7 @@
 #include <string>
 
 #define LOG_EXPORT
-#include "Log.h"
+#include "log.h"
 
 #ifdef WIN32
 DWORD WINAPI

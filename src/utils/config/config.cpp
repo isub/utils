@@ -11,9 +11,10 @@
 #	define	strerror_rs(a,b,c)	strerror_r(a,b,c)
 #endif
 
-#include "Config.h"
+#include "config.h"
 
-int CConfig::LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam) {
+int CConfig::LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam)
+{
 	int iRetVal = 0;
 	FILE *psoFile = 0;
 	char mcParam[0x1000];
@@ -41,16 +42,25 @@ int CConfig::LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam) {
 		while (! feof(psoFile)) {
 			/* читаем очередную строку из файла, если чтение не выполнено, проверяем наличие ошибки */
 			if (0 == fgets (mcParam, sizeof(mcParam), psoFile)) {
-					if (errno) { iRetVal = errno; break; }
-					continue;
+				iRetVal = errno;
+				if (iRetVal) {
+					break;
+				}
+				continue;
 			}
 			/* Ищем и затираем, символы перехода на новую строку */
 			pcEOL = strstr (mcParam, "\r");
 			pcEOLAlt = strstr (mcParam, "\n");
-			if (pcEOL) { *pcEOL = '\0'; }
-			if (pcEOLAlt) { *pcEOLAlt = '\0'; }
+			if (pcEOL) {
+				*pcEOL = '\0';
+			}
+			if (pcEOLAlt) {
+				*pcEOLAlt = '\0';
+			}
 			/* если строка пустая переходим к следующей итеррации */
-			if (0 == strlen (mcParam)) { continue; }
+			if (0 == strlen (mcParam)) {
+				continue;
+			}
 			/* ищем разделитель значения */
 			pcValue = strstr (mcParam, "=");
 			/* если разделитель не найден переходим к следующей итерации */
@@ -114,6 +124,19 @@ int CConfig::GetParamValue (const char *p_pcszName, std::string &p_strValue) {
 	}
 
 	return iRetVal;
+}
+
+int CConfig::SetParamValue (const char *p_pcszName, std::string &p_strValue)
+{
+	std::multimap<std::string,std::string>::iterator iterValueList;
+
+	iterValueList = m_mmapConf.insert (std::make_pair (p_pcszName, p_strValue));
+
+	if (iterValueList == m_mmapConf.end ()) {
+		return -1;
+	} else {
+		return 0;
+	}
 }
 
 CConfig::CConfig (int p_iDebugLevel) {

@@ -110,7 +110,9 @@ int CFileReader::OpenDataFile (
 				break;
 			}
 #endif
-		} else if (0 == p_strType.compare ("ftp") || 0 == p_strType.compare ("sftp")) { /* загрузка файла с использованием библиотеки CURL */
+		} else if (0 == p_strType.compare ("ftp")
+				|| 0 == p_strType.compare ("sftp")
+				|| 0 == p_strType.compare ("ftps")) { /* загрузка файла с использованием библиотеки CURL */
 			/* чтение данных с буферизацией */
 			/* создаем поток записи данных в буфер */
 #ifdef _WIN32

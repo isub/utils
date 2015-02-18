@@ -11,6 +11,7 @@
 #else
 #	define	LOG_SPEC
 #	include <pthread.h>
+#	include <unistd.h>
 #endif
 
 class LOG_SPEC CLog {

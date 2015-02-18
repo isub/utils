@@ -1,5 +1,5 @@
 #define FILE_WRITER_EXPORT
-#include "FileWriter.h"
+#include "filewriter.h"
 
 #include <string>
 #include <io.h>

@@ -15,7 +15,7 @@
 #	define SOCKET_ERROR (-1)
 #endif
 
-#include "IPConnector.h"
+#include "ipconnector.h"
 
 void CIPConnector::init (int p_iReqTimeout)
 {

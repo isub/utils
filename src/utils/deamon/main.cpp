@@ -24,10 +24,10 @@
 #include <map>
 #include <vector>
 
-#include "/usr/local/etc/CoASensor/src/CoACommon.h"
-#include "../Config/Config.h"
-#include "../Log/Log.h"
-#include "../Manager/CoAManager.h"
+#include "../coacommon.h"
+#include "../config/config.h"
+#include "../log/log.h"
+#include "../manager/coamanager.h"
 #include "main.h"
 
 static void sig_handler(int sig);

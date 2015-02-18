@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "TimeMeasurer.h"
+#include "timemeasurer.h"
 
 CTimeMeasurer::CTimeMeasurer ()
 {

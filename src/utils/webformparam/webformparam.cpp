@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "WebFormParam.h"
+#include "webformparam.h"
 
 void DecodeParam (char *p_pszParam);
 

@@ -4,14 +4,14 @@
 #include <stdio.h>
 #ifdef WIN32
 #	include <Winsock2.h>
-#	include "CoACommon.h"
+#	include "coacommon.h"
 #	pragma	comment(lib, "ws2_32.lib")
 #else
 #	include <arpa/inet.h>
-#	include "CoACommon.h"
+#	include "utils/coacommon.h"
 #endif
 
-#include "PSPacket.h"
+#include "pspacket.h"
 
 int CPSPacket::Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, __uint16_t p_ui16ReqType) {
 	int iRetVal = 0;

@@ -1,5 +1,5 @@
 #define FILE_LIST_EXPORT
-#include "FileList.h"
+#include "filelist.h"
 #ifdef _WIN32
 #	include <curl.h>
 #else
@@ -52,6 +52,8 @@ int CFileList::CreateFileList (SFileListInfo &p_soFileListOpt)
 	} else if (0 == p_soFileListOpt.m_strFileType.compare ("ftp")) {
 		iRetVal = CURL_CreateFileList (p_soFileListOpt);
 	} else if (0 == p_soFileListOpt.m_strFileType.compare ("sftp")) {
+		iRetVal = CURL_CreateFileList (p_soFileListOpt);
+	} else if (0 == p_soFileListOpt.m_strFileType.compare ("ftps")) {
 		iRetVal = CURL_CreateFileList (p_soFileListOpt);
 	} else {
 		iRetVal = -1;

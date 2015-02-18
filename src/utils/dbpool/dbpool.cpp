@@ -4,6 +4,7 @@
 #include <semaphore.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <errno.h>
 
 #if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
 #define LOG_ERR_DESCR(str) 		iFnRes = errno; \
@@ -37,7 +38,7 @@ sem_t g_tSem;
 /* размер пула */
 static int g_iPoolSize;
 /* элемент пула */
-volatile struct SPoolElem {
+struct SPoolElem {
 	otl_connect m_coDBConn;
 	bool m_bIsBusy;
 	SPoolElem () { m_bIsBusy = false; }
@@ -47,6 +48,14 @@ volatile struct SPoolElem {
 static SPoolElem *g_pmsoPool = NULL;
 /* мьютекс для изменения статусов элементов пула */
 static pthread_mutex_t g_tMutex;
+
+void DisconnectDB (otl_connect &p_coDBConn)
+{
+	if (p_coDBConn.connected) {
+		p_coDBConn.cancel ();
+		p_coDBConn.logoff ();
+	}
+}
 
 int ConnectDB (otl_connect &p_coDBConn)
 {
@@ -183,12 +192,6 @@ int db_pool_check (otl_connect &p_coDBConn)
 	return iRetVal;
 }
 
-void DisconnectDB (otl_connect &p_coDBConn)
-{
-	p_coDBConn.cancel ();
-	p_coDBConn.logoff ();
-}
-
 int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf)
 {
 	/* копируем указатель на объект класса логгера */
@@ -248,6 +251,8 @@ int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf)
 	}
 	/* на всякий случай освобождаем мьютекс, при первом использовании он нам нужен свободным */
 	pthread_mutex_unlock (&g_tMutex);
+
+	return iRetVal;
 }
 
 void db_pool_deinit ()

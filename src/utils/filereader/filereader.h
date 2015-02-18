@@ -27,7 +27,7 @@ class FILE_READER_SPEC CFileReader
 public:
 	/* открытие файла */
 	int OpenDataFile (
-		std::string &p_strType,			/* "file", "ftp" or "sftp" */
+		std::string &p_strType,			/* "file", "ftp", "sftp", "ftps" */
 #ifdef _WIN32
 		SFileInfo &p_soCURLLib,			/* параметры библиотеки cURL */
 #endif
