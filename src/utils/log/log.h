@@ -14,6 +14,17 @@
 #	include <unistd.h>
 #endif
 
+#define LOG(logger,status, format,args...)	(logger).WriteLog(status ": %s@%s[%u]: " format, __FUNCTION__, __FILE__, __LINE__, ## args)
+#define LOG_E(logger,format,args...)	LOG(logger,"error",format,##args)
+#define LOG_N(logger,format,args...)	LOG(logger,"noti",format,##args)
+#ifdef DEBUG
+#define LOG_D(logger,format,args...)	LOG(logger,"debug",format,##args)
+#else
+#define LOG_D
+#endif
+#define LOG_W(logger,format,args...)	LOG(logger,"warning",format,##args)
+#define LOG_F(logger,format,args...)	LOG(logger,"fatal",format,##args)
+
 class LOG_SPEC CLog {
 public:
 	int Init (const char *p_pcszLogFileMask, char *p_pszEndOfLine = NULL);

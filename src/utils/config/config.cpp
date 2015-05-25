@@ -42,8 +42,7 @@ int CConfig::LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam)
 		while (! feof(psoFile)) {
 			/* читаем очередную строку из файла, если чтение не выполнено, провер€ем наличие ошибки */
 			if (0 == fgets (mcParam, sizeof(mcParam), psoFile)) {
-				iRetVal = errno;
-				if (iRetVal) {
+				if (errno) {
 					break;
 				}
 				continue;
@@ -59,6 +58,10 @@ int CConfig::LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam)
 			}
 			/* если строка пуста€ переходим к следующей итеррации */
 			if (0 == strlen (mcParam)) {
+				continue;
+			}
+			/* строки с коментари€ми пропускаем */
+			if (mcParam[0] == '#') {
 				continue;
 			}
 			/* ищем разделитель значени€ */
@@ -78,6 +81,11 @@ int CConfig::LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam)
 				if (2 <= m_iDebug) {
 					printf ("CConfig::LoadConf: parameter: %s: zero value length\n", mcParam);
 				}
+				continue;
+			}
+			/* загружаем включаемый файл */
+			if (0 == strcmp(mcParam, "$INCLUDE")) {
+				LoadConf(pcValue, p_iCollectEmptyParam);
 				continue;
 			}
 			/* ƒобавл€ем параметры в список */
