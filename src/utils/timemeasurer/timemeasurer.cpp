@@ -86,6 +86,8 @@ int CTimeMeasurer::GetDifference (timeval *p_psoTV, char *p_pszString, size_t p_
 				if (0 < iStrLen) {
 					if (iStrLen > p_stMaxLen - 1) {
 						p_pszString[p_stMaxLen - 1] = '\0';
+					} else {
+						p_pszString[iStrLen] = '\0';
 					}
 				} else {
 					iRetVal = -1;
@@ -100,6 +102,8 @@ int CTimeMeasurer::GetDifference (timeval *p_psoTV, char *p_pszString, size_t p_
 				if (0 < iStrLen) {
 					if (iStrLen > p_stMaxLen - 1) {
 						p_pszString[p_stMaxLen - 1] = '\0';
+					} else {
+						p_pszString[iStrLen] = '\0';
 					}
 				} else {
 					iRetVal = -1;
@@ -114,6 +118,8 @@ int CTimeMeasurer::GetDifference (timeval *p_psoTV, char *p_pszString, size_t p_
 				if (0 < iStrLen) {
 					if (iStrLen > p_stMaxLen - 1) {
 						p_pszString[p_stMaxLen - 1] = '\0';
+					} else {
+						p_pszString[iStrLen] = '\0';
 					}
 				} else {
 					iRetVal = -1;

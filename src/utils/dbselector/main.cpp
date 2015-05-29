@@ -74,14 +74,12 @@ int main (int argc, char *argv[])
 		psoFile = NULL;
 		/* тестовое подключение к текущей БД */
 		iFnRes = test_db(mcCurrentDB, coConf, coLog);
-		/* если возникла ошибка */
-		if (iFnRes < 0) {
-			break;
-		}
 		/* если текущая БД в активном состоянии завершаем работу */
 		if (0 == iFnRes) {
 			LOG_N(coLog, "current DB '%s' is in active state", mcCurrentDB);
 			break;
+		} else {
+			LOG_N(coLog, "current DB '%s': test result code: '%d'", mcCurrentDB, iFnRes);
 		}
 		/* проверяем состояние другой БД */
 		if (0 == strcmp("local_db", mcCurrentDB)) {
@@ -91,7 +89,8 @@ int main (int argc, char *argv[])
 		}
 		iFnRes = test_db(mcCurrentDB, coConf, coLog);
 		/* если возникла ошибка */
-		if (iFnRes != 0) {
+		if (iFnRes) {
+			LOG_N(coLog, "next DB '%s': test result code: '%d'", mcCurrentDB, iFnRes);
 			break;
 		}
 		/* если состояние другой БД активно переключаемся на нее */
