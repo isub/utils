@@ -18,7 +18,7 @@
 
 #include <string.h>
 #ifdef _WIN32
-#	include <curl.h>
+#	include <curl/curl.h>
 #else
 #	include <curl/curl.h>
 #endif
@@ -55,9 +55,9 @@
 #endif
 
 int CFileReader::OpenDataFile (
-		std::string &p_strType,
+		const char *p_pszType,
 #ifdef _WIN32
-		SFileInfo &p_soCURLLib,
+		SFileInfo *p_psoCURLLib,
 #endif
 		SFileInfo &p_soFileInfo,
 		std::string *p_pstrHost,
@@ -67,11 +67,19 @@ int CFileReader::OpenDataFile (
 	int iRetVal = 0;
 	int iFnRes;
 
+#ifdef WIN32
+	m_hReadStarted = CreateEvent (NULL, TRUE, FALSE, NULL);
+	if (NULL == m_hReadStarted) {
+		iRetVal = GetLastError ();
+		return iRetVal;
+	}
+#endif
+
 	/* запоминаем информацию о файле */
 	m_soFileInfo = p_soFileInfo;
 
 	/* запоминаем тип */
-	m_strType = p_strType;
+	m_strType = p_pszType;
 
 	if (p_pstrHost) {
 		m_pszHost = strdup (p_pstrHost->c_str ());
@@ -84,16 +92,19 @@ int CFileReader::OpenDataFile (
 	}
 
 	/* формируем полное имя файла */
-	std::string strFileName = m_soFileInfo.m_strDir;
-	if (strFileName[strFileName.length () - 1] != '/'
-		&& strFileName[strFileName.length () - 1] != '\\') {
+	std::string strFileName;
+	if (m_soFileInfo.m_strDir.length ()) {
+		strFileName = m_soFileInfo.m_strDir;
+		if (strFileName[strFileName.length () - 1] != '/'
+			&& strFileName[strFileName.length () - 1] != '\\') {
 			strFileName += '/';
+		}
 	}
 	strFileName += m_soFileInfo.m_strTitle;
 
 	do {
 		/* производим подготовительные для работы с файлом */
-		if (0 == p_strType.compare ("file")) {       /* открываем файл */
+		if (0 == strcmp (p_pszType, "file")) {       /* открываем файл */
 			/* чтение файлов без буферизации */
 #ifdef _WIN32
 			m_hWriteThread = CreateThread (NULL, 0, FS_LoadFile, this, 0, NULL);
@@ -110,13 +121,16 @@ int CFileReader::OpenDataFile (
 				break;
 			}
 #endif
-		} else if (0 == p_strType.compare ("ftp")
-				|| 0 == p_strType.compare ("sftp")
-				|| 0 == p_strType.compare ("ftps")) { /* загрузка файла с использованием библиотеки CURL */
+		} else if (0 == strcmp (p_pszType, "ftp")
+				|| 0 == strcmp (p_pszType, "sftp")
+				|| 0 == strcmp (p_pszType, "ftps")) { /* загрузка файла с использованием библиотеки CURL */
+			if (NULL == p_psoCURLLib) {
+				return EINVAL;
+			}
 			/* чтение данных с буферизацией */
 			/* создаем поток записи данных в буфер */
 #ifdef _WIN32
-			iFnRes = CURL_Init (p_soCURLLib);
+			iFnRes = CURL_Init (*p_psoCURLLib);
 			if (iFnRes) {
 				iRetVal = iFnRes;
 				break;
@@ -139,6 +153,17 @@ int CFileReader::OpenDataFile (
 			iRetVal = -1;
 		}
 	} while (0);
+
+	/* ждем когда начнется чтение данных */
+#ifdef WIN32
+	if (0 == iRetVal) {
+		WaitForSingleObject (m_hReadStarted, INFINITE);
+	}
+	if (NULL != m_hReadStarted) {
+		CloseHandle (m_hReadStarted);
+		m_hReadStarted = NULL;
+	}
+#endif
 
 	return iRetVal;
 }
@@ -525,6 +550,7 @@ CFileReader::CFileReader(void)
 	InitializeCriticalSection (&m_soCSBuf);
 	m_hWriteThread = (HANDLE) -1;
 	m_hCURLLib = NULL;
+	m_hReadStarted = NULL;
 #else
 	pthread_mutex_init (&m_tMutex, NULL);
 	m_hWriteThread = (pthread_t) -1;
@@ -579,6 +605,10 @@ CFileReader::~CFileReader(void)
 	m_stReadPointer = 0;
 #ifdef WIN32
 	DeleteCriticalSection (&m_soCSBuf);
+	if (NULL != m_hReadStarted) {
+		CloseHandle (m_hReadStarted);
+		m_hReadStarted = NULL;
+	}
 #else
 	pthread_mutex_destroy (&m_tMutex);
 #endif
@@ -610,21 +640,27 @@ void * FS_LoadFile (void *p_pcoThis)
 	unsigned char mucBuf[0x10000];
 
 	do {
+		if (pcoThis->m_iCancelWritingBuf) {
+			iRetVal = -1;
+			break;
+		}
 		/* проверка содержимого дескриптора */
 		if (-1 != pcoThis->m_hFile) {
 			iRetVal = -1;
 			break;
 		}
 		/* формируем полное имя файла */
-		strFileName = pcoThis->m_soFileInfo.m_strDir;
-		if (strFileName[strFileName.length () - 1] != '/'
+		if (pcoThis->m_soFileInfo.m_strDir.length()) {
+			strFileName = pcoThis->m_soFileInfo.m_strDir;
+			if (strFileName[strFileName.length () - 1] != '/'
 #ifdef WIN32
-			&& strFileName[strFileName.length () - 1] != '\\') {
+				&& strFileName[strFileName.length () - 1] != '\\') {
 				strFileName += '\\';
 #else
-			) {
+				) {
 				strFileName += '/';
 #endif
+			}
 		}
 		strFileName += pcoThis->m_soFileInfo.m_strTitle;
 		/* открываем дескриптор файла */
@@ -647,6 +683,11 @@ void * FS_LoadFile (void *p_pcoThis)
 		}
 		/* считываем файл поблочно, чтобы конвертор мог сразу начать обработку данных */
 		while (0 < (iFnRes = _read (pcoThis->m_hFile, mucBuf, sizeof(mucBuf)))) {
+#ifdef WIN32
+			if (NULL != pcoThis->m_hReadStarted) {
+				SetEvent (pcoThis->m_hReadStarted);
+			}
+#endif
 			/* если размер файла не задан, дозапрашиваем блок памяти для очередного блока данных */
 			if (-1 == pcoThis->m_soFileInfo.m_stFileSize) {
 				iFnRes = pcoThis->AllocateMemBlock (pcoThis->m_soFileInfo.m_stFileSize + sizeof (mucBuf));
@@ -668,6 +709,10 @@ void * FS_LoadFile (void *p_pcoThis)
 
 	/* запись в буфер завершена */
 	pcoThis->m_iIsWritingBufCompl = 1;
+
+	if (NULL != pcoThis->m_hReadStarted) {
+		SetEvent (pcoThis->m_hReadStarted);
+	}
 
 #ifdef _WIN32
 	ExitThread (iRetVal);

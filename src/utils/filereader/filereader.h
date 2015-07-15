@@ -27,9 +27,9 @@ class FILE_READER_SPEC CFileReader
 public:
 	/* открытие файла */
 	int OpenDataFile (
-		std::string &p_strType,			/* "file", "ftp", "sftp", "ftps" */
+		const char *p_pszType,			/* "file", "ftp", "sftp", "ftps" */
 #ifdef _WIN32
-		SFileInfo &p_soCURLLib,			/* параметры библиотеки cURL */
+		SFileInfo *p_psoCURLLib,			/* параметры библиотеки cURL */
 #endif
 		SFileInfo &p_soFileInfo,		/* параметры открываемого файла */
 		std::string *p_pstrHost,		/* имя хоста (ftp, sftp) */
@@ -57,7 +57,7 @@ private:
 	friend void * FS_LoadFile (void *p_pcoThis);
 #endif
 	friend size_t CURL_Write (void *p_pvSrc, size_t p_stSize, size_t p_stCount, CFileReader *p_pcoFileReader);
-public:
+public: /* конструктор и деструктор */
 	CFileReader (void);
 	~CFileReader (void);
 private:
@@ -82,6 +82,7 @@ private:
 #ifdef _WIN32
 	CRITICAL_SECTION m_soCSBuf;		/* критическая секция для операций с буфером */
 	HMODULE m_hCURLLib;				/* дескриптор динамической библиотеки */
+	HANDLE m_hReadStarted;			/* дескриптор события ожидния начала чтения данных */
 #else
 	pthread_mutex_t m_tMutex;		/* мьютекс для операций с буфером */
 #endif

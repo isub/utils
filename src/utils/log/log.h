@@ -8,22 +8,32 @@
 #	else
 #		define	LOG_SPEC	__declspec(dllimport)
 #	endif
+#	define __STRIPPED_FILE__ __FILE__
 #else
 #	define	LOG_SPEC
 #	include <pthread.h>
 #	include <unistd.h>
+#	ifndef __STRIPPED_FILE__
+#		include <libgen.h>
+		static char * file_bname = NULL;
+		static char * file_bname_init(char * full) { file_bname = basename(full); return file_bname; }
+#		define __STRIPPED_FILE__	(file_bname ?: file_bname_init((char *)__FILE__))
+#	endif
 #endif
-
-#define LOG(logger,status, format,args...)	(logger).WriteLog(status ": %s@%s[%u]: " format, __FUNCTION__, __FILE__, __LINE__, ## args)
-#define LOG_E(logger,format,args...)	LOG(logger,"error",format,##args)
-#define LOG_N(logger,format,args...)	LOG(logger,"noti",format,##args)
 #ifdef DEBUG
-#define LOG_D(logger,format,args...)	LOG(logger,"debug",format,##args)
+#define UTL_LOG(logger,status, format,args...)	(logger).WriteLog(status ": %s@%s[%u]: " format, __FUNCTION__, __STRIPPED_FILE__, __LINE__, ## args)
 #else
-#define LOG_D
+#define UTL_LOG(logger,status, format,args...)	(logger).WriteLog(status ": " format, ## args)
 #endif
-#define LOG_W(logger,format,args...)	LOG(logger,"warning",format,##args)
-#define LOG_F(logger,format,args...)	LOG(logger,"fatal",format,##args)
+#define UTL_LOG_E(logger,format,args...)	UTL_LOG(logger,"error",format,##args)
+#define UTL_LOG_N(logger,format,args...)	UTL_LOG(logger,"noti",format,##args)
+#ifdef DEBUG
+#define UTL_LOG_D(logger,format,args...)	UTL_LOG(logger,"debug",format,##args)
+#else
+#define UTL_LOG_D
+#endif
+#define UTL_LOG_W(logger,format,args...)	UTL_LOG(logger,"warning",format,##args)
+#define UTL_LOG_F(logger,format,args...)	UTL_LOG(logger,"fatal",format,##args)
 
 class LOG_SPEC CLog {
 public:
