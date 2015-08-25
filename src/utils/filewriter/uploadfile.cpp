@@ -9,7 +9,7 @@
 #ifdef WIN32
 #	include <share.h>
 #	include <Windows.h>
-#	include <curl.h>
+#	include <curl/curl.h>
 #else
 #	include <curl/curl.h>
 #endif

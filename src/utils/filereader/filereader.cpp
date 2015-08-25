@@ -185,11 +185,13 @@ int CFileReader::ReadData (unsigned char *p_pucData, int &p_iDataSize)
 			break;
 		}
 		if (NULL == p_pucData) {
+			p_iDataSize = 0;
 			iRetVal = ERROR_INVALID_PARAMETER;
 			break;
 		}
 		/* если запись в буфер завершена и он пуст */
 		if (IsWritingBufCompl () && IsBufferEmpty ()) {
+			p_iDataSize = 0;
 			iRetVal = -1;
 			break;
 		}
