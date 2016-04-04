@@ -8,20 +8,20 @@
 #	else
 #		define	LOG_SPEC	__declspec(dllimport)
 #	endif
-#	define __STRIPPED_FILE__ __FILE__
+#	define _LOG_STRIPPED_FILE__ __FILE__
 #else
 #	define	LOG_SPEC
 #	include <pthread.h>
 #	include <unistd.h>
-#	ifndef __STRIPPED_FILE__
+#	ifndef _LOG_STRIPPED_FILE__
 #		include <libgen.h>
-		static char * file_bname = NULL;
-		static char * file_bname_init(char * full) { file_bname = basename(full); return file_bname; }
-#		define __STRIPPED_FILE__	(file_bname ?: file_bname_init((char *)__FILE__))
+		static char * pszFileBaseName = NULL;
+		static char * FileBaseName(char * full) { pszFileBaseName = basename(full); return pszFileBaseName; }
+#		define _LOG_STRIPPED_FILE__	(pszFileBaseName ?: FileBaseName((char *)__FILE__))
 #	endif
 #endif
 #ifdef DEBUG
-#define UTL_LOG(logger,status, format,args...)	(logger).WriteLog(status ": %s@%s[%u]: " format, __FUNCTION__, __STRIPPED_FILE__, __LINE__, ## args)
+#define UTL_LOG(logger,status, format,args...)	(logger).WriteLog(status ": %s@%s[%u]: " format, __FUNCTION__, _LOG_STRIPPED_FILE__, __LINE__, ## args)
 #else
 #define UTL_LOG(logger,status, format,args...)	(logger).WriteLog(status ": " format, ## args)
 #endif

@@ -64,7 +64,7 @@ int CIPConnector::Connect (const char *p_pszHostName, unsigned short p_usPort, i
 	hostent *psoHostEnt;
 
 	do {
-		/* провер€ем инициализирован ли экземпл€р класса */
+		/* проверяем инициализирован ли экземпляр класса */
 		if (! m_iStatus) {
 			iRetVal = -1;
 			break;
@@ -72,7 +72,19 @@ int CIPConnector::Connect (const char *p_pszHostName, unsigned short p_usPort, i
 		DisConnect ();
 
 		/* создаем сокет */
-		m_sockSock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		switch (p_iProtoType) {
+			case IPPROTO_TCP:
+				m_sockSock = socket (AF_INET, SOCK_STREAM, p_iProtoType);
+				break;
+			case IPPROTO_UDP:
+				m_sockSock = socket (AF_INET, SOCK_DGRAM, p_iProtoType);
+				break;
+			default:
+				iRetVal = -2;
+				break;
+		}
+		if (iRetVal)
+			break;
 
 		memset (&soSockAddr, 0, sizeof(soSockAddr));
 
@@ -88,7 +100,7 @@ int CIPConnector::Connect (const char *p_pszHostName, unsigned short p_usPort, i
 
 		/* адрес не удалось распознать */
 		if (INADDR_NONE == soSockAddr.sin_addr.s_addr) {
-			iRetVal = -1;
+			iRetVal = -3;
 			break;
 		}
 
@@ -96,7 +108,7 @@ int CIPConnector::Connect (const char *p_pszHostName, unsigned short p_usPort, i
 		soSockAddr.sin_family = AF_INET;
 		iRetVal = connect (m_sockSock, (sockaddr*)&soSockAddr, sizeof(soSockAddr));
 		if (SOCKET_ERROR == iRetVal) {
-			iRetVal = -1;
+			iRetVal = -4;
 			break;
 		}
 		m_iStatus = 2;

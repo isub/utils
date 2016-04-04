@@ -6,6 +6,12 @@
 
 #include "webformparam.h"
 
+#ifndef WIN32
+#define sprintf_s snprintf
+#define strcpy_s strcpy
+#define strncpy_s strncpy
+#endif
+
 void DecodeParam (char *p_pszParam);
 
 SParamList * ParseBuffer(
@@ -27,14 +33,14 @@ SParamList * ParseBuffer(
 	char *pszParamVal;
 
 	while (pszParamName && pszParamName < (char*)pmucBuf + p_stLen) {
-		// èùåì ðàçäåëèòåëü èìåíè ïàðàìåòðà è åãî çíà÷åíèÿ
+		// Ð¸Ñ‰ÐµÐ¼ Ñ€Ð°Ð·Ð´ÐµÐ»Ð¸Ñ‚ÐµÐ»ÑŒ Ð¸Ð¼ÐµÐ½Ð¸ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð° Ð¸ ÐµÐ³Ð¾ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ñ
 		pszParamVal = strstr (pszParamName, "=");
 		if (NULL == pszParamVal) {
 			break;
 		}
 		*pszParamVal = '\0';
 		++pszParamVal;
-		// ñîçäàåì íîâûé ýëåìåíò ñïèñêà ïàðàìåòðîâ
+		// ÑÐ¾Ð·Ð´Ð°ÐµÐ¼ Ð½Ð¾Ð²Ñ‹Ð¹ ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚ ÑÐ¿Ð¸ÑÐºÐ° Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð²
 		if (NULL == psoParamList) {
 			psoParamList = new SParamList;
 			psoPLTmp = psoParamList;
@@ -46,16 +52,25 @@ SParamList * ParseBuffer(
 		psoPLTmp->m_mcParamName[0] = '\0';
 		psoPLTmp->m_mcParamValue[0] = '\0';
 		psoPLTmp->m_psoNext = NULL;
-		// êîïèðóåì èìÿ ïàðàìåòðà
-		strcpy_s (psoPLTmp->m_mcParamName, sizeof(psoPLTmp->m_mcParamName), pszParamName);
+		// ÐºÐ¾Ð¿Ð¸Ñ€ÑƒÐµÐ¼ Ð¸Ð¼Ñ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð°
+		strcpy_s (
+		psoPLTmp->m_mcParamName,
+#ifdef WIN32
+		sizeof(psoPLTmp->m_mcParamName),
+#endif
+		pszParamName);
 		DecodeParam (psoPLTmp->m_mcParamName);
 		pszParamName = strstr (pszParamVal, "&");
 		if (pszParamName) {
 			*pszParamName = '\0';
 			++pszParamName;
 		}
-		// êîïèðóåì çíà÷åíèå ïàðàìåòðà
-		strcpy_s (psoPLTmp->m_mcParamValue, sizeof(psoPLTmp->m_mcParamValue), pszParamVal);
+		// ÐºÐ¾Ð¿Ð¸Ñ€ÑƒÐµÐ¼ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð°
+		strcpy_s (psoPLTmp->m_mcParamValue,
+#ifdef WIN32
+		sizeof(psoPLTmp->m_mcParamValue),
+#endif
+		pszParamVal);
 		DecodeParam (psoPLTmp->m_mcParamValue);
 	}
 

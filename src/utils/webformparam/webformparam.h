@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 struct SParamList {
 	char m_mcParamName[128];
 	char m_mcParamValue[1024];
