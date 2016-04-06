@@ -24,6 +24,7 @@ void * stat_output (void *p_pArg);
 struct SStat {
 	std::string m_strObjName;		/* имя объекта статистики */
 	uint64_t m_ui64Count;			/* количество выполнений */
+	uint64_t m_ui64CountPrec;		/* количество выполнений - предыдущее значение */
 	timeval m_soTmMin;				/* минимальная продолжительность выполнения */
 	timeval m_soTmMax;				/* максимальная продолжительность выполнения */
 	timeval m_soTmTotal;			/* суммарная продожительность выполнения */
@@ -199,7 +200,8 @@ SStat::SStat(const char *p_pszObjName)
 	m_bFirst = true;
 	m_strObjName = p_pszObjName;
 	m_ui64Count = 0ULL;
-	memset(&m_soTmMin, 0, sizeof(m_soTmMin));
+	m_ui64CountPrec = 0ULL;
+	memset (&m_soTmMin, 0, sizeof (m_soTmMin));
 	memset(&m_soTmMax, 0, sizeof(m_soTmMax));
 	memset(&m_soTmTotal, 0, sizeof(m_soTmTotal));
 	memset(&m_soTmLast, 0, sizeof(m_soTmLast));
@@ -241,19 +243,21 @@ void * stat_output (void *p_pArg)
 				pthread_mutex_lock (&psoTmp->m_mutexStat);
 				if (bFirst) {
 					bFirst = false;
-					strMsg += "branch name: ";
+					strMsg += "branch name:";
 				} else {
-					strMsg += "\r\n\t";
+					strMsg += "\r\n";
 				}
 				coTM.ToString (&psoTmp->m_soTmMin, mcMin, sizeof(mcMin));
 				coTM.ToString (&psoTmp->m_soTmMax, mcMax, sizeof(mcMax));
 				coTM.ToString (&psoTmp->m_soTmTotal, mcTotal, sizeof(mcTotal));
 				coTM.ToString (&psoTmp->m_soTmLast, mcLast, sizeof(mcLast));
-				snprintf (mcBuf, sizeof(mcBuf), "%35s: EC: %10u; MIN: %12s; MAX: %16s; TOTAL: %16s; LAST: %12s; AVG: %0.3f s/r;",
-          psoTmp->m_strObjName.c_str(),
+				snprintf (mcBuf, sizeof (mcBuf), "%35s: TC:%10u; D:%6u; MIN:%12s; MAX:%16s; TT:%16s; L:%14s; A:%0.3f s/r;",
+					psoTmp->m_strObjName.c_str (),
 					psoTmp->m_ui64Count,
+					psoTmp->m_ui64Count - psoTmp->m_ui64CountPrec,
 					mcMin, mcMax, mcTotal, mcLast,
-					psoTmp->m_ui64Count ? ((double)psoTmp->m_soTmTotal.tv_sec)/psoTmp->m_ui64Count : (double)0);
+					psoTmp->m_ui64Count ? ((double)psoTmp->m_soTmTotal.tv_sec)/psoTmp->m_ui64Count : 0.0);
+				psoTmp->m_ui64CountPrec = psoTmp->m_ui64Count;
 				strMsg += mcBuf;
 				pthread_mutex_unlock (&psoTmp->m_mutexStat);
 				psoTmp = psoTmp->m_psoNext;
