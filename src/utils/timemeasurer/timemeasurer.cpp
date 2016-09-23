@@ -140,9 +140,9 @@ void CTimeMeasurer::ToString (timeval *p_psoTv, char *p_pszString, size_t p_stMa
 #ifdef WIN32
 		iStrLen = _snprintf_s (p_pszString, p_stMaxLen, _TRUNCATE, "%u,%03u sec", p_psoTv->tv_sec, p_psoTv->tv_usec / 1000);
 #else
-		iStrLen = snprintf (p_pszString, p_stMaxLen - 1, "%u,%03u sec", p_psoTv->tv_sec, p_psoTv->tv_usec / 1000);
+		iStrLen = snprintf (p_pszString, p_stMaxLen - 1, "%u,%03u sec", static_cast<unsigned int>(p_psoTv->tv_sec), static_cast<unsigned int>(p_psoTv->tv_usec / 1000));
 		if (0 < iStrLen) {
-			if (iStrLen > p_stMaxLen - 1) {
+			if (static_cast<size_t>(iStrLen) > p_stMaxLen - 1) {
 				p_pszString[p_stMaxLen - 1] = '\0';
 			} else {
 				p_pszString[iStrLen] = '\0';
@@ -155,9 +155,9 @@ void CTimeMeasurer::ToString (timeval *p_psoTv, char *p_pszString, size_t p_stMa
 #ifdef WIN32
 		_snprintf_s (p_pszString, p_stMaxLen, _TRUNCATE, "%u,%03u mlsec", p_psoTv->tv_usec / 1000, p_psoTv->tv_usec % 1000);
 #else
-		iStrLen = snprintf (p_pszString, p_stMaxLen, "%u,%03u mlsec", p_psoTv->tv_usec / 1000, p_psoTv->tv_usec % 1000);
+		iStrLen = snprintf (p_pszString, p_stMaxLen, "%u,%03u mlsec", static_cast<unsigned int>(p_psoTv->tv_usec / 1000), static_cast<unsigned int>(p_psoTv->tv_usec % 1000));
 		if (0 < iStrLen) {
-			if (iStrLen > p_stMaxLen - 1) {
+			if (static_cast<size_t>(iStrLen) > p_stMaxLen - 1) {
 				p_pszString[p_stMaxLen - 1] = '\0';
 			} else {
 				p_pszString[iStrLen] = '\0';
@@ -170,9 +170,9 @@ void CTimeMeasurer::ToString (timeval *p_psoTv, char *p_pszString, size_t p_stMa
 #ifdef WIN32
 		_snprintf_s (p_pszString, p_stMaxLen, _TRUNCATE, "%u mcsec", p_psoTv->tv_usec);
 #else
-		iStrLen = snprintf (p_pszString, p_stMaxLen, "%u mcsec", p_psoTv->tv_usec);
+		iStrLen = snprintf (p_pszString, p_stMaxLen, "%u mcsec", static_cast<unsigned int>(p_psoTv->tv_usec));
 		if (0 < iStrLen) {
-			if (iStrLen > p_stMaxLen - 1) {
+			if (static_cast<size_t>(iStrLen) > p_stMaxLen - 1) {
 				p_pszString[p_stMaxLen - 1] = '\0';
 			} else {
 				p_pszString[iStrLen] = '\0';

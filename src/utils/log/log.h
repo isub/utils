@@ -15,23 +15,31 @@
 #	include <unistd.h>
 #	ifndef _LOG_STRIPPED_FILE__
 #		include <libgen.h>
-		static char * pszFileBaseName = NULL;
-		static char * FileBaseName(char * full) { pszFileBaseName = basename(full); return pszFileBaseName; }
-#		define _LOG_STRIPPED_FILE__	(pszFileBaseName ?: FileBaseName((char *)__FILE__))
+		static const char * g_pszFileBaseName = NULL;
+		static const char * FileBaseName(const char * full)
+		{
+			g_pszFileBaseName = basename((char*)full);
+			return g_pszFileBaseName;
+		}
+#		define _LOG_STRIPPED_FILE__	(g_pszFileBaseName ? g_pszFileBaseName : FileBaseName(__FILE__))
 #	endif
 #endif
+
 #ifdef DEBUG
 #define UTL_LOG(logger,status, format,args...)	(logger).WriteLog(status ": %s@%s[%u]: " format, __FUNCTION__, _LOG_STRIPPED_FILE__, __LINE__, ## args)
 #else
 #define UTL_LOG(logger,status, format,args...)	(logger).WriteLog(status ": " format, ## args)
 #endif
+
 #define UTL_LOG_E(logger,format,args...)	UTL_LOG(logger,"error",format,##args)
 #define UTL_LOG_N(logger,format,args...)	UTL_LOG(logger,"noti",format,##args)
+
 #ifdef DEBUG
 #define UTL_LOG_D(logger,format,args...)	UTL_LOG(logger,"debug",format,##args)
 #else
-#define UTL_LOG_D
+#define UTL_LOG_D(logger,format,args...)
 #endif
+
 #define UTL_LOG_W(logger,format,args...)	UTL_LOG(logger,"warning",format,##args)
 #define UTL_LOG_F(logger,format,args...)	UTL_LOG(logger,"fatal",format,##args)
 
@@ -52,7 +60,7 @@ public:
 	~CLog ();
 private:
 	int GetLogFileName (char *p_pszLogFileName, size_t p_stMaxSize);
-	bool CheckLogFileName (const char *p_pcszLogFileName);
+	bool CheckLogFileName ();
 	int OpenLogFile (const char *p_pcszLogFileName);
 #ifdef WIN32
 	friend DWORD WINAPI ReCreateFileProc (void *p_pParam);

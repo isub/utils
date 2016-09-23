@@ -15,7 +15,7 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
-#include <stdio.h>
+#include <cstdio>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -131,7 +131,7 @@ void CLog::WriteLog (const char *p_pszMsg, ...)
 	/* если буфер успешно заполнен */
 	if (0 < iFnRes) {
 		/* если строка не уместилась в буфере */
-		if (iFnRes > sizeof(mcBuf) - 1 - iStrLen) {
+		if (static_cast<size_t>(iFnRes) > sizeof(mcBuf) - 1 - iStrLen) {
 			iFnRes = sizeof(mcBuf) - 1 - iStrLen;
 		}
 		iStrLen += iFnRes;
@@ -143,7 +143,7 @@ void CLog::WriteLog (const char *p_pszMsg, ...)
 	/* если буфер успешно заполнен */
 	if (0 < iFnRes) {
 		/* если строка не уместилась в буфере */
-		if (iFnRes > sizeof(mcBuf) - 1 - iStrLen) {
+		if (static_cast<size_t>(iFnRes) > sizeof(mcBuf) - 1 - iStrLen) {
 			iFnRes = sizeof(mcBuf) - 1 - iStrLen;
 		}
 		iStrLen += iFnRes;
@@ -156,7 +156,7 @@ void CLog::WriteLog (const char *p_pszMsg, ...)
 		write (m_iLogFileFD, mcBuf, iStrLen);
 #endif
 	} else {
-		printf (mcBuf);
+		puts (mcBuf);
 	}
 }
 
@@ -181,7 +181,7 @@ void CLog::Dump (const char *p_pszTitle, const char *p_pszMessage)
 		write (m_iLogFileFD, mcBuf, stStrLen);
 #endif
 	} else {
-		printf (mcBuf);
+		puts (mcBuf);
 	}
 }
 
@@ -197,7 +197,7 @@ void CLog::Dump (const char *p_pszMessage)
 	/* если буфер успешно заполнен */
 	if (0 < iFnRes) {
 		/* если строка не уместилась в буфере */
-		if (iFnRes > sizeof(mcBuf) - 1 - iStrLen) {
+		if (static_cast<size_t>(iFnRes) > sizeof(mcBuf) - 1 - iStrLen) {
 			iFnRes = sizeof(mcBuf) - 1 - iStrLen;
 		}
 		iStrLen += iFnRes;
@@ -209,7 +209,7 @@ void CLog::Dump (const char *p_pszMessage)
 	/* если буфер успешно заполнен */
 	if (0 < iFnRes) {
 		/* если строка не уместилась в буфере */
-		if (iFnRes > sizeof(mcBuf) - 1 - iStrLen) {
+		if (static_cast<size_t>(iFnRes) > sizeof(mcBuf) - 1 - iStrLen) {
 			iFnRes = sizeof(mcBuf) - 1 - iStrLen;
 		}
 		iStrLen += iFnRes;
@@ -222,7 +222,7 @@ void CLog::Dump (const char *p_pszMessage)
 		write (m_iLogFileFD, mcBuf, iStrLen);
 #endif
 	} else {
-		printf (mcBuf);
+		puts (mcBuf);
 	}
 }
 
@@ -260,11 +260,13 @@ int CLog::GetLogFileName (char *p_pszLogFileName, size_t p_stMaxSize)
 	return iRetVal;
 }
 
-bool CLog::CheckLogFileName (const char *p_pcszLogFileName)
+bool CLog::CheckLogFileName (const char *p_pszLogFileName)
 {
-	if (0 != access (m_pszLogFileName, F_OK)) {
-		return false;
-	}
+	if (0 == access (p_pszLogFileName, F_OK)) {
+		return true;
+	} else {
+    return false;
+  }
 }
 
 int CLog::OpenLogFile (const char *p_pcszLogFileName)
@@ -343,11 +345,11 @@ int GetTimeStamp (char *p_pszBuf, size_t p_stSize)
 		"%04u.%02u.%02u %02u:%02u:%02u,%06u : ",
 		soTm.tm_year, soTm.tm_mon, soTm.tm_mday,
 		soTm.tm_hour, soTm.tm_min, soTm.tm_sec,
-		soTV.tv_usec);
+		static_cast<unsigned int>(soTV.tv_usec));
 #endif
 
 	if (0 < iRetVal) {
-		if (iRetVal > p_stSize - 1) {
+		if (static_cast<size_t>(iRetVal) > p_stSize - 1) {
 			iRetVal = p_stSize - 1;
 		}
 	} else {
@@ -433,8 +435,8 @@ ReCreateFileProc (void *p_pParam)
 #ifdef WIN32
 	SYSTEMTIME soSysTime;
 #else
-	timespec soTimeSpec = { 0 };
-	timeval soTimeVal = { 0 };
+	timespec soTimeSpec = { 0, 0 };
+	timeval soTimeVal = { 0, 0 };
 #endif
 
 	do {
@@ -442,14 +444,14 @@ ReCreateFileProc (void *p_pParam)
 			break;
 		}
 
-		char mcLogFileName[1024];
+    char mcLogFileName[1024];
 
 		while (pcoLog->m_iInit) {
-			if (0 == pcoLog->GetLogFileName (mcLogFileName, sizeof(mcLogFileName))) {
-				if (! pcoLog->CheckLogFileName (mcLogFileName)) {
-					pcoLog->OpenLogFile (mcLogFileName);
-				}
-			}
+      if (0 == pcoLog->GetLogFileName (mcLogFileName, sizeof(mcLogFileName))) {
+        if (! pcoLog->CheckLogFileName (mcLogFileName)) {
+          pcoLog->OpenLogFile (mcLogFileName);
+        }
+      }
 #ifdef WIN32
 			GetSystemTime (&soSysTime);
 			Sleep (1);

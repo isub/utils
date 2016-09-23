@@ -189,10 +189,10 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 			ntohs (p_psoBuf->m_usPackLen));
 		if (0 >= iFnRes) { iRetVal = -1; break; }
 		/* для linux: если строка целиком не уместилась в буфер (под Windows это не работает) */
-		if (iFnRes >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
+		if (static_cast<size_t>(iFnRes) >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
 		mcString[iFnRes] = '\0';
 		stWrtInd = 0;
-		stStrLen = p_stOutBufSize > iFnRes ? iFnRes : p_stOutBufSize - 1;
+		stStrLen = p_stOutBufSize > static_cast<size_t>(iFnRes) ? iFnRes : p_stOutBufSize - 1;
 		memcpy (p_pmcOutBuf, mcString, stStrLen);
 		p_pmcOutBuf[stStrLen] = '\0';
 		stWrtInd = stStrLen;
@@ -212,16 +212,16 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 				ntohs (iter->second->m_usAttrLen));
 			/* если произошла ошика завершаем формирование атрибутов */
 			if (0 >= iFnRes) { iRetVal = -1; break; }
-			if (iFnRes >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
+			if (static_cast<size_t>(iFnRes) >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
 			mcString[iFnRes] = '\0';
 			/* выводим значение атрибута по байтам */
-			for (int iInd = sizeof (SPSReqAttr); iInd < ntohs (iter->second->m_usAttrLen) && iFnRes < sizeof(mcString) - 1; ++iInd) {
-				if (0x20 <= reinterpret_cast<char*>(iter->second)[iInd] && 0x7F > reinterpret_cast<char*>(iter->second)[iInd]) {
-					mcString[iFnRes] = reinterpret_cast<char*>(iter->second)[iInd];
+			for (size_t i = sizeof (SPSReqAttr); i < ntohs (iter->second->m_usAttrLen) && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
+				if (0x20 <= reinterpret_cast<char*>(iter->second)[i] && 0x7F > reinterpret_cast<char*>(iter->second)[i]) {
+					mcString[iFnRes] = reinterpret_cast<char*>(iter->second)[i];
 					++iFnRes;
 				} else {
 					/* если следующий символ не уместится в буфер - завершаем формирование атрибута */
-					if (iFnRes + 10 > sizeof(mcString) - 1) { bStop =  true; break; }
+					if (static_cast<size_t>(iFnRes) + 10 > sizeof(mcString) - 1) { bStop =  true; break; }
 #ifdef WIN32
 					iStrLen = _snprintf (
 #else
@@ -230,11 +230,11 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 						&mcString[iFnRes],
 						sizeof (mcString) - 1 - iFnRes,
 						"\\x%02x",
-						reinterpret_cast<unsigned char*>(iter->second)[iInd]);
+						reinterpret_cast<unsigned char*>(iter->second)[i]);
 					/* если при выводе очередного байта возникла ошибка прекращаем обработку атрибута */
 					if (0 >= iStrLen) { bStop =  true; break; }
 					/* для linux: если строка целиком не уместилась в буфер (под Windows это не работает) */
-					if (iStrLen >= sizeof (mcString) - 1 - iFnRes) { iStrLen = sizeof (mcString) - 1 - iFnRes; }
+					if (static_cast<size_t>(iStrLen) >= sizeof (mcString) - 1 - iFnRes) { iStrLen = sizeof (mcString) - 1 - iFnRes; }
 					iFnRes += iStrLen;
 				}
 				/* досрочно завершаем вывод атрибута */
@@ -244,7 +244,7 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 			if (iRetVal) {
 				break;
 			} else {
-				stStrLen = p_stOutBufSize - stWrtInd > iFnRes ? iFnRes : p_stOutBufSize - stWrtInd - 1;
+				stStrLen = p_stOutBufSize - stWrtInd > static_cast<size_t>(iFnRes) ? iFnRes : p_stOutBufSize - stWrtInd - 1;
 				memcpy (&p_pmcOutBuf[stWrtInd], mcString, stStrLen);
 				stWrtInd += stStrLen;
 				p_pmcOutBuf[stWrtInd] = '\0';

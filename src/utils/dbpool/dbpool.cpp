@@ -83,6 +83,7 @@ int ConnectDB (otl_connect &p_coDBConn)
 	if (iFnRes || 0 == strDBUser.length ()) {
 		if (g_pcoLog) {
 			g_pcoLog->WriteLog ("dbpool: %s: error: configuration parameter '%s' not defined", __func__, pcszConfParam);
+      return -1;
 		}
 	}
 
@@ -92,6 +93,7 @@ int ConnectDB (otl_connect &p_coDBConn)
 	if (iFnRes || 0 == strDBPswd.length ()) {
 		if (g_pcoLog) {
 			g_pcoLog->WriteLog ("dbpool: %s: error: configuration parameter '%s' not defined", __func__, pcszConfParam);
+      return -1;
 		}
 	}
 
@@ -101,6 +103,7 @@ int ConnectDB (otl_connect &p_coDBConn)
 	if (iFnRes || 0 == strDBDescr.length ()) {
 		if (g_pcoLog) {
 			g_pcoLog->WriteLog ("dbpool: %s: error: configuration parameter '%s' not defined", __func__, pcszConfParam);
+      return -1;
 		}
 	}
 
@@ -342,7 +345,7 @@ otl_connect * db_pool_get ()
 
 int db_pool_release (otl_connect *p_pcoDBConn)
 {
-	int iRetVal;
+	int iRetVal = 0;
 	int iFnRes;
 	timespec soTimeSpec;
 	timeval soTimeVal;
@@ -350,12 +353,14 @@ int db_pool_release (otl_connect *p_pcoDBConn)
 	/* запрашиваем текущее время */
 	iFnRes = gettimeofday (&soTimeVal, NULL);
 	if (iFnRes) {
-		return NULL;
-	}
-
-	/* вычисляем время до которого мы будем ждать освобождения мьютекса */
-	soTimeSpec.tv_sec = soTimeVal.tv_sec + 1;
-	soTimeSpec.tv_nsec = soTimeVal.tv_usec * 1000;
+    /* в случае ошибки выполнения функции gettimeofday будет нулевое ожидание */
+    soTimeSpec.tv_sec = 0;
+    soTimeSpec.tv_nsec = 0;
+	} else {
+    /* вычисляем время до которого мы будем ждать освобождения мьютекса */
+    soTimeSpec.tv_sec = soTimeVal.tv_sec + 1;
+    soTimeSpec.tv_nsec = soTimeVal.tv_usec * 1000;
+  }
 
 	/* входим в критическую секцию */
 	iFnRes = pthread_mutex_timedlock (&g_tMutex, &soTimeSpec);

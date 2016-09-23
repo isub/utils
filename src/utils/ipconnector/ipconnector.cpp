@@ -29,7 +29,7 @@ void CIPConnector::init (int p_iReqTimeout)
 #else
 	m_iStatus = 1;
 #endif
-	m_iRequestTimeout = 10;
+	m_iRequestTimeout = p_iReqTimeout;
 }
 
 CIPConnector::CIPConnector ()
