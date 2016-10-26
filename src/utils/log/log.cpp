@@ -123,30 +123,35 @@ void CLog::WriteLog (const char *p_pszMsg, ...)
 	char mcBuf[0x10000];
 	va_list vaList;
 
-	/* формируем временную метку */
+	/* С„РѕСЂРјРёСЂСѓРµРј РІСЂРµРјРµРЅРЅСѓСЋ РјРµС‚РєСѓ */
 	iStrLen = GetTimeStamp (mcBuf, sizeof (mcBuf));
-	va_start (vaList, p_pszMsg);
-	iFnRes = vsnprintf_ (mcBuf + iStrLen, sizeof(mcBuf) - 1 - iStrLen, p_pszMsg, vaList);
-	va_end (vaList);
-	/* если буфер успешно заполнен */
-	if (0 < iFnRes) {
-		/* если строка не уместилась в буфере */
-		if (static_cast<size_t>(iFnRes) > sizeof(mcBuf) - 1 - iStrLen) {
-			iFnRes = sizeof(mcBuf) - 1 - iStrLen;
-		}
-		iStrLen += iFnRes;
-	}
-	/* дополняем строку последовательность перевода строки */
-	if (m_pszEndOfLine) {
-		iFnRes = snprintf_ (mcBuf + iStrLen, sizeof(mcBuf) - 1 - iStrLen, "%s", m_pszEndOfLine);
-	}
-	/* если буфер успешно заполнен */
-	if (0 < iFnRes) {
-		/* если строка не уместилась в буфере */
-		if (static_cast<size_t>(iFnRes) > sizeof(mcBuf) - 1 - iStrLen) {
-			iFnRes = sizeof(mcBuf) - 1 - iStrLen;
-		}
-		iStrLen += iFnRes;
+  /* Р·Р°РїРѕР»РЅСЏРµРј Р±СѓС„РµСЂ С‚РµРєСЃС‚РѕРј СЃРѕРѕР±С‰РµРЅРёСЏ */
+  if (sizeof(mcBuf) > iStrLen) {
+	  va_start (vaList, p_pszMsg);
+	  iFnRes = vsnprintf_ (mcBuf + iStrLen, sizeof(mcBuf) - iStrLen, p_pszMsg, vaList);
+	  va_end (vaList);
+	  /* РµСЃР»Рё Р±СѓС„РµСЂ СѓСЃРїРµС€РЅРѕ Р·Р°РїРѕР»РЅРµРЅ */
+	  if (0 < iFnRes) {
+		  /* РµСЃР»Рё СЃС‚СЂРѕРєР° РЅРµ СѓРјРµСЃС‚РёР»Р°СЃСЊ РІ Р±СѓС„РµСЂРµ */
+		  if (sizeof(mcBuf) - iStrLen > static_cast<size_t>(iFnRes)) {
+    	  iStrLen += iFnRes;
+      } else {
+			  iStrLen = sizeof(mcBuf);
+		  }
+	  }
+  }
+	/* РґРѕРїРѕР»РЅСЏРµРј СЃС‚СЂРѕРєСѓ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊ РїРµСЂРµРІРѕРґР° СЃС‚СЂРѕРєРё */
+	if (m_pszEndOfLine && sizeof(mcBuf) > iStrLen) {
+		iFnRes = snprintf_ (mcBuf + iStrLen, sizeof(mcBuf) - iStrLen, "%s", m_pszEndOfLine);
+	  /* РµСЃР»Рё Р±СѓС„РµСЂ СѓСЃРїРµС€РЅРѕ Р·Р°РїРѕР»РЅРµРЅ */
+	  if (0 < iFnRes) {
+      if (sizeof(mcBuf) - iStrLen > static_cast<size_t>(iFnRes)) {
+  		  iStrLen += iFnRes;
+      } else {
+  		  /* РµСЃР»Рё СЃС‚СЂРѕРєР° РЅРµ СѓРјРµСЃС‚РёР»Р°СЃСЊ РІ Р±СѓС„РµСЂРµ */
+			  iStrLen = sizeof(mcBuf);
+		  }
+	  }
 	}
 	if (INVALID_HANDLE_VALUE != m_iLogFileFD) {
 #ifdef WIN32
@@ -163,7 +168,7 @@ void CLog::WriteLog (const char *p_pszMsg, ...)
 void CLog::Dump (const char *p_pszTitle, const char *p_pszMessage)
 {
 	size_t stStrLen;
-	char mcBuf[0x10000];
+	char mcBuf[0x2000];
 
 	stStrLen = GetTimeStamp (mcBuf, sizeof(mcBuf));
 #ifdef WIN32
@@ -191,24 +196,24 @@ void CLog::Dump (const char *p_pszMessage)
 	int iFnRes;
 	char mcBuf[0x10000];
 
-	/* формируем временную метку */
+	/* С„РѕСЂРјРёСЂСѓРµРј РІСЂРµРјРµРЅРЅСѓСЋ РјРµС‚РєСѓ */
 	iStrLen = GetTimeStamp (mcBuf, sizeof (mcBuf));
 	iFnRes = snprintf_ (mcBuf + iStrLen, sizeof(mcBuf) - 1 - iStrLen, "%s", p_pszMessage);
-	/* если буфер успешно заполнен */
+	/* РµСЃР»Рё Р±СѓС„РµСЂ СѓСЃРїРµС€РЅРѕ Р·Р°РїРѕР»РЅРµРЅ */
 	if (0 < iFnRes) {
-		/* если строка не уместилась в буфере */
+		/* РµСЃР»Рё СЃС‚СЂРѕРєР° РЅРµ СѓРјРµСЃС‚РёР»Р°СЃСЊ РІ Р±СѓС„РµСЂРµ */
 		if (static_cast<size_t>(iFnRes) > sizeof(mcBuf) - 1 - iStrLen) {
 			iFnRes = sizeof(mcBuf) - 1 - iStrLen;
 		}
 		iStrLen += iFnRes;
 	}
-	/* дополняем строку последовательность перевода строки */
+	/* РґРѕРїРѕР»РЅСЏРµРј СЃС‚СЂРѕРєСѓ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊ РїРµСЂРµРІРѕРґР° СЃС‚СЂРѕРєРё */
 	if (m_pszEndOfLine) {
 		iFnRes = snprintf_ (mcBuf + iStrLen, sizeof(mcBuf) - 1 - iStrLen, "%s", m_pszEndOfLine);
 	}
-	/* если буфер успешно заполнен */
+	/* РµСЃР»Рё Р±СѓС„РµСЂ СѓСЃРїРµС€РЅРѕ Р·Р°РїРѕР»РЅРµРЅ */
 	if (0 < iFnRes) {
-		/* если строка не уместилась в буфере */
+		/* РµСЃР»Рё СЃС‚СЂРѕРєР° РЅРµ СѓРјРµСЃС‚РёР»Р°СЃСЊ РІ Р±СѓС„РµСЂРµ */
 		if (static_cast<size_t>(iFnRes) > sizeof(mcBuf) - 1 - iStrLen) {
 			iFnRes = sizeof(mcBuf) - 1 - iStrLen;
 		}
@@ -341,7 +346,7 @@ int GetTimeStamp (char *p_pszBuf, size_t p_stSize)
 	++ soTm.tm_mon;
 	iRetVal = snprintf (
 		p_pszBuf,
-		p_stSize - 1,
+		p_stSize,
 		"%04u.%02u.%02u %02u:%02u:%02u,%06u : ",
 		soTm.tm_year, soTm.tm_mon, soTm.tm_mday,
 		soTm.tm_hour, soTm.tm_min, soTm.tm_sec,
@@ -349,8 +354,10 @@ int GetTimeStamp (char *p_pszBuf, size_t p_stSize)
 #endif
 
 	if (0 < iRetVal) {
-		if (static_cast<size_t>(iRetVal) > p_stSize - 1) {
+		if (p_stSize > static_cast<size_t>(iRetVal)) {
+    } else {
 			iRetVal = p_stSize - 1;
+      p_pszBuf[iRetVal] = '\0';
 		}
 	} else {
 		iRetVal = 0;
@@ -367,11 +374,11 @@ CLog::CLog () {
 	m_idUId = (gid_t)-1;
 	m_idGId = (gid_t)-1;
 	m_hReCreateFile = 0;
-	/* инициализируем мьютекс для ожидания момента проверки соответствия имени файла заданной маске */
+	/* РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РјСЊСЋС‚РµРєСЃ РґР»СЏ РѕР¶РёРґР°РЅРёСЏ РјРѕРјРµРЅС‚Р° РїСЂРѕРІРµСЂРєРё СЃРѕРѕС‚РІРµС‚СЃС‚РІРёСЏ РёРјРµРЅРё С„Р°Р№Р»Р° Р·Р°РґР°РЅРЅРѕР№ РјР°СЃРєРµ */
 	pthread_mutex_init (&m_tMutex, NULL);
-	/* при создании мьютекс должен находиться в открытом состоянии, поэтому мы блокируем его */
+	/* РїСЂРё СЃРѕР·РґР°РЅРёРё РјСЊСЋС‚РµРєСЃ РґРѕР»Р¶РµРЅ РЅР°С…РѕРґРёС‚СЊСЃСЏ РІ РѕС‚РєСЂС‹С‚РѕРј СЃРѕСЃС‚РѕСЏРЅРёРё, РїРѕСЌС‚РѕРјСѓ РјС‹ Р±Р»РѕРєРёСЂСѓРµРј РµРіРѕ */
 	pthread_mutex_trylock (&m_tMutex);
-	/* по умолчанию интервал ожидания 1 минута */
+	/* РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РёРЅС‚РµСЂРІР°Р» РѕР¶РёРґР°РЅРёСЏ 1 РјРёРЅСѓС‚Р° */
 	m_uiWaitInterval = 60;
 #endif
 	m_pszLogFileMask = NULL;
@@ -389,7 +396,7 @@ CLog::~CLog ()
 		WaitForSingleObject (m_hReCreateFile, 5000);
 		m_hReCreateFile = NULL;
 #else
-		/* снимаем блокировку мьютекса */
+		/* СЃРЅРёРјР°РµРј Р±Р»РѕРєРёСЂРѕРІРєСѓ РјСЊСЋС‚РµРєСЃР° */
 		pthread_mutex_unlock (&m_tMutex);
 		pthread_join (m_hReCreateFile, NULL);
 		pthread_mutex_destroy (&m_tMutex);
@@ -397,19 +404,19 @@ CLog::~CLog ()
 #endif
 	}
 	if (INVALID_HANDLE_VALUE != m_iLogFileFD) {
-		/* если дескриптор содержит допустимое значение */
-		/* дозаписываем содержимое буферов на диск */
+		/* РµСЃР»Рё РґРµСЃРєСЂРёРїС‚РѕСЂ СЃРѕРґРµСЂР¶РёС‚ РґРѕРїСѓСЃС‚РёРјРѕРµ Р·РЅР°С‡РµРЅРёРµ */
+		/* РґРѕР·Р°РїРёСЃС‹РІР°РµРј СЃРѕРґРµСЂР¶РёРјРѕРµ Р±СѓС„РµСЂРѕРІ РЅР° РґРёСЃРє */
 		Flush ();
-		/* закрыаем файл */
+		/* Р·Р°РєСЂС‹Р°РµРј С„Р°Р№Р» */
 #ifdef WIN32
 		CloseHandle (m_iLogFileFD);
 #else
 		close (m_iLogFileFD);
 #endif
-		/* значение дескриптора теперь неактуально */
+		/* Р·РЅР°С‡РµРЅРёРµ РґРµСЃРєСЂРёРїС‚РѕСЂР° С‚РµРїРµСЂСЊ РЅРµР°РєС‚СѓР°Р»СЊРЅРѕ */
 		m_iLogFileFD = INVALID_HANDLE_VALUE;
 	}
-	/* освобождаем занятые ресурсы */
+	/* РѕСЃРІРѕР±РѕР¶РґР°РµРј Р·Р°РЅСЏС‚С‹Рµ СЂРµСЃСѓСЂСЃС‹ */
 	if (m_pszLogFileMask) {
 		free (m_pszLogFileMask);
 		m_pszLogFileMask = NULL;
@@ -456,15 +463,15 @@ ReCreateFileProc (void *p_pParam)
 			GetSystemTime (&soSysTime);
 			Sleep (1);
 #else
-			/* ждем нужный момент */
-			/* получаем текущее время */
+			/* Р¶РґРµРј РЅСѓР¶РЅС‹Р№ РјРѕРјРµРЅС‚ */
+			/* РїРѕР»СѓС‡Р°РµРј С‚РµРєСѓС‰РµРµ РІСЂРµРјСЏ */
 			gettimeofday (&soTimeVal, NULL);
-			/* задаем время срабатывания мьютекса */
+			/* Р·Р°РґР°РµРј РІСЂРµРјСЏ СЃСЂР°Р±Р°С‚С‹РІР°РЅРёСЏ РјСЊСЋС‚РµРєСЃР° */
 			soTimeSpec.tv_sec = soTimeVal.tv_sec + pcoLog->m_uiWaitInterval;
-			/* выравниваем секунды по краям интервала */
+			/* РІС‹СЂР°РІРЅРёРІР°РµРј СЃРµРєСѓРЅРґС‹ РїРѕ РєСЂР°СЏРј РёРЅС‚РµСЂРІР°Р»Р° */
 			soTimeSpec.tv_sec /= pcoLog->m_uiWaitInterval;
 			soTimeSpec.tv_sec *= pcoLog->m_uiWaitInterval;
-			/* запускаем ожидание */
+			/* Р·Р°РїСѓСЃРєР°РµРј РѕР¶РёРґР°РЅРёРµ */
 			pthread_mutex_timedlock (&pcoLog->m_tMutex, &soTimeSpec);
 #endif
 		}

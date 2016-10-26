@@ -219,6 +219,7 @@ SStat::~SStat()
 
 void * stat_output (void *p_pArg)
 {
+  int iFnRes;
 	bool *bStop = (bool*)p_pArg;
 	timespec soTmSpec;
 	SStat *psoTmp;
@@ -239,7 +240,7 @@ void * stat_output (void *p_pArg)
 			strMsg += "\r\n";
 			bFirst = true;
 			psoTmp = iter->second;
-			while (psoTmp) {
+			for (; psoTmp; psoTmp = psoTmp->m_psoNext) {
 				pthread_mutex_lock (&psoTmp->m_mutexStat);
 				if (bFirst) {
 					bFirst = false;
@@ -251,16 +252,23 @@ void * stat_output (void *p_pArg)
 				coTM.ToString (&psoTmp->m_soTmMax, mcMax, sizeof(mcMax));
 				coTM.ToString (&psoTmp->m_soTmTotal, mcTotal, sizeof(mcTotal));
 				coTM.ToString (&psoTmp->m_soTmLast, mcLast, sizeof(mcLast));
-				snprintf (mcBuf, sizeof (mcBuf), "%35s: TC:%10u; D:%6u; MIN:%12s; MAX:%16s; TT:%16s; L:%14s; A:%0.3f s/r;",
+				iFnRes = snprintf (mcBuf, sizeof (mcBuf), "%35s: TC:%10u; D:%6u; MIN:%12s; MAX:%16s; TT:%16s; L:%14s; A:%0.3f s/r;",
 					psoTmp->m_strObjName.c_str (),
 					psoTmp->m_ui64Count,
 					psoTmp->m_ui64Count - psoTmp->m_ui64CountPrec,
 					mcMin, mcMax, mcTotal, mcLast,
 					psoTmp->m_ui64Count ? ((double)psoTmp->m_soTmTotal.tv_sec)/psoTmp->m_ui64Count : 0.0);
 				psoTmp->m_ui64CountPrec = psoTmp->m_ui64Count;
+        if (0 < iFnRes) {
+          if (sizeof(mcBuf) > static_cast<size_t>(iFnRes)) {
+          } else {
+            mcBuf[sizeof(mcBuf)-1] = '\0';
+          }
+        } else {
+          continue;
+        }
 				strMsg += mcBuf;
 				pthread_mutex_unlock (&psoTmp->m_mutexStat);
-				psoTmp = psoTmp->m_psoNext;
 			}
 		}
 		pthread_mutex_unlock (g_pmutexStat);

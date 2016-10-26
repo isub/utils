@@ -60,7 +60,7 @@ public:
 	~CLog ();
 private:
 	int GetLogFileName (char *p_pszLogFileName, size_t p_stMaxSize);
-	bool CheckLogFileName ();
+	inline bool CheckLogFileName (const char *p_pszLogFileName);
 	int OpenLogFile (const char *p_pcszLogFileName);
 #ifdef WIN32
 	friend DWORD WINAPI ReCreateFileProc (void *p_pParam);
@@ -77,9 +77,9 @@ private:
 	pthread_t m_hReCreateFile;
 	gid_t m_idUId;
 	gid_t m_idGId;
-	/* mutex для проверки соответствия имени файла заданной маске */
+	/* mutex РґР»СЏ РїСЂРѕРІРµСЂРєРё СЃРѕРѕС‚РІРµС‚СЃС‚РІРёСЏ РёРјРµРЅРё С„Р°Р№Р»Р° Р·Р°РґР°РЅРЅРѕР№ РјР°СЃРєРµ */
 	pthread_mutex_t m_tMutex;
-	/* интервал проверки имени файла в секундах */
+	/* РёРЅС‚РµСЂРІР°Р» РїСЂРѕРІРµСЂРєРё РёРјРµРЅРё С„Р°Р№Р»Р° РІ СЃРµРєСѓРЅРґР°С… */
 	unsigned int m_uiWaitInterval;
 #endif
 	int m_iInit;
