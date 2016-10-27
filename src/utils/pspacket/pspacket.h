@@ -25,7 +25,19 @@ public:
 	int Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize);
 	/* разбор пакета */
 	void EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttrList);
-	int Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, std::multimap<__uint16_t,SPSReqAttr*> &p_pumapAttrList, int p_iValidate = 1);
+	int Parse (
+    const SPSRequest *p_psoBuf,
+    size_t p_stBufSize,
+    std::multimap<__uint16_t,SPSReqAttr*> &p_pumapAttrList,
+    int p_iValidate = 1);
+	int Parse (
+    const SPSRequest *p_psoBuf,
+    size_t p_stBufSize,
+    __uint32_t &p_ui32ReqNum,
+    __uint16_t &p_ui16ReqType,
+    __uint16_t &p_ui16PackLen,
+    std::multimap<__uint16_t,SPSReqAttr*> &p_pumapAttrList,
+    int p_iValidate = 1);
 	/* возвращает количество записанных в буфер символов, в случае ошибки возвращаемое значение равно -1 */
 	int Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pmcOutBuf, size_t p_stOutBufSize);
 };

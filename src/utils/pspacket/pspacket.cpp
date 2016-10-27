@@ -4,11 +4,11 @@
 #include <stdio.h>
 #ifdef WIN32
 #	include <Winsock2.h>
-#	include "coacommon.h"
+#	include "ps_common.h"
 #	pragma	comment(lib, "ws2_32.lib")
 #else
 #	include <arpa/inet.h>
-#	include "utils/coacommon.h"
+#	include "utils/ps_common.h"
 #endif
 
 #include "pspacket.h"
@@ -162,6 +162,21 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, std::multi
 	} while (0);
 
 	return iRetVal;
+}
+
+int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t &p_ui32ReqNum,
+                        __uint16_t &p_ui16ReqType, __uint16_t &p_ui16PackLen,
+                        std::multimap<__uint16_t,SPSReqAttr*> &p_pumapAttrList, int p_iValidate) {
+    int iRetVal = 0;
+
+    /* валидация пакета */
+    if (p_iValidate) { iRetVal = Validate (p_psoBuf, p_stBufSize); }
+    if (iRetVal) { return iRetVal; }
+    p_ui32ReqNum=ntohl (p_psoBuf->m_uiReqNum);
+    p_ui16ReqType=ntohs (p_psoBuf->m_usReqType);
+    p_ui16PackLen=ntohs (p_psoBuf->m_usPackLen);
+
+    return Parse(p_psoBuf,p_stBufSize,p_pumapAttrList,0);
 }
 
 int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pmcOutBuf, size_t p_stOutBufSize) {
