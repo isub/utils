@@ -17,7 +17,7 @@ int CPSPacket::Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32
 	int iRetVal = 0;
 
 	do {
-		/* проверяем достаточно ли размера буфера для заголовка пакета */
+		/* РїСЂРѕРІРµСЂСЏРµРј РґРѕСЃС‚Р°С‚РѕС‡РЅРѕ Р»Рё СЂР°Р·РјРµСЂР° Р±СѓС„РµСЂР° РґР»СЏ Р·Р°РіРѕР»РѕРІРєР° РїР°РєРµС‚Р° */
 		if (p_stBufSize < sizeof(SPSRequest)) { iRetVal = -1; break; }
 		p_psoBuf->m_uiReqNum = htonl (p_ui32ReqNum);
 		p_psoBuf->m_usReqType = htons (p_ui16ReqType);
@@ -59,10 +59,10 @@ int CPSPacket::AddAttr (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_u
 		ui16AttrLen;
 
 	do {
-		/* валидация пакета */
+		/* РІР°Р»РёРґР°С†РёСЏ РїР°РєРµС‚Р° */
 		if (p_iValidate) { iRetVal = Validate (p_psoBuf, p_stBufSize); }
 		if (iRetVal) { break; }
-		/* проверка размера буфера */
+		/* РїСЂРѕРІРµСЂРєР° СЂР°Р·РјРµСЂР° Р±СѓС„РµСЂР° */
 		ui16PackLen = ntohs (p_psoBuf->m_usPackLen);
 		ui16AttrLen = p_ui16ValueLen + sizeof(SPSReqAttr);
 		if ((size_t)(ui16PackLen + ui16AttrLen) > p_stBufSize) { iRetVal = -1; break; }
@@ -87,30 +87,30 @@ int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize) {
 		ui16AttrLen;
 
 	do {
-		/* проверяем достаточен ли размер буфера для заголовка пакета */
+		/* РїСЂРѕРІРµСЂСЏРµРј РґРѕСЃС‚Р°С‚РѕС‡РµРЅ Р»Рё СЂР°Р·РјРµСЂ Р±СѓС„РµСЂР° РґР»СЏ Р·Р°РіРѕР»РѕРІРєР° РїР°РєРµС‚Р° */
 		if (p_stBufSize < sizeof(SPSRequest)) { iRetVal = -1; break; }
-		/* инициализируем суммарную длину начальным значением */
+		/* РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃСѓРјРјР°СЂРЅСѓСЋ РґР»РёРЅСѓ РЅР°С‡Р°Р»СЊРЅС‹Рј Р·РЅР°С‡РµРЅРёРµРј */
 		ui16TotalLen = sizeof(SPSRequest);
-		/* определяем длину пакета по заголовку */
+		/* РѕРїСЂРµРґРµР»СЏРµРј РґР»РёРЅСѓ РїР°РєРµС‚Р° РїРѕ Р·Р°РіРѕР»РѕРІРєСѓ */
 		ui16PackLen = ntohs (p_psoBuf->m_usPackLen);
-		/* инициализируем указатель на атрибут начальным значением */
+		/* РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° Р°С‚СЂРёР±СѓС‚ РЅР°С‡Р°Р»СЊРЅС‹Рј Р·РЅР°С‡РµРЅРёРµРј */
 		psoTmp = (SPSReqAttr*)((char*)p_psoBuf + sizeof(SPSRequest));
-		/* обходим все атрибуты */
+		/* РѕР±С…РѕРґРёРј РІСЃРµ Р°С‚СЂРёР±СѓС‚С‹ */
 		while (((char*)p_psoBuf + ui16PackLen) > ((char*)psoTmp)) {
-			/* определяем длину атрибута */
+			/* РѕРїСЂРµРґРµР»СЏРµРј РґР»РёРЅСѓ Р°С‚СЂРёР±СѓС‚Р° */
 			ui16AttrLen = ntohs (psoTmp->m_usAttrLen);
-			/* увеличиваем суммарную длину пакета */
+			/* СѓРІРµР»РёС‡РёРІР°РµРј СЃСѓРјРјР°СЂРЅСѓСЋ РґР»РёРЅСѓ РїР°РєРµС‚Р° */
 			ui16TotalLen += ui16AttrLen;
-			/* проверяем умещается ли пакет в буфере */
+			/* РїСЂРѕРІРµСЂСЏРµРј СѓРјРµС‰Р°РµС‚СЃСЏ Р»Рё РїР°РєРµС‚ РІ Р±СѓС„РµСЂРµ */
 			if (ui16TotalLen > p_stBufSize) { iRetVal = -1; break; }
-			/* определяем указатель на следующий атрибут */
+			/* РѕРїСЂРµРґРµР»СЏРµРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° СЃР»РµРґСѓСЋС‰РёР№ Р°С‚СЂРёР±СѓС‚ */
 			psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
-			/* если суммарная длина больше длины пакета нет смысла проверять дальше */
+			/* РµСЃР»Рё СЃСѓРјРјР°СЂРЅР°СЏ РґР»РёРЅР° Р±РѕР»СЊС€Рµ РґР»РёРЅС‹ РїР°РєРµС‚Р° РЅРµС‚ СЃРјС‹СЃР»Р° РїСЂРѕРІРµСЂСЏС‚СЊ РґР°Р»СЊС€Рµ */
 			if (ui16TotalLen > ui16PackLen) { iRetVal = -1; break; }
 		}
-		/* если найдена ошибка завершаем проверку */
+		/* РµСЃР»Рё РЅР°Р№РґРµРЅР° РѕС€РёР±РєР° Р·Р°РІРµСЂС€Р°РµРј РїСЂРѕРІРµСЂРєСѓ */
 		if (iRetVal) { break; }
-		/* сличаем длину пакета с суммой длин атрибутов */
+		/* СЃР»РёС‡Р°РµРј РґР»РёРЅСѓ РїР°РєРµС‚Р° СЃ СЃСѓРјРјРѕР№ РґР»РёРЅ Р°С‚СЂРёР±СѓС‚РѕРІ */
 		if (ui16TotalLen != ui16PackLen) { iRetVal = -1; break; }
 	} while (0);
 
@@ -141,22 +141,22 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, std::multi
 	EraseAttrList (p_pumapAttrList);
 
 	do {
-		/* валидация пакета */
+		/* РІР°Р»РёРґР°С†РёСЏ РїР°РєРµС‚Р° */
 		if (p_iValidate) { iRetVal = Validate (p_psoBuf, p_stBufSize); }
 		if (iRetVal) { break; }
-		/* определяем длину пакета */
+		/* РѕРїСЂРµРґРµР»СЏРµРј РґР»РёРЅСѓ РїР°РєРµС‚Р° */
 		ui16PackLen = ntohs (p_psoBuf->m_usPackLen);
-		/* инициализируем указатель на атрибут начальным значением */
+		/* РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° Р°С‚СЂРёР±СѓС‚ РЅР°С‡Р°Р»СЊРЅС‹Рј Р·РЅР°С‡РµРЅРёРµРј */
 		psoTmp = (SPSReqAttr*)((char*)p_psoBuf + sizeof(SPSRequest));
-		/* обходим все атрибуты */
+		/* РѕР±С…РѕРґРёРј РІСЃРµ Р°С‚СЂРёР±СѓС‚С‹ */
 		while (((char*)p_psoBuf + ui16PackLen) > ((char*)psoTmp)) {
-			/* определяем длину атрибута */
+			/* РѕРїСЂРµРґРµР»СЏРµРј РґР»РёРЅСѓ Р°С‚СЂРёР±СѓС‚Р° */
 			ui16AttrLen = ntohs (psoTmp->m_usAttrLen);
-			/* добавляем атрибут в список */
+			/* РґРѕР±Р°РІР»СЏРµРј Р°С‚СЂРёР±СѓС‚ РІ СЃРїРёСЃРѕРє */
 			psoPSReqAttr = (SPSReqAttr*) malloc (ui16AttrLen);
 			memcpy (psoPSReqAttr, psoTmp, ui16AttrLen);
 			p_pumapAttrList.insert (std::make_pair (ntohs (psoTmp->m_usAttrType), (SPSReqAttr*)psoPSReqAttr));
-			/* определяем указатель на следующий атрибут */
+			/* РѕРїСЂРµРґРµР»СЏРµРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° СЃР»РµРґСѓСЋС‰РёР№ Р°С‚СЂРёР±СѓС‚ */
 			psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
 		}
 	} while (0);
@@ -172,10 +172,10 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 	std::multimap<__uint16_t,SPSReqAttr*> mapAttrList;
 
 	do {
-		/* разбор атрибутов пакета */
+		/* СЂР°Р·Р±РѕСЂ Р°С‚СЂРёР±СѓС‚РѕРІ РїР°РєРµС‚Р° */
 		iRetVal = Parse (p_psoBuf, p_stBufSize, mapAttrList);
 		if (iRetVal) { break; }
-		/* формируем заголовок пакета */
+		/* С„РѕСЂРјРёСЂСѓРµРј Р·Р°РіРѕР»РѕРІРѕРє РїР°РєРµС‚Р° */
 #ifdef WIN32
 		iFnRes = _snprintf (
 #else
@@ -188,7 +188,7 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 			ntohs (p_psoBuf->m_usReqType),
 			ntohs (p_psoBuf->m_usPackLen));
 		if (0 >= iFnRes) { iRetVal = -1; break; }
-		/* для linux: если строка целиком не уместилась в буфер (под Windows это не работает) */
+		/* РґР»СЏ linux: РµСЃР»Рё СЃС‚СЂРѕРєР° С†РµР»РёРєРѕРј РЅРµ СѓРјРµСЃС‚РёР»Р°СЃСЊ РІ Р±СѓС„РµСЂ (РїРѕРґ Windows СЌС‚Рѕ РЅРµ СЂР°Р±РѕС‚Р°РµС‚) */
 		if (static_cast<size_t>(iFnRes) >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
 		mcString[iFnRes] = '\0';
 		stWrtInd = 0;
@@ -196,10 +196,10 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 		memcpy (p_pmcOutBuf, mcString, stStrLen);
 		p_pmcOutBuf[stStrLen] = '\0';
 		stWrtInd = stStrLen;
-		/* обходим все атрибуты */
+		/* РѕР±С…РѕРґРёРј РІСЃРµ Р°С‚СЂРёР±СѓС‚С‹ */
 		bool bStop = false;
 		for (std::multimap<__uint16_t,SPSReqAttr*>::iterator iter = mapAttrList.begin(); iter != mapAttrList.end (); ++iter) {
-			/* формируем заголовок атрибута */
+			/* С„РѕСЂРјРёСЂСѓРµРј Р·Р°РіРѕР»РѕРІРѕРє Р°С‚СЂРёР±СѓС‚Р° */
 #ifdef WIN32
 			iFnRes = _snprintf (
 #else
@@ -210,17 +210,17 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 				" attribute code: 0x%04x; length: %u; value: ",
 				ntohs (iter->second->m_usAttrType),
 				ntohs (iter->second->m_usAttrLen));
-			/* если произошла ошика завершаем формирование атрибутов */
+			/* РµСЃР»Рё РїСЂРѕРёР·РѕС€Р»Р° РѕС€РёРєР° Р·Р°РІРµСЂС€Р°РµРј С„РѕСЂРјРёСЂРѕРІР°РЅРёРµ Р°С‚СЂРёР±СѓС‚РѕРІ */
 			if (0 >= iFnRes) { iRetVal = -1; break; }
 			if (static_cast<size_t>(iFnRes) >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
 			mcString[iFnRes] = '\0';
-			/* выводим значение атрибута по байтам */
+			/* РІС‹РІРѕРґРёРј Р·РЅР°С‡РµРЅРёРµ Р°С‚СЂРёР±СѓС‚Р° РїРѕ Р±Р°Р№С‚Р°Рј */
 			for (size_t i = sizeof (SPSReqAttr); i < ntohs (iter->second->m_usAttrLen) && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
 				if (0x20 <= reinterpret_cast<char*>(iter->second)[i] && 0x7F > reinterpret_cast<char*>(iter->second)[i]) {
 					mcString[iFnRes] = reinterpret_cast<char*>(iter->second)[i];
 					++iFnRes;
 				} else {
-					/* если следующий символ не уместится в буфер - завершаем формирование атрибута */
+					/* РµСЃР»Рё СЃР»РµРґСѓСЋС‰РёР№ СЃРёРјРІРѕР» РЅРµ СѓРјРµСЃС‚РёС‚СЃСЏ РІ Р±СѓС„РµСЂ - Р·Р°РІРµСЂС€Р°РµРј С„РѕСЂРјРёСЂРѕРІР°РЅРёРµ Р°С‚СЂРёР±СѓС‚Р° */
 					if (static_cast<size_t>(iFnRes) + 10 > sizeof(mcString) - 1) { bStop =  true; break; }
 #ifdef WIN32
 					iStrLen = _snprintf (
@@ -231,13 +231,13 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 						sizeof (mcString) - 1 - iFnRes,
 						"\\x%02x",
 						reinterpret_cast<unsigned char*>(iter->second)[i]);
-					/* если при выводе очередного байта возникла ошибка прекращаем обработку атрибута */
+					/* РµСЃР»Рё РїСЂРё РІС‹РІРѕРґРµ РѕС‡РµСЂРµРґРЅРѕРіРѕ Р±Р°Р№С‚Р° РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° РїСЂРµРєСЂР°С‰Р°РµРј РѕР±СЂР°Р±РѕС‚РєСѓ Р°С‚СЂРёР±СѓС‚Р° */
 					if (0 >= iStrLen) { bStop =  true; break; }
-					/* для linux: если строка целиком не уместилась в буфер (под Windows это не работает) */
+					/* РґР»СЏ linux: РµСЃР»Рё СЃС‚СЂРѕРєР° С†РµР»РёРєРѕРј РЅРµ СѓРјРµСЃС‚РёР»Р°СЃСЊ РІ Р±СѓС„РµСЂ (РїРѕРґ Windows СЌС‚Рѕ РЅРµ СЂР°Р±РѕС‚Р°РµС‚) */
 					if (static_cast<size_t>(iStrLen) >= sizeof (mcString) - 1 - iFnRes) { iStrLen = sizeof (mcString) - 1 - iFnRes; }
 					iFnRes += iStrLen;
 				}
-				/* досрочно завершаем вывод атрибута */
+				/* РґРѕСЃСЂРѕС‡РЅРѕ Р·Р°РІРµСЂС€Р°РµРј РІС‹РІРѕРґ Р°С‚СЂРёР±СѓС‚Р° */
 				if (bStop) { break; }
 			}
 			mcString[iFnRes] = '\0';
@@ -249,7 +249,7 @@ int CPSPacket::Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pm
 				stWrtInd += stStrLen;
 				p_pmcOutBuf[stWrtInd] = '\0';
 			}
-			/* если формирование атрибута прервано завершаем вывод всего пакета */
+			/* РµСЃР»Рё С„РѕСЂРјРёСЂРѕРІР°РЅРёРµ Р°С‚СЂРёР±СѓС‚Р° РїСЂРµСЂРІР°РЅРѕ Р·Р°РІРµСЂС€Р°РµРј РІС‹РІРѕРґ РІСЃРµРіРѕ РїР°РєРµС‚Р° */
 			if (bStop) { break; }
 		}
 		if (0 == iRetVal) {

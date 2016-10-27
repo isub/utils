@@ -502,7 +502,7 @@ int CMySMTP::VerifyRecipient (
 		}
 	} while (0);
 
-	// если произошла ошибка
+	// РµСЃР»Рё РїСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР°
 	if (iRetVal && -1 != iRetVal) {
 		// RSET
 		strMsg = "RSET\r\n";
@@ -640,7 +640,7 @@ int CMySMTP::OutputFile (SOCKET p_sockSock, const char *p_pcszFileName) {
 	pszBase64 = new char [iBase64Len];
 	if (NULL == pszBase64) { return iRetVal; }
 		iFnRes = base64_encode (mucReadBuf, dwBytesRead, pszBase64);
-		/* если в буфер ничего не записано, значит произошла обшибка */
+		/* РµСЃР»Рё РІ Р±СѓС„РµСЂ РЅРёС‡РµРіРѕ РЅРµ Р·Р°РїРёСЃР°РЅРѕ, Р·РЅР°С‡РёС‚ РїСЂРѕРёР·РѕС€Р»Р° РѕР±С€РёР±РєР° */
 		if (0 == iFnRes) { iRetVal = -1; break; }
 		iFnRes = SendMsg (p_sockSock, pszBase64, iFnRes);
 		if (pszBase64) { delete [] pszBase64; pszBase64 = NULL; }

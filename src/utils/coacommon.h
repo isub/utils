@@ -61,14 +61,14 @@
 #define PS_SESSTATUS	(unsigned short)0x0308
 
 #pragma pack(push,1)
-/*	Атрибут запроса в формате IRBiS-PS
+/*	РђС‚СЂРёР±СѓС‚ Р·Р°РїСЂРѕСЃР° РІ С„РѕСЂРјР°С‚Рµ IRBiS-PS
  */
 struct SPSReqAttr {
 	unsigned short m_usAttrType;
 	unsigned short m_usAttrLen;
 };
 
-/*	Запрос в формате IRBiS-PS
+/*	Р—Р°РїСЂРѕСЃ РІ С„РѕСЂРјР°С‚Рµ IRBiS-PS
  */
 struct SPSRequest {
 	unsigned int m_uiReqNum;

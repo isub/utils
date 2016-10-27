@@ -1,5 +1,5 @@
 #include <string>
 
-/* возвращает количество символов, записанных в выходной буфер */
+/* РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ СЃРёРјРІРѕР»РѕРІ, Р·Р°РїРёСЃР°РЅРЅС‹С… РІ РІС‹С…РѕРґРЅРѕР№ Р±СѓС„РµСЂ */
 int base64_encode (unsigned char const* p_pszToEncode, unsigned int p_iLen, char *p_pszOut);
 std::string base64_decode (std::string const& s);

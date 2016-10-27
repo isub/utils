@@ -24,7 +24,7 @@
 #endif
 
 #ifdef WIN32
-	/* функции и типы данных для работы с библиотекой CURL ********************/
+	/* С„СѓРЅРєС†РёРё Рё С‚РёРїС‹ РґР°РЅРЅС‹С… РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ Р±РёР±Р»РёРѕС‚РµРєРѕР№ CURL ********************/
 	typedef CURLcode (*typeCURLGlobalInit)(long);
 	typedef void (*typeCURLGlobalCleanup)(void);
 	typedef CURL* (*typeCURLEasyInit)(void);
@@ -41,7 +41,7 @@
 	/*****************************************************************************/
 #	define	close _close
 #	define strdup _strdup
-	/* функция для чтения данный с диска **************************************/
+	/* С„СѓРЅРєС†РёСЏ РґР»СЏ С‡С‚РµРЅРёСЏ РґР°РЅРЅС‹Р№ СЃ РґРёСЃРєР° **************************************/
 	DWORD WINAPI FS_LoadFile (void *p_pcoThis);
 #else
 #	define fn_curl_global_init		curl_global_init
@@ -75,10 +75,10 @@ int CFileReader::OpenDataFile (
 	}
 #endif
 
-	/* запоминаем информацию о файле */
+	/* Р·Р°РїРѕРјРёРЅР°РµРј РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С„Р°Р№Р»Рµ */
 	m_soFileInfo = p_soFileInfo;
 
-	/* запоминаем тип */
+	/* Р·Р°РїРѕРјРёРЅР°РµРј С‚РёРї */
 	m_strType = p_pszType;
 
 	if (p_pstrHost) {
@@ -91,7 +91,7 @@ int CFileReader::OpenDataFile (
 		m_pszPassword = strdup (p_pstrPassword->c_str ());
 	}
 
-	/* формируем полное имя файла */
+	/* С„РѕСЂРјРёСЂСѓРµРј РїРѕР»РЅРѕРµ РёРјСЏ С„Р°Р№Р»Р° */
 	std::string strFileName;
 	if (m_soFileInfo.m_strDir.length ()) {
 		strFileName = m_soFileInfo.m_strDir;
@@ -103,9 +103,9 @@ int CFileReader::OpenDataFile (
 	strFileName += m_soFileInfo.m_strTitle;
 
 	do {
-		/* производим подготовительные для работы с файлом */
-		if (0 == strcmp (p_pszType, "file")) {       /* открываем файл */
-			/* чтение файлов без буферизации */
+		/* РїСЂРѕРёР·РІРѕРґРёРј РїРѕРґРіРѕС‚РѕРІРёС‚РµР»СЊРЅС‹Рµ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ С„Р°Р№Р»РѕРј */
+		if (0 == strcmp (p_pszType, "file")) {       /* РѕС‚РєСЂС‹РІР°РµРј С„Р°Р№Р» */
+			/* С‡С‚РµРЅРёРµ С„Р°Р№Р»РѕРІ Р±РµР· Р±СѓС„РµСЂРёР·Р°С†РёРё */
 #ifdef _WIN32
 			m_hWriteThread = CreateThread (NULL, 0, FS_LoadFile, this, 0, NULL);
 			if (NULL == m_hWriteThread) {
@@ -123,12 +123,12 @@ int CFileReader::OpenDataFile (
 #endif
 		} else if (0 == strcmp (p_pszType, "ftp")
 				|| 0 == strcmp (p_pszType, "sftp")
-				|| 0 == strcmp (p_pszType, "ftps")) { /* загрузка файла с использованием библиотеки CURL */
+				|| 0 == strcmp (p_pszType, "ftps")) { /* Р·Р°РіСЂСѓР·РєР° С„Р°Р№Р»Р° СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј Р±РёР±Р»РёРѕС‚РµРєРё CURL */
 			if (NULL == p_psoCURLLib) {
 				return EINVAL;
 			}
-			/* чтение данных с буферизацией */
-			/* создаем поток записи данных в буфер */
+			/* С‡С‚РµРЅРёРµ РґР°РЅРЅС‹С… СЃ Р±СѓС„РµСЂРёР·Р°С†РёРµР№ */
+			/* СЃРѕР·РґР°РµРј РїРѕС‚РѕРє Р·Р°РїРёСЃРё РґР°РЅРЅС‹С… РІ Р±СѓС„РµСЂ */
 #ifdef _WIN32
 			iFnRes = CURL_Init (*p_psoCURLLib);
 			if (iFnRes) {
@@ -154,7 +154,7 @@ int CFileReader::OpenDataFile (
 		}
 	} while (0);
 
-	/* ждем когда начнется чтение данных */
+	/* Р¶РґРµРј РєРѕРіРґР° РЅР°С‡РЅРµС‚СЃСЏ С‡С‚РµРЅРёРµ РґР°РЅРЅС‹С… */
 #ifdef WIN32
 	if (0 == iRetVal) {
 		WaitForSingleObject (m_hReadStarted, INFINITE);
@@ -179,7 +179,7 @@ int CFileReader::ReadData (unsigned char *p_pucData, int &p_iDataSize)
 #endif
 
 	do {
-		/* на всякий случай проверяем значение параметров */
+		/* РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№ РїСЂРѕРІРµСЂСЏРµРј Р·РЅР°С‡РµРЅРёРµ РїР°СЂР°РјРµС‚СЂРѕРІ */
 		if (0 == p_iDataSize) {
 			iRetVal = 0;
 			break;
@@ -189,19 +189,19 @@ int CFileReader::ReadData (unsigned char *p_pucData, int &p_iDataSize)
 			iRetVal = ERROR_INVALID_PARAMETER;
 			break;
 		}
-		/* если запись в буфер завершена и он пуст */
+		/* РµСЃР»Рё Р·Р°РїРёСЃСЊ РІ Р±СѓС„РµСЂ Р·Р°РІРµСЂС€РµРЅР° Рё РѕРЅ РїСѓСЃС‚ */
 		if (IsWritingBufCompl () && IsBufferEmpty ()) {
 			p_iDataSize = 0;
 			iRetVal = -1;
 			break;
 		}
-		/* определяем объем доступных данных */
+		/* РѕРїСЂРµРґРµР»СЏРµРј РѕР±СЉРµРј РґРѕСЃС‚СѓРїРЅС‹С… РґР°РЅРЅС‹С… */
 		p_iDataSize = m_stFileSize - m_stReadPointer > p_iDataSize ? p_iDataSize : m_stFileSize - m_stReadPointer;
-		/* если нечего копировать */
+		/* РµСЃР»Рё РЅРµС‡РµРіРѕ РєРѕРїРёСЂРѕРІР°С‚СЊ */
 		if (0 == p_iDataSize) {
 			break;
 		}
-		/* копируем запрошенный блок данных */
+		/* РєРѕРїРёСЂСѓРµРј Р·Р°РїСЂРѕС€РµРЅРЅС‹Р№ Р±Р»РѕРє РґР°РЅРЅС‹С… */
 		memcpy (p_pucData, &m_pmucBuf[m_stReadPointer], p_iDataSize);
 		m_stReadPointer += p_iDataSize;
 	} while (0);
@@ -228,7 +228,7 @@ int CFileReader::CloseDataFile ()
 #ifdef _WIN32
 	if ((HANDLE) -1 != m_hWriteThread) {
 		DWORD dwExitCode;
-		/* сигнализируем потоку о необходимости прекратить запись в буфер */
+		/* СЃРёРіРЅР°Р»РёР·РёСЂСѓРµРј РїРѕС‚РѕРєСѓ Рѕ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РїСЂРµРєСЂР°С‚РёС‚СЊ Р·Р°РїРёСЃСЊ РІ Р±СѓС„РµСЂ */
 		m_iCancelWritingBuf = 1;
 		WaitForSingleObject (m_hWriteThread, INFINITE);
 		GetExitCodeThread (m_hWriteThread, &dwExitCode);
@@ -294,16 +294,16 @@ int CFileReader::AllocateMemBlock (size_t p_stSize)
 #endif
 	do {
 		if (p_stSize > m_stBufSize) {
-			/* запрашиваем у системы новый блок памяти */
+			/* Р·Р°РїСЂР°С€РёРІР°РµРј Сѓ СЃРёСЃС‚РµРјС‹ РЅРѕРІС‹Р№ Р±Р»РѕРє РїР°РјСЏС‚Рё */
 			unsigned char *pmucTmp = reinterpret_cast<unsigned char*> (malloc (p_stSize));
 			if (NULL == pmucTmp) {
 				iRetVal = ERROR_OUTOFMEMORY;
 				break;
 			};
-			/* копируем прежнее содержимое в новый буфер, если в нем что-то есть */
+			/* РєРѕРїРёСЂСѓРµРј РїСЂРµР¶РЅРµРµ СЃРѕРґРµСЂР¶РёРјРѕРµ РІ РЅРѕРІС‹Р№ Р±СѓС„РµСЂ, РµСЃР»Рё РІ РЅРµРј С‡С‚Рѕ-С‚Рѕ РµСЃС‚СЊ */
 			if (m_pmucBuf) {
 				memcpy (pmucTmp, m_pmucBuf, m_stBufSize);
-				/* освобождаем старый буфер */
+				/* РѕСЃРІРѕР±РѕР¶РґР°РµРј СЃС‚Р°СЂС‹Р№ Р±СѓС„РµСЂ */
 				free (m_pmucBuf);
 			}
 			m_pmucBuf = pmucTmp;
@@ -327,7 +327,7 @@ int CFileReader::CURL_Init (SFileInfo &p_soCURLLibInfo)
 	do {
 		SetDllDirectoryA (p_soCURLLibInfo.m_strDir.c_str ());
 
-		/* загружаем библиотеку */
+		/* Р·Р°РіСЂСѓР¶Р°РµРј Р±РёР±Р»РёРѕС‚РµРєСѓ */
 		if (NULL == m_hCURLLib) {
 			m_hCURLLib = LoadLibraryA (p_soCURLLibInfo.m_strTitle.c_str ());
 			if (NULL == m_hCURLLib) {
@@ -336,7 +336,7 @@ int CFileReader::CURL_Init (SFileInfo &p_soCURLLibInfo)
 			}
 		}
 
-		/* загружаем необходимые функции из библиотеки */
+		/* Р·Р°РіСЂСѓР¶Р°РµРј РЅРµРѕР±С…РѕРґРёРјС‹Рµ С„СѓРЅРєС†РёРё РёР· Р±РёР±Р»РёРѕС‚РµРєРё */
 		if (NULL == fn_curl_global_init) {
 			fn_curl_global_init = reinterpret_cast<typeCURLGlobalInit>(GetProcAddress (m_hCURLLib, "curl_global_init"));
 			if (NULL == fn_curl_global_init) {
@@ -382,7 +382,7 @@ int CFileReader::CURL_Init (SFileInfo &p_soCURLLibInfo)
 
 	} while (0);
 
-	/* если возникла ошибка освобождаем библиотеку */
+	/* РµСЃР»Рё РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° РѕСЃРІРѕР±РѕР¶РґР°РµРј Р±РёР±Р»РёРѕС‚РµРєСѓ */
 	if (iRetVal) {
 		if (m_hCURLLib) {
 			FreeLibrary (m_hCURLLib);
@@ -440,7 +440,7 @@ void * CURL_LoadFile (void *p_pcoThis)
 	std::string strURL;
 
 	do {
-		/* инициализация библиотеки CURL */
+		/* РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Р±РёР±Р»РёРѕС‚РµРєРё CURL */
 		curlRes = fn_curl_global_init (CURL_GLOBAL_DEFAULT);
 		if (CURLE_OK != curlRes) {
 			iRetVal = curlRes;
@@ -448,7 +448,7 @@ void * CURL_LoadFile (void *p_pcoThis)
 		}
 		iGlobalInit = 1;
 
-		/* инициализация экземпляра CURL */
+		/* РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЌРєР·РµРјРїР»СЏСЂР° CURL */
 		pvCurl = fn_curl_easy_init ();
 		if (NULL == pvCurl) {
 			iRetVal = -1;
@@ -503,7 +503,7 @@ void * CURL_LoadFile (void *p_pcoThis)
 			break;
 		}
 
-		/* попробуем выделить память для чтения файла заранее */
+		/* РїРѕРїСЂРѕР±СѓРµРј РІС‹РґРµР»РёС‚СЊ РїР°РјСЏС‚СЊ РґР»СЏ С‡С‚РµРЅРёСЏ С„Р°Р№Р»Р° Р·Р°СЂР°РЅРµРµ */
 		if (pcoThis->m_soFileInfo.m_stFileSize != -1 && pcoThis->m_soFileInfo.m_stFileSize > 0) {
 			iFnRes = pcoThis->AllocateMemBlock (pcoThis->m_soFileInfo.m_stFileSize);
 			if (iFnRes) {
@@ -512,17 +512,17 @@ void * CURL_LoadFile (void *p_pcoThis)
 			}
 		}
 
-		/* если чтение отменено */
+		/* РµСЃР»Рё С‡С‚РµРЅРёРµ РѕС‚РјРµРЅРµРЅРѕ */
 		if (pcoThis->m_iCancelWritingBuf) {
 			break;
 		}
 
 		/* execute */
 		curlRes = fn_curl_easy_perform (pvCurl);
-		/* запись в буфер завершена */
+		/* Р·Р°РїРёСЃСЊ РІ Р±СѓС„РµСЂ Р·Р°РІРµСЂС€РµРЅР° */
 		pcoThis->m_iIsWritingBufCompl = 1;
 
-		/* если при выполнении запроса произошла ошибка */
+		/* РµСЃР»Рё РїСЂРё РІС‹РїРѕР»РЅРµРЅРёРё Р·Р°РїСЂРѕСЃР° РїСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° */
 		if (curlRes) {
 			iRetVal = curlRes;
 			break;
@@ -646,12 +646,12 @@ void * FS_LoadFile (void *p_pcoThis)
 			iRetVal = -1;
 			break;
 		}
-		/* проверка содержимого дескриптора */
+		/* РїСЂРѕРІРµСЂРєР° СЃРѕРґРµСЂР¶РёРјРѕРіРѕ РґРµСЃРєСЂРёРїС‚РѕСЂР° */
 		if (-1 != pcoThis->m_hFile) {
 			iRetVal = -1;
 			break;
 		}
-		/* формируем полное имя файла */
+		/* С„РѕСЂРјРёСЂСѓРµРј РїРѕР»РЅРѕРµ РёРјСЏ С„Р°Р№Р»Р° */
 		if (pcoThis->m_soFileInfo.m_strDir.length()) {
 			strFileName = pcoThis->m_soFileInfo.m_strDir;
 			if (strFileName[strFileName.length () - 1] != '/'
@@ -665,7 +665,7 @@ void * FS_LoadFile (void *p_pcoThis)
 			}
 		}
 		strFileName += pcoThis->m_soFileInfo.m_strTitle;
-		/* открываем дескриптор файла */
+		/* РѕС‚РєСЂС‹РІР°РµРј РґРµСЃРєСЂРёРїС‚РѕСЂ С„Р°Р№Р»Р° */
 #ifdef WIN32
 		iFnRes = _sopen_s (&(pcoThis->m_hFile), strFileName.c_str(), O_RDONLY | O_BINARY | O_SEQUENTIAL, _SH_DENYWR, _S_IREAD);
 		if (iFnRes) {
@@ -679,18 +679,18 @@ void * FS_LoadFile (void *p_pcoThis)
 			break;
 		}
 #endif
-		/* если размер файла задан, сразу запрашиваем блок памяти */
+		/* РµСЃР»Рё СЂР°Р·РјРµСЂ С„Р°Р№Р»Р° Р·Р°РґР°РЅ, СЃСЂР°Р·Сѓ Р·Р°РїСЂР°С€РёРІР°РµРј Р±Р»РѕРє РїР°РјСЏС‚Рё */
 		if (-1 != pcoThis->m_soFileInfo.m_stFileSize) {
 			pcoThis->AllocateMemBlock (pcoThis->m_soFileInfo.m_stFileSize);
 		}
-		/* считываем файл поблочно, чтобы конвертор мог сразу начать обработку данных */
+		/* СЃС‡РёС‚С‹РІР°РµРј С„Р°Р№Р» РїРѕР±Р»РѕС‡РЅРѕ, С‡С‚РѕР±С‹ РєРѕРЅРІРµСЂС‚РѕСЂ РјРѕРі СЃСЂР°Р·Сѓ РЅР°С‡Р°С‚СЊ РѕР±СЂР°Р±РѕС‚РєСѓ РґР°РЅРЅС‹С… */
 		while (0 < (iFnRes = _read (pcoThis->m_hFile, mucBuf, sizeof(mucBuf)))) {
 #ifdef WIN32
 			if (NULL != pcoThis->m_hReadStarted) {
 				SetEvent (pcoThis->m_hReadStarted);
 			}
 #endif
-			/* если размер файла не задан, дозапрашиваем блок памяти для очередного блока данных */
+			/* РµСЃР»Рё СЂР°Р·РјРµСЂ С„Р°Р№Р»Р° РЅРµ Р·Р°РґР°РЅ, РґРѕР·Р°РїСЂР°С€РёРІР°РµРј Р±Р»РѕРє РїР°РјСЏС‚Рё РґР»СЏ РѕС‡РµСЂРµРґРЅРѕРіРѕ Р±Р»РѕРєР° РґР°РЅРЅС‹С… */
 			if (-1 == pcoThis->m_soFileInfo.m_stFileSize) {
 				iFnRes = pcoThis->AllocateMemBlock (pcoThis->m_soFileInfo.m_stFileSize + sizeof (mucBuf));
 				if (iFnRes) {
@@ -709,7 +709,7 @@ void * FS_LoadFile (void *p_pcoThis)
 		}
 	} while (0);
 
-	/* запись в буфер завершена */
+	/* Р·Р°РїРёСЃСЊ РІ Р±СѓС„РµСЂ Р·Р°РІРµСЂС€РµРЅР° */
 	pcoThis->m_iIsWritingBufCompl = 1;
 
 	if (NULL != pcoThis->m_hReadStarted) {

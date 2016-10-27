@@ -53,7 +53,7 @@ int CFileWriter::UploadFile (
 		struct stat soFileInfo;
 		curl_off_t stFileSize;
 
-		/* запрашиваем размер файла */
+		/* Р·Р°РїСЂР°С€РёРІР°РµРј СЂР°Р·РјРµСЂ С„Р°Р№Р»Р° */
 		iFnRes = stat (p_pcszFileName, &soFileInfo);
 		if (iFnRes) {
 			iRetVal = iFnRes;
@@ -61,12 +61,12 @@ int CFileWriter::UploadFile (
 		}
 		stFileSize = soFileInfo.st_size;
 		if (0 >= stFileSize) {
-			/* отправлять нечего, завершаем работу */
+			/* РѕС‚РїСЂР°РІР»В¤С‚СЊ РЅРµС‡РµРіРѕ, Р·Р°РІРµСЂС€Р°РµРј СЂР°Р±РѕС‚Сѓ */
 			iRetVal = -1;
 			break;
 		}
 
-		/* открываем файл для чтения */
+		/* РѕС‚РєСЂС‹РІР°РµРј С„Р°Р№Р» РґР»В¤ С‡С‚РµРЅРёВ¤ */
 		iFnRes = _sopen_s (&iFile, p_pcszFileName, _O_RDONLY | _O_BINARY, _SH_DENYWR, _S_IREAD);
 		if (iFnRes) {
 			iRetVal = iFnRes;
@@ -81,7 +81,7 @@ int CFileWriter::UploadFile (
 			break;
 		}
 
-		/* инициализация экземпляра CURL */
+		/* РёРЅРёС†РёР°Р»РёР·Р°С†РёВ¤ СЌРєР·РµРјРїР»В¤СЂР° CURL */
 		pCurl = fn_curl_easy_init ();
 		if (NULL == pCurl) {
 			iRetVal = ERROR_OUTOFMEMORY;
@@ -130,7 +130,7 @@ int CFileWriter::UploadFile (
 			 make sure that to pass in a type 'long' argument. */
 		fn_curl_easy_setopt(pCurl, CURLOPT_INFILESIZE_LARGE, stFileSize);
 
-		/* выполняем запрос */
+		/* РІС‹РїРѕР»РЅВ¤РµРј Р·Р°РїСЂРѕСЃ */
 		curlRes = fn_curl_easy_perform (pCurl);
 		if (curlRes) {
 			iRetVal = curlRes;
@@ -163,7 +163,7 @@ int CURL_Init ()
 
 		SetDllDirectoryA ("D:/Lib/cURL");
 
-		/* загружаем библиотеку */
+		/* Р·Р°РіСЂСѓР¶Р°РµРј Р±РёР±Р»РёРѕС‚РµРєСѓ */
 		if (NULL == g_hCurlLib) {
 			g_hCurlLib = LoadLibraryA ("libcurl.dll");
 			if (NULL == g_hCurlLib) {
@@ -172,7 +172,7 @@ int CURL_Init ()
 			}
 		}
 
-		/* загружаем необходимые функции из библиотеки */
+		/* Р·Р°РіСЂСѓР¶Р°РµРј РЅРµРѕР±С…РѕРґРёРјС‹Рµ С„СѓРЅРєС†РёРё РёР· Р±РёР±Р»РёРѕС‚РµРєРё */
 		if (NULL == fn_curl_global_init) {
 			fn_curl_global_init = reinterpret_cast<typeCURLGlobalInit>(GetProcAddress (g_hCurlLib, "curl_global_init"));
 			if (NULL == fn_curl_global_init) { iRetVal = GetLastError (); break; }
@@ -202,7 +202,7 @@ int CURL_Init ()
 
 	} while (0);
 
-	/* если возникла ошибка освобождаем библиотеку */
+	/* РµСЃР»Рё РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° РѕСЃРІРѕР±РѕР¶РґР°РµРј Р±РёР±Р»РёРѕС‚РµРєСѓ */
 	if (iRetVal) {
 		if (g_hCurlLib) {
 			FreeLibrary (g_hCurlLib);

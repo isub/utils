@@ -38,7 +38,7 @@ int CFileWriter::CreateOutputFile (const char *p_pszFileName)
 {
 	int iRetVal = 0;
 
-	// Если имя файла не задано, присваиваем значение по умолчанию
+	// Р•СЃР»Рё РёРјСЏ С„Р°Р№Р»Р° РЅРµ Р·Р°РґР°РЅРѕ, РїСЂРёСЃРІР°РёРІР°РµРј Р·РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
 	if (NULL == p_pszFileName) {
 		return -1;
 	}

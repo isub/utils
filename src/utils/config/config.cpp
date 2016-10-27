@@ -22,7 +22,7 @@ int CConfig::LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam)
 	char *pcEOL, *pcEOLAlt;
 
 	do {
-		/* открываем файл для чтения */
+		/* РѕС‚РєСЂС‹РІР°РµРј С„Р°Р№Р» РґР»В¤ С‡С‚РµРЅРёВ¤ */
 #ifdef	WIN32
 		if (0 != fopen_s (&psoFile, p_pcszFileName, "r")) {
 #else
@@ -40,14 +40,14 @@ int CConfig::LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam)
 			printf ("CConfig::LoadConf: Load configuration file %s\n", p_pcszFileName);
 		}
 		while (! feof(psoFile)) {
-			/* читаем очередную строку из файла, если чтение не выполнено, проверяем наличие ошибки */
+			/* С‡РёС‚Р°РµРј РѕС‡РµСЂРµРґРЅСѓСЋ СЃС‚СЂРѕРєСѓ РёР· С„Р°Р№Р»Р°, РµСЃР»Рё С‡С‚РµРЅРёРµ РЅРµ РІС‹РїРѕР»РЅРµРЅРѕ, РїСЂРѕРІРµСЂВ¤РµРј РЅР°Р»РёС‡РёРµ РѕС€РёР±РєРё */
 			if (0 == fgets (mcParam, sizeof(mcParam), psoFile)) {
 				if (errno) {
 					break;
 				}
 				continue;
 			}
-			/* Ищем и затираем, символы перехода на новую строку */
+			/* В»С‰РµРј Рё Р·Р°С‚РёСЂР°РµРј, СЃРёРјРІРѕР»С‹ РїРµСЂРµС…РѕРґР° РЅР° РЅРѕРІСѓСЋ СЃС‚СЂРѕРєСѓ */
 			pcEOL = strstr (mcParam, "\r");
 			pcEOLAlt = strstr (mcParam, "\n");
 			if (pcEOL) {
@@ -56,39 +56,39 @@ int CConfig::LoadConf (const char *p_pcszFileName, int p_iCollectEmptyParam)
 			if (pcEOLAlt) {
 				*pcEOLAlt = '\0';
 			}
-			/* если строка пустая переходим к следующей итеррации */
+			/* РµСЃР»Рё СЃС‚СЂРѕРєР° РїСѓСЃС‚Р°В¤ РїРµСЂРµС…РѕРґРёРј Рє СЃР»РµРґСѓСЋС‰РµР№ РёС‚РµСЂСЂР°С†РёРё */
 			if (0 == strlen (mcParam)) {
 				continue;
 			}
-			/* строки с коментариями пропускаем */
+			/* СЃС‚СЂРѕРєРё СЃ РєРѕРјРµРЅС‚Р°СЂРёВ¤РјРё РїСЂРѕРїСѓСЃРєР°РµРј */
 			if (mcParam[0] == '#') {
 				continue;
 			}
-			/* ищем разделитель значения */
+			/* РёС‰РµРј СЂР°Р·РґРµР»РёС‚РµР»СЊ Р·РЅР°С‡РµРЅРёВ¤ */
 			pcValue = strstr (mcParam, "=");
-			/* если разделитель не найден переходим к следующей итерации */
+			/* РµСЃР»Рё СЂР°Р·РґРµР»РёС‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ РїРµСЂРµС…РѕРґРёРј Рє СЃР»РµРґСѓСЋС‰РµР№ РёС‚РµСЂР°С†РёРё */
 			if (0 == pcValue) {
 				if (2 <= m_iDebug) {
 					printf ("CConfig::LoadConf: parameter: %s: devider not found\n", mcParam);
 				}
 				continue;
 			}
-			/* Затираем разделитель и переводим указатель на значение параметра */
+			/* В«Р°С‚РёСЂР°РµРј СЂР°Р·РґРµР»РёС‚РµР»СЊ Рё РїРµСЂРµРІРѕРґРёРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° Р·РЅР°С‡РµРЅРёРµ РїР°СЂР°РјРµС‚СЂР° */
 			*pcValue = '\0';
 			++pcValue;
-			/* Если значение не задано переходим к следующей итерации */
+			/* в‰€СЃР»Рё Р·РЅР°С‡РµРЅРёРµ РЅРµ Р·Р°РґР°РЅРѕ РїРµСЂРµС…РѕРґРёРј Рє СЃР»РµРґСѓСЋС‰РµР№ РёС‚РµСЂР°С†РёРё */
 			if (0 == strlen(pcValue) && 0 == p_iCollectEmptyParam) {
 				if (2 <= m_iDebug) {
 					printf ("CConfig::LoadConf: parameter: %s: zero value length\n", mcParam);
 				}
 				continue;
 			}
-			/* загружаем включаемый файл */
+			/* Р·Р°РіСЂСѓР¶Р°РµРј РІРєР»СЋС‡Р°РµРјС‹Р№ С„Р°Р№Р» */
 			if (0 == strcmp(mcParam, "$INCLUDE")) {
 				LoadConf(pcValue, p_iCollectEmptyParam);
 				continue;
 			}
-			/* Добавляем параметры в список */
+			/* Ж’РѕР±Р°РІР»В¤РµРј РїР°СЂР°РјРµС‚СЂС‹ РІ СЃРїРёСЃРѕРє */
 			if (2 <= m_iDebug) {
 				printf ("CConfig::LoadConf: parameter: %s; value: %s\n", mcParam, pcValue);
 			}

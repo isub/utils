@@ -26,27 +26,27 @@
 		}
 #endif
 
-/* шаблон строки подключения к БД */
+/* С€Р°Р±Р»РѕРЅ СЃС‚СЂРѕРєРё РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє Р‘Р” */
 static char g_mcRadDBConnTempl[] = "%s/%s@%s";
-/* указатель на объект логгера */
+/* СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РѕР±СЉРµРєС‚ Р»РѕРіРіРµСЂР° */
 static CLog *g_pcoLog = NULL;
-/* указатель на объект конфигурации */
+/* СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РѕР±СЉРµРєС‚ РєРѕРЅС„РёРіСѓСЂР°С†РёРё */
 static CConfig *g_pcoConf = NULL;
 
-/* семафор для ожидания свободного указателя на объект класса для взаимодействия с БД */
+/* СЃРµРјР°С„РѕСЂ РґР»СЏ РѕР¶РёРґР°РЅРёСЏ СЃРІРѕР±РѕРґРЅРѕРіРѕ СѓРєР°Р·Р°С‚РµР»СЏ РЅР° РѕР±СЉРµРєС‚ РєР»Р°СЃСЃР° РґР»СЏ РІР·Р°РёРјРѕРґРµР№СЃС‚РІРёСЏ СЃ Р‘Р” */
 sem_t g_tSem;
-/* размер пула */
+/* СЂР°Р·РјРµСЂ РїСѓР»Р° */
 static int g_iPoolSize;
-/* элемент пула */
+/* СЌР»РµРјРµРЅС‚ РїСѓР»Р° */
 struct SPoolElem {
 	otl_connect m_coDBConn;
 	bool m_bIsBusy;
 	SPoolElem () { m_bIsBusy = false; }
 	~SPoolElem () { m_bIsBusy = true; }
 };
-/* массив пула */
+/* РјР°СЃСЃРёРІ РїСѓР»Р° */
 static SPoolElem *g_pmsoPool = NULL;
-/* мьютекс для изменения статусов элементов пула */
+/* РјСЊСЋС‚РµРєСЃ РґР»СЏ РёР·РјРµРЅРµРЅРёСЏ СЃС‚Р°С‚СѓСЃРѕРІ СЌР»РµРјРµРЅС‚РѕРІ РїСѓР»Р° */
 static pthread_mutex_t g_tMutex;
 
 void DisconnectDB (otl_connect &p_coDBConn)
@@ -59,7 +59,7 @@ void DisconnectDB (otl_connect &p_coDBConn)
 
 int ConnectDB (otl_connect &p_coDBConn)
 {
-	/* проверка параметров */
+	/* РїСЂРѕРІРµСЂРєР° РїР°СЂР°РјРµС‚СЂРѕРІ */
 	if (NULL == g_pcoConf) {
 		if (g_pcoLog) {
 			g_pcoLog->WriteLog ("%s: dbpool: error: configuration not defined", __func__);
@@ -77,7 +77,7 @@ int ConnectDB (otl_connect &p_coDBConn)
 		strDBDescr;
 	const char *pcszConfParam = NULL;
 
-	/* запрашиваем имя пользователя БД из конфигурации */
+	/* Р·Р°РїСЂР°С€РёРІР°РµРј РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Р‘Р” РёР· РєРѕРЅС„РёРіСѓСЂР°С†РёРё */
 	pcszConfParam = "db_user";
 	iFnRes = g_pcoConf->GetParamValue (pcszConfParam, strDBUser);
 	if (iFnRes || 0 == strDBUser.length ()) {
@@ -87,7 +87,7 @@ int ConnectDB (otl_connect &p_coDBConn)
 		}
 	}
 
-	/* запрашиваем пароль пользователя БД из конфигурации */
+	/* Р·Р°РїСЂР°С€РёРІР°РµРј РїР°СЂРѕР»СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Р‘Р” РёР· РєРѕРЅС„РёРіСѓСЂР°С†РёРё */
 	pcszConfParam = "db_pswd";
 	iFnRes = g_pcoConf->GetParamValue (pcszConfParam, strDBPswd);
 	if (iFnRes || 0 == strDBPswd.length ()) {
@@ -97,7 +97,7 @@ int ConnectDB (otl_connect &p_coDBConn)
 		}
 	}
 
-	/* запрашиваем дескриптор БД из конфигурации */
+	/* Р·Р°РїСЂР°С€РёРІР°РµРј РґРµСЃРєСЂРёРїС‚РѕСЂ Р‘Р” РёР· РєРѕРЅС„РёРіСѓСЂР°С†РёРё */
 	pcszConfParam = "db_descr";
 	iFnRes = g_pcoConf->GetParamValue (pcszConfParam, strDBDescr);
 	if (iFnRes || 0 == strDBDescr.length ()) {
@@ -107,7 +107,7 @@ int ConnectDB (otl_connect &p_coDBConn)
 		}
 	}
 
-	/* формируем строку подключения */
+	/* С„РѕСЂРјРёСЂСѓРµРј СЃС‚СЂРѕРєСѓ РїРѕРґРєР»СЋС‡РµРЅРёСЏ */
 	snprintf (
 		mcConnStr,
 		sizeof(mcConnStr),
@@ -145,7 +145,7 @@ int db_pool_reconnect (otl_connect &p_coDBConn)
 		}
 		iFnRes = ConnectDB (p_coDBConn);
 		if (iFnRes) {
-			/* подключиться к БД не удалось */
+			/* РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ Рє Р‘Р” РЅРµ СѓРґР°Р»РѕСЃСЊ */
 			if (g_pcoLog) {
 				g_pcoLog->WriteLog ("dbpool: %s: error: reconnect failed", __func__);
 			}
@@ -162,14 +162,14 @@ int db_pool_check (otl_connect &p_coDBConn)
 	int iRetVal = 0;
 	int iFnRes;
 
-	/* объект класса не подключен к БД */
+	/* РѕР±СЉРµРєС‚ РєР»Р°СЃСЃР° РЅРµ РїРѕРґРєР»СЋС‡РµРЅ Рє Р‘Р” */
 	if (! p_coDBConn.connected) {
 		return -2;
 	}
 
 	std::string strDBDummyReq;
 
-	/* запрашиваем текст проверочного запроса из конфигурации */
+	/* Р·Р°РїСЂР°С€РёРІР°РµРј С‚РµРєСЃС‚ РїСЂРѕРІРµСЂРѕС‡РЅРѕРіРѕ Р·Р°РїСЂРѕСЃР° РёР· РєРѕРЅС„РёРіСѓСЂР°С†РёРё */
 	if (g_pcoConf) {
 		iFnRes = g_pcoConf->GetParamValue ("db_dummy_req", strDBDummyReq);
 	} else {
@@ -179,13 +179,13 @@ int db_pool_check (otl_connect &p_coDBConn)
 		strDBDummyReq = "select to_char(sysdate, 'yyyy') from dual";
 	}
 
-	/* проверяем работоспособность подключения на простейшем запросе */
+	/* РїСЂРѕРІРµСЂСЏРµРј СЂР°Р±РѕС‚РѕСЃРїРѕСЃРѕР±РЅРѕСЃС‚СЊ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РЅР° РїСЂРѕСЃС‚РµР№С€РµРј Р·Р°РїСЂРѕСЃРµ */
 	try {
 		char mcTime[128];
 		otl_stream coStream (1, strDBDummyReq.c_str (), p_coDBConn);
 		coStream >> mcTime;
 	} catch (otl_exception &coExc) {
-		/* если запрос выполнился с ошибкой */
+		/* РµСЃР»Рё Р·Р°РїСЂРѕСЃ РІС‹РїРѕР»РЅРёР»СЃСЏ СЃ РѕС€РёР±РєРѕР№ */
 		if (g_pcoLog) {
 			g_pcoLog->WriteLog ("dbpool: %s: error: connection test failed: error: code: '%s'; description: '%s'", __func__, coExc.code, coExc.msg);
 		}
@@ -197,13 +197,13 @@ int db_pool_check (otl_connect &p_coDBConn)
 
 int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf)
 {
-	/* копируем указатель на объект класса логгера */
+	/* РєРѕРїРёСЂСѓРµРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РѕР±СЉРµРєС‚ РєР»Р°СЃСЃР° Р»РѕРіРіРµСЂР° */
 	if (p_pcoLog) {
 		g_pcoLog = p_pcoLog;
 	} else {
 		return -1;
 	}
-	/* копируем указатель на объект класса конфигурации */
+	/* РєРѕРїРёСЂСѓРµРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РѕР±СЉРµРєС‚ РєР»Р°СЃСЃР° РєРѕРЅС„РёРіСѓСЂР°С†РёРё */
 	if (p_pcoConf) {
 		g_pcoConf = p_pcoConf;
 	} else {
@@ -213,7 +213,7 @@ int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf)
 	int iRetVal = 0;
 	int iFnRes;
 
-	/* запрашиваем в кофигурации размер пула */
+	/* Р·Р°РїСЂР°С€РёРІР°РµРј РІ РєРѕС„РёРіСѓСЂР°С†РёРё СЂР°Р·РјРµСЂ РїСѓР»Р° */
 	std::string strDBPoolSize;
 	const char *pcszConfParam = "db_pool_size";
 	iFnRes = g_pcoConf->GetParamValue (pcszConfParam, strDBPoolSize);
@@ -224,7 +224,7 @@ int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf)
 		g_iPoolSize = atoi (strDBPoolSize.c_str ());
 	}
 
-	/* выделяем память для пула */
+	/* РІС‹РґРµР»СЏРµРј РїР°РјСЏС‚СЊ РґР»СЏ РїСѓР»Р° */
 	g_pmsoPool = new SPoolElem [g_iPoolSize];
 	for (int iInd = 0; iInd < g_iPoolSize; ++ iInd) {
 		iFnRes = ConnectDB (g_pmsoPool[iInd].m_coDBConn);
@@ -233,26 +233,26 @@ int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf)
 		}
 	}
 
-	/* проверяем результат инициализации массива */
+	/* РїСЂРѕРІРµСЂСЏРµРј СЂРµР·СѓР»СЊС‚Р°С‚ РёРЅРёС†РёР°Р»РёР·Р°С†РёРё РјР°СЃСЃРёРІР° */
 	if (iFnRes) {
 		db_pool_deinit ();
 		return -2;
 	}
 
-	/* инициализируем семафор */
+	/* РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃРµРјР°С„РѕСЂ */
 	iFnRes = sem_init (&g_tSem, 0, g_iPoolSize);
 	if (iFnRes) {
 		db_pool_deinit ();
 		return -3;
 	}
 
-	/* инициализация мьютекса */
+	/* РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РјСЊСЋС‚РµРєСЃР° */
 	iFnRes = pthread_mutex_init (&g_tMutex, NULL);
 	if (iFnRes) {
 		db_pool_deinit ();
 		return -4;
 	}
-	/* на всякий случай освобождаем мьютекс, при первом использовании он нам нужен свободным */
+	/* РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№ РѕСЃРІРѕР±РѕР¶РґР°РµРј РјСЊСЋС‚РµРєСЃ, РїСЂРё РїРµСЂРІРѕРј РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё РѕРЅ РЅР°Рј РЅСѓР¶РµРЅ СЃРІРѕР±РѕРґРЅС‹Рј */
 	pthread_mutex_unlock (&g_tMutex);
 
 	return iRetVal;
@@ -260,13 +260,13 @@ int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf)
 
 void db_pool_deinit ()
 {
-	/* освобождаем ресурсы, занятые семафором */
+	/* РѕСЃРІРѕР±РѕР¶РґР°РµРј СЂРµСЃСѓСЂСЃС‹, Р·Р°РЅСЏС‚С‹Рµ СЃРµРјР°С„РѕСЂРѕРј */
 	sem_destroy (&g_tSem);
 
-	/* освобождаем ресурсы, занятые мьютексом */
+	/* РѕСЃРІРѕР±РѕР¶РґР°РµРј СЂРµСЃСѓСЂСЃС‹, Р·Р°РЅСЏС‚С‹Рµ РјСЊСЋС‚РµРєСЃРѕРј */
 	pthread_mutex_destroy (&g_tMutex);
 
-	/* освобождаем массив пула */
+	/* РѕСЃРІРѕР±РѕР¶РґР°РµРј РјР°СЃСЃРёРІ РїСѓР»Р° */
 	if (g_pmsoPool) {
 		for (int iInd = 0; iInd < g_iPoolSize; ++ iInd) {
 			DisconnectDB (g_pmsoPool[iInd].m_coDBConn);
@@ -284,60 +284,60 @@ otl_connect * db_pool_get ()
 	timespec soTimeSpec;
 	timeval soTimeVal;
 
-	/* запрашиваем текущее время */
+	/* Р·Р°РїСЂР°С€РёРІР°РµРј С‚РµРєСѓС‰РµРµ РІСЂРµРјСЏ */
 	iFnRes = gettimeofday (&soTimeVal, NULL);
 	if (iFnRes) {
 		return NULL;
 	}
 
-	/* вычисляем время до которого мы будем ждать освобождения семафора */
+	/* РІС‹С‡РёСЃР»СЏРµРј РІСЂРµРјСЏ РґРѕ РєРѕС‚РѕСЂРѕРіРѕ РјС‹ Р±СѓРґРµРј Р¶РґР°С‚СЊ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ СЃРµРјР°С„РѕСЂР° */
 	soTimeSpec.tv_sec = soTimeVal.tv_sec + 1;
 	soTimeSpec.tv_nsec = soTimeVal.tv_usec * 1000;
 
-	/* ждем освобождения объекта для взаимодействия с БД */
+	/* Р¶РґРµРј РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ РѕР±СЉРµРєС‚Р° РґР»СЏ РІР·Р°РёРјРѕРґРµР№СЃС‚РІРёСЏ СЃ Р‘Р” */
 	iFnRes = sem_timedwait (&g_tSem, &soTimeSpec);
-	/* если во время ожидания возникла ошибка */
+	/* РµСЃР»Рё РІРѕ РІСЂРµРјСЏ РѕР¶РёРґР°РЅРёСЏ РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° */
 	if (iFnRes) {
 		LOG_ERR_DESCR ("sem_timedwait error accurred");
 		return NULL;
 	}
 
-	/* запрашиваем текущее время */
+	/* Р·Р°РїСЂР°С€РёРІР°РµРј С‚РµРєСѓС‰РµРµ РІСЂРµРјСЏ */
 	iFnRes = gettimeofday (&soTimeVal, NULL);
 	if (iFnRes) {
 		return NULL;
 	}
 
-	/* вычисляем время до которого мы будем ждать освобождения мьютекса */
+	/* РІС‹С‡РёСЃР»СЏРµРј РІСЂРµРјСЏ РґРѕ РєРѕС‚РѕСЂРѕРіРѕ РјС‹ Р±СѓРґРµРј Р¶РґР°С‚СЊ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ РјСЊСЋС‚РµРєСЃР° */
 	soTimeSpec.tv_sec = soTimeVal.tv_sec + 1;
 	soTimeSpec.tv_nsec = soTimeVal.tv_usec * 1000;
 
-	/* входим в критическую секцию */
+	/* РІС…РѕРґРёРј РІ РєСЂРёС‚РёС‡РµСЃРєСѓСЋ СЃРµРєС†РёСЋ */
 	iFnRes = pthread_mutex_timedlock (&g_tMutex, &soTimeSpec);
-	/* если во время ожидания возникла ошибка */
+	/* РµСЃР»Рё РІРѕ РІСЂРµРјСЏ РѕР¶РёРґР°РЅРёСЏ РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° */
 	if (iFnRes) {
 		LOG_ERR_DESCR ("pthread_mutex_timedlock error accurred");
-		/* возвращаем семафор */
+		/* РІРѕР·РІСЂР°С‰Р°РµРј СЃРµРјР°С„РѕСЂ */
 		sem_post (&g_tSem);
 		return NULL;
 	}
 
-	/* ищем свободный элемент */
+	/* РёС‰РµРј СЃРІРѕР±РѕРґРЅС‹Р№ СЌР»РµРјРµРЅС‚ */
 	for (int iInd = 0; iInd < g_iPoolSize; ++ iInd) {
-		/* если наши незанятый элемент */
+		/* РµСЃР»Рё РЅР°С€Рё РЅРµР·Р°РЅСЏС‚С‹Р№ СЌР»РµРјРµРЅС‚ */
 		if (! g_pmsoPool[iInd].m_bIsBusy) {
 			g_pmsoPool[iInd].m_bIsBusy = true;
 			pcoRetVal = & (g_pmsoPool[iInd].m_coDBConn);
 		}
 	}
-	/* на всякий случай проверим значение указателя */
+	/* РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№ РїСЂРѕРІРµСЂРёРј Р·РЅР°С‡РµРЅРёРµ СѓРєР°Р·Р°С‚РµР»СЏ */
 	if (NULL == pcoRetVal) {
 		if (g_pcoLog) {
 			g_pcoLog->WriteLog ("dbpool: %s: error: unexpected error occurred: there is no free db connections but semaphore has allowed to pass through it", __func__);
 		}
 	}
 
-	/* освобождаем мьютекс */
+	/* РѕСЃРІРѕР±РѕР¶РґР°РµРј РјСЊСЋС‚РµРєСЃ */
 	pthread_mutex_unlock (&g_tMutex);
 
 	return pcoRetVal;
@@ -350,35 +350,35 @@ int db_pool_release (otl_connect *p_pcoDBConn)
 	timespec soTimeSpec;
 	timeval soTimeVal;
 
-	/* запрашиваем текущее время */
+	/* Р·Р°РїСЂР°С€РёРІР°РµРј С‚РµРєСѓС‰РµРµ РІСЂРµРјСЏ */
 	iFnRes = gettimeofday (&soTimeVal, NULL);
 	if (iFnRes) {
-    /* в случае ошибки выполнения функции gettimeofday будет нулевое ожидание */
+    /* РІ СЃР»СѓС‡Р°Рµ РѕС€РёР±РєРё РІС‹РїРѕР»РЅРµРЅРёСЏ С„СѓРЅРєС†РёРё gettimeofday Р±СѓРґРµС‚ РЅСѓР»РµРІРѕРµ РѕР¶РёРґР°РЅРёРµ */
     soTimeSpec.tv_sec = 0;
     soTimeSpec.tv_nsec = 0;
 	} else {
-    /* вычисляем время до которого мы будем ждать освобождения мьютекса */
+    /* РІС‹С‡РёСЃР»СЏРµРј РІСЂРµРјСЏ РґРѕ РєРѕС‚РѕСЂРѕРіРѕ РјС‹ Р±СѓРґРµРј Р¶РґР°С‚СЊ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ РјСЊСЋС‚РµРєСЃР° */
     soTimeSpec.tv_sec = soTimeVal.tv_sec + 1;
     soTimeSpec.tv_nsec = soTimeVal.tv_usec * 1000;
   }
 
-	/* входим в критическую секцию */
+	/* РІС…РѕРґРёРј РІ РєСЂРёС‚РёС‡РµСЃРєСѓСЋ СЃРµРєС†РёСЋ */
 	iFnRes = pthread_mutex_timedlock (&g_tMutex, &soTimeSpec);
-	/* если во время ожидания возникла ошибка */
+	/* РµСЃР»Рё РІРѕ РІСЂРµРјСЏ РѕР¶РёРґР°РЅРёСЏ РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° */
 	if (iFnRes) {
 		LOG_ERR_DESCR ("pthread_mutex_timedlock error accurred");
 		return -1;
 	}
 
 	int iInd = 0;
-	/* ищем соответствующий элемент */
+	/* РёС‰РµРј СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёР№ СЌР»РµРјРµРЅС‚ */
 	for (; iInd < g_iPoolSize; ++ iInd) {
-		/* если наши искомый элемент */
+		/* РµСЃР»Рё РЅР°С€Рё РёСЃРєРѕРјС‹Р№ СЌР»РµРјРµРЅС‚ */
 		if (&(g_pmsoPool[iInd].m_coDBConn) == p_pcoDBConn) {
 			break;
 		}
 	}
-	/* на всякий случай проверим значение */
+	/* РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№ РїСЂРѕРІРµСЂРёРј Р·РЅР°С‡РµРЅРёРµ */
 	if (g_iPoolSize == iInd) {
 		if (g_pcoLog) {
 			g_pcoLog->WriteLog ("dbpool: %s: error: unexpected error occurred: db coonector not found", __func__);
@@ -387,16 +387,16 @@ int db_pool_release (otl_connect *p_pcoDBConn)
 		g_pmsoPool[iInd].m_bIsBusy = false;
 	}
 
-	/* освобождаем мьютекс */
+	/* РѕСЃРІРѕР±РѕР¶РґР°РµРј РјСЊСЋС‚РµРєСЃ */
 	iFnRes = pthread_mutex_unlock (&g_tMutex);
-	/* если во время ожидания возникла ошибка */
+	/* РµСЃР»Рё РІРѕ РІСЂРµРјСЏ РѕР¶РёРґР°РЅРёСЏ РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° */
 	if (iFnRes) {
 		LOG_ERR_DESCR ("pthread_mutex_unlock error accurred");
 	}
 
-	/* увеличиваем счетчик семафора */
+	/* СѓРІРµР»РёС‡РёРІР°РµРј СЃС‡РµС‚С‡РёРє СЃРµРјР°С„РѕСЂР° */
 	iFnRes = sem_post (&g_tSem);
-	/* если во время ожидания возникла ошибка */
+	/* РµСЃР»Рё РІРѕ РІСЂРµРјСЏ РѕР¶РёРґР°РЅРёСЏ РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° */
 	if (iFnRes) {
 		LOG_ERR_DESCR ("sem_post error accurred");
 	}

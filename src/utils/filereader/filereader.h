@@ -25,27 +25,27 @@ struct SFileInfo {
 class FILE_READER_SPEC CFileReader
 {
 public:
-	/* открытие файла */
+	/* РѕС‚РєСЂС‹С‚РёРµ С„Р°Р№Р»Р° */
 	int OpenDataFile (
 		const char *p_pszType,			/* "file", "ftp", "sftp", "ftps" */
 #ifdef _WIN32
-		SFileInfo *p_psoCURLLib,			/* параметры библиотеки cURL */
+		SFileInfo *p_psoCURLLib,			/* РїР°СЂР°РјРµС‚СЂС‹ Р±РёР±Р»РёРѕС‚РµРєРё cURL */
 #endif
-		SFileInfo &p_soFileInfo,		/* параметры открываемого файла */
-		std::string *p_pstrHost,		/* имя хоста (ftp, sftp) */
-		std::string *p_pstrUserName,	/* имя пользователя (ftp, sftp) */
-		std::string *p_pstrPassword);	/* пароль пользователя (ftp, sftp) */
-	/* чтение данных из буфера возвращает 0 в случае успешного чтения всех запрошенных данных */
+		SFileInfo &p_soFileInfo,		/* РїР°СЂР°РјРµС‚СЂС‹ РѕС‚РєСЂС‹РІР°РµРјРѕРіРѕ С„Р°Р№Р»Р° */
+		std::string *p_pstrHost,		/* РёРјСЏ С…РѕСЃС‚Р° (ftp, sftp) */
+		std::string *p_pstrUserName,	/* РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ (ftp, sftp) */
+		std::string *p_pstrPassword);	/* РїР°СЂРѕР»СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ (ftp, sftp) */
+	/* С‡С‚РµРЅРёРµ РґР°РЅРЅС‹С… РёР· Р±СѓС„РµСЂР° РІРѕР·РІСЂР°С‰Р°РµС‚ 0 РІ СЃР»СѓС‡Р°Рµ СѓСЃРїРµС€РЅРѕРіРѕ С‡С‚РµРЅРёСЏ РІСЃРµС… Р·Р°РїСЂРѕС€РµРЅРЅС‹С… РґР°РЅРЅС‹С… */
 	int ReadData (
-		unsigned char *p_pucData,		/* буфер для чтения данных */
-		int &p_iDataSize);				/* размер буфера, в случае успешного выполнения функции количество записанных в буфер данных */
-	/* закрывает файл */
+		unsigned char *p_pucData,		/* Р±СѓС„РµСЂ РґР»СЏ С‡С‚РµРЅРёСЏ РґР°РЅРЅС‹С… */
+		int &p_iDataSize);				/* СЂР°Р·РјРµСЂ Р±СѓС„РµСЂР°, РІ СЃР»СѓС‡Р°Рµ СѓСЃРїРµС€РЅРѕРіРѕ РІС‹РїРѕР»РЅРµРЅРёСЏ С„СѓРЅРєС†РёРё РєРѕР»РёС‡РµСЃС‚РІРѕ Р·Р°РїРёСЃР°РЅРЅС‹С… РІ Р±СѓС„РµСЂ РґР°РЅРЅС‹С… */
+	/* Р·Р°РєСЂС‹РІР°РµС‚ С„Р°Р№Р» */
 	int CloseDataFile ();
 	const char * GetDir() { return m_soFileInfo.m_strDir.c_str (); }
 	const char * GetFileName() { return m_soFileInfo.m_strTitle.c_str (); }
-	/* завершена ли запись в буфер */
+	/* Р·Р°РІРµСЂС€РµРЅР° Р»Рё Р·Р°РїРёСЃСЊ РІ Р±СѓС„РµСЂ */
 	int IsWritingBufCompl ();
-	/* пуст ли буфер */
+	/* РїСѓСЃС‚ Р»Рё Р±СѓС„РµСЂ */
 	int IsBufferEmpty ();
 private:
 	int AllocateMemBlock (size_t p_stSize);
@@ -57,34 +57,34 @@ private:
 	friend void * FS_LoadFile (void *p_pcoThis);
 #endif
 	friend size_t CURL_Write (void *p_pvSrc, size_t p_stSize, size_t p_stCount, CFileReader *p_pcoFileReader);
-public: /* конструктор и деструктор */
+public: /* РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ Рё РґРµСЃС‚СЂСѓРєС‚РѕСЂ */
 	CFileReader (void);
 	~CFileReader (void);
 private:
 	int m_hFile;
 	SFileInfo m_soFileInfo;
 	std::string m_strType;
-	unsigned char *m_pmucBuf;		/* буфер для буферизации содержимого файла */
-	size_t m_stBufSize;				/* размер буфера */
-	volatile size_t m_stFileSize;	/* размер буферизированного файла */
-	volatile size_t m_stReadPointer;	/* позиция для чтение из буфера */
-	volatile int m_iIsWritingBufCompl;	/* завершена ли запись в буфер */
+	unsigned char *m_pmucBuf;		/* Р±СѓС„РµСЂ РґР»СЏ Р±СѓС„РµСЂРёР·Р°С†РёРё СЃРѕРґРµСЂР¶РёРјРѕРіРѕ С„Р°Р№Р»Р° */
+	size_t m_stBufSize;				/* СЂР°Р·РјРµСЂ Р±СѓС„РµСЂР° */
+	volatile size_t m_stFileSize;	/* СЂР°Р·РјРµСЂ Р±СѓС„РµСЂРёР·РёСЂРѕРІР°РЅРЅРѕРіРѕ С„Р°Р№Р»Р° */
+	volatile size_t m_stReadPointer;	/* РїРѕР·РёС†РёСЏ РґР»СЏ С‡С‚РµРЅРёРµ РёР· Р±СѓС„РµСЂР° */
+	volatile int m_iIsWritingBufCompl;	/* Р·Р°РІРµСЂС€РµРЅР° Р»Рё Р·Р°РїРёСЃСЊ РІ Р±СѓС„РµСЂ */
 #ifdef _WIN32
 	int CURL_Init (SFileInfo &p_soCURLLibInfo);
-	HANDLE m_hWriteThread;			/* дескриптор программного потока записи данных в буфер */
+	HANDLE m_hWriteThread;			/* РґРµСЃРєСЂРёРїС‚РѕСЂ РїСЂРѕРіСЂР°РјРјРЅРѕРіРѕ РїРѕС‚РѕРєР° Р·Р°РїРёСЃРё РґР°РЅРЅС‹С… РІ Р±СѓС„РµСЂ */
 #else
-	pthread_t m_hWriteThread;		/* дескриптор программного потока записи данных в буфер */
+	pthread_t m_hWriteThread;		/* РґРµСЃРєСЂРёРїС‚РѕСЂ РїСЂРѕРіСЂР°РјРјРЅРѕРіРѕ РїРѕС‚РѕРєР° Р·Р°РїРёСЃРё РґР°РЅРЅС‹С… РІ Р±СѓС„РµСЂ */
 #endif
-	int m_iCancelWritingBuf;		/* отменить запись в буфер */
-	char *m_pszHost;				/* имя удаленного хоста-источника */
-	char *m_pszUserName;			/* имя пользователя доступа к хосту-источнику */
-	char *m_pszPassword;			/* пароль пользователя доступа к хосту-источнику */
+	int m_iCancelWritingBuf;		/* РѕС‚РјРµРЅРёС‚СЊ Р·Р°РїРёСЃСЊ РІ Р±СѓС„РµСЂ */
+	char *m_pszHost;				/* РёРјСЏ СѓРґР°Р»РµРЅРЅРѕРіРѕ С…РѕСЃС‚Р°-РёСЃС‚РѕС‡РЅРёРєР° */
+	char *m_pszUserName;			/* РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РґРѕСЃС‚СѓРїР° Рє С…РѕСЃС‚Сѓ-РёСЃС‚РѕС‡РЅРёРєСѓ */
+	char *m_pszPassword;			/* РїР°СЂРѕР»СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РґРѕСЃС‚СѓРїР° Рє С…РѕСЃС‚Сѓ-РёСЃС‚РѕС‡РЅРёРєСѓ */
 #ifdef _WIN32
-	CRITICAL_SECTION m_soCSBuf;		/* критическая секция для операций с буфером */
-	HMODULE m_hCURLLib;				/* дескриптор динамической библиотеки */
-	HANDLE m_hReadStarted;			/* дескриптор события ожидния начала чтения данных */
+	CRITICAL_SECTION m_soCSBuf;		/* РєСЂРёС‚РёС‡РµСЃРєР°СЏ СЃРµРєС†РёСЏ РґР»СЏ РѕРїРµСЂР°С†РёР№ СЃ Р±СѓС„РµСЂРѕРј */
+	HMODULE m_hCURLLib;				/* РґРµСЃРєСЂРёРїС‚РѕСЂ РґРёРЅР°РјРёС‡РµСЃРєРѕР№ Р±РёР±Р»РёРѕС‚РµРєРё */
+	HANDLE m_hReadStarted;			/* РґРµСЃРєСЂРёРїС‚РѕСЂ СЃРѕР±С‹С‚РёСЏ РѕР¶РёРґРЅРёСЏ РЅР°С‡Р°Р»Р° С‡С‚РµРЅРёСЏ РґР°РЅРЅС‹С… */
 #else
-	pthread_mutex_t m_tMutex;		/* мьютекс для операций с буфером */
+	pthread_mutex_t m_tMutex;		/* РјСЊСЋС‚РµРєСЃ РґР»СЏ РѕРїРµСЂР°С†РёР№ СЃ Р±СѓС„РµСЂРѕРј */
 #endif
 };
 

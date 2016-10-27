@@ -44,7 +44,7 @@ CIPConnector::CIPConnector (int p_iReqTimeout)
 
 CIPConnector::~CIPConnector ()
 {
-	/* если соединение установлено */
+	/* РµСЃР»Рё СЃРѕРµРґРёРЅРµРЅРёРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ */
 	if (2 == m_iStatus) {
 		DisConnect ();
 		m_iStatus = 1;
@@ -64,14 +64,14 @@ int CIPConnector::Connect (const char *p_pszHostName, unsigned short p_usPort, i
 	hostent *psoHostEnt;
 
 	do {
-		/* проверЯем инициализирован ли экземплЯр класса */
+		/* РїСЂРѕРІРµСЂСЏРµРј РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ Р»Рё СЌРєР·РµРјРїР»СЏСЂ РєР»Р°СЃСЃР° */
 		if (! m_iStatus) {
 			iRetVal = -1;
 			break;
 		}
 		DisConnect ();
 
-		/* создаем сокет */
+		/* СЃРѕР·РґР°РµРј СЃРѕРєРµС‚ */
 		switch (p_iProtoType) {
 			case IPPROTO_TCP:
 				m_sockSock = socket (AF_INET, SOCK_STREAM, p_iProtoType);
@@ -88,7 +88,7 @@ int CIPConnector::Connect (const char *p_pszHostName, unsigned short p_usPort, i
 
 		memset (&soSockAddr, 0, sizeof(soSockAddr));
 
-		/* определяем ip-адрес хоста */
+		/* РѕРїСЂРµРґРµР»В¤РµРј ip-Р°РґСЂРµСЃ С…РѕСЃС‚Р° */
 		psoHostEnt = gethostbyname (p_pszHostName);
 		if (psoHostEnt) {
 			soSockAddr.sin_addr.s_addr = *((in_addr_t*)(psoHostEnt->h_addr_list[0]));
@@ -98,7 +98,7 @@ int CIPConnector::Connect (const char *p_pszHostName, unsigned short p_usPort, i
 			soSockAddr.sin_family = AF_INET;
 		}
 
-		/* адрес не удалось распознать */
+		/* Р°РґСЂРµСЃ РЅРµ СѓРґР°Р»РѕСЃСЊ СЂР°СЃРїРѕР·РЅР°С‚СЊ */
 		if (INADDR_NONE == soSockAddr.sin_addr.s_addr) {
 			iRetVal = -3;
 			break;
@@ -126,7 +126,7 @@ int CIPConnector::Send (const char *p_mcBuf, int p_iLen)
 		pollfd soPollFD;
 		int iSent;
 
-		/* проверяем, было ли выполнено подключение */
+		/* РїСЂРѕРІРµСЂВ¤РµРј, Р±С‹Р»Рѕ Р»Рё РІС‹РїРѕР»РЅРµРЅРѕ РїРѕРґРєР»СЋС‡РµРЅРёРµ */
 		if (2 != m_iStatus) {
 			iRetVal = -1;
 			break;
@@ -151,12 +151,12 @@ int CIPConnector::Send (const char *p_mcBuf, int p_iLen)
 		while (iSent < p_iLen) {
 			iFnRes = send (m_sockSock, p_mcBuf + iSent, p_iLen - iSent, 0);
 			if (SOCKET_ERROR == iFnRes) {
-				/* в случае вознекновения ошибки */
+				/* РІ СЃР»СѓС‡Р°Рµ РІРѕР·РЅРµРєРЅРѕРІРµРЅРёВ¤ РѕС€РёР±РєРё */
 				iRetVal = errno;
 				switch (iRetVal) {
-					/* если соединение с процессом потеряно */
+					/* РµСЃР»Рё СЃРѕРµРґРёРЅРµРЅРёРµ СЃ РїСЂРѕС†РµСЃСЃРѕРј РїРѕС‚РµСЂВ¤РЅРѕ */
 					case EPIPE:
-					/* если соединение разорвано */
+					/* РµСЃР»Рё СЃРѕРµРґРёРЅРµРЅРёРµ СЂР°Р·РѕСЂРІР°РЅРѕ */
 					case ECONNRESET:
 						DisConnect ();
 						break;
@@ -180,7 +180,7 @@ int CIPConnector::Recv (char *p_mcBuf, int p_iBufSize)
 		int iFnRes;
 		pollfd soPollFD;
 
-		/* проверяем, было ли выполнено подключение */
+		/* РїСЂРѕРІРµСЂВ¤РµРј, Р±С‹Р»Рѕ Р»Рё РІС‹РїРѕР»РЅРµРЅРѕ РїРѕРґРєР»СЋС‡РµРЅРёРµ */
 		if (2 != m_iStatus) {
 			iRetVal = -1;
 			break;
@@ -201,7 +201,7 @@ int CIPConnector::Recv (char *p_mcBuf, int p_iBufSize)
 		}
 
 		iFnRes = recv (m_sockSock, p_mcBuf, p_iBufSize, 0);
-		/* если соединение разорвано */
+		/* РµСЃР»Рё СЃРѕРµРґРёРЅРµРЅРёРµ СЂР°Р·РѕСЂРІР°РЅРѕ */
 		if (0 == iFnRes) {
 			DisConnect ();
 			iRetVal = 0;

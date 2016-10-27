@@ -36,10 +36,10 @@
 	static typeCURLGlobalCleanup	fn_curl_global_cleanup;
 #endif
 
-/* прототипы функций для работы с различными типами хранилищ */
-/* оболочка для работы с библиотекой CURL */
+/* РїСЂРѕС‚РѕС‚РёРїС‹ С„СѓРЅРєС†РёР№ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ СЂР°Р·Р»РёС‡РЅС‹РјРё С‚РёРїР°РјРё С…СЂР°РЅРёР»РёС‰ */
+/* РѕР±РѕР»РѕС‡РєР° РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ Р±РёР±Р»РёРѕС‚РµРєРѕР№ CURL */
 int CURL_CreateFileList (SFileListInfo &p_soFileListOpt);
-/* оболочка для работы с локальными и NFS файлами */
+/* РѕР±РѕР»РѕС‡РєР° РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ Р»РѕРєР°Р»СЊРЅС‹РјРё Рё NFS С„Р°Р№Р»Р°РјРё */
 int FS_CreateFileList (SFileListInfo &p_soFileListOpt);
 /*****************************************************************************/
 
@@ -79,7 +79,7 @@ int CURL_CreateFileList (SFileListInfo &p_soFileListOpt)
 	CURL *pHandle = NULL;
 
 	do {
-		/* инициализация дескриптора */
+		/* РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РґРµСЃРєСЂРёРїС‚РѕСЂР° */
 		pHandle = fn_curl_easy_init ();
 		if (NULL == pHandle) {
 			iRetVal = CURLE_OUT_OF_MEMORY;
@@ -134,7 +134,7 @@ int CURL_CreateFileList (SFileListInfo &p_soFileListOpt)
 		}
 	} while (0);
 
-	/* освобождаем занятые ресурсы */
+	/* РѕСЃРІРѕР±РѕР¶РґР°РµРј Р·Р°РЅСЏС‚С‹Рµ СЂРµСЃСѓСЂСЃС‹ */
 	if (NULL != pHandle) {
 		fn_curl_easy_cleanup (pHandle);
 	}
@@ -162,7 +162,7 @@ static size_t CURL_write_it (
 }
 
 /******************************************************************************
-  Образец строки, содержащей информацию о элементе удаленной файловой системы
+  РћР±СЂР°Р·РµС† СЃС‚СЂРѕРєРё, СЃРѕРґРµСЂР¶Р°С‰РµР№ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ СЌР»РµРјРµРЅС‚Рµ СѓРґР°Р»РµРЅРЅРѕР№ С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹
   drwxr-x---   6 hpiumusr   iumusers        96 Nov  1 00:00 2013
 ******************************************************************************/
 static const char g_mcFormat [] = "%s %u %s %s %u %s %u %u:%u %s";
@@ -215,10 +215,10 @@ void CURL_OperateFileList (
 		}
 		strFileTitle = soInfo.m_mcFileName;
 		switch (soInfo.m_mcMode[0]) {
-		case 'd': /* если файл является директорией */
-			if (p_soFileListOpt.m_iLookNestedFold) { /* если необходимо просматривать вложенные папки */
+		case 'd': /* РµСЃР»Рё С„Р°Р№Р» СЏРІР»СЏРµС‚СЃСЏ РґРёСЂРµРєС‚РѕСЂРёРµР№ */
+			if (p_soFileListOpt.m_iLookNestedFold) { /* РµСЃР»Рё РЅРµРѕР±С…РѕРґРёРјРѕ РїСЂРѕСЃРјР°С‚СЂРёРІР°С‚СЊ РІР»РѕР¶РµРЅРЅС‹Рµ РїР°РїРєРё */
 				std::string strSubDir;
-				/* формируем путь к вложенной папке */
+				/* С„РѕСЂРјРёСЂСѓРµРј РїСѓС‚СЊ Рє РІР»РѕР¶РµРЅРЅРѕР№ РїР°РїРєРµ */
 				strSubDir = p_soFileListOpt.m_strPath;
 				if (strSubDir[strSubDir.length () - 1] != '/') {
 					strSubDir += '/';
@@ -229,7 +229,7 @@ void CURL_OperateFileList (
 				CURL_CreateFileList (soOpt);
 			}
 			break;
-		default: /* во всех остальных случаях */
+		default: /* РІРѕ РІСЃРµС… РѕСЃС‚Р°Р»СЊРЅС‹С… СЃР»СѓС‡Р°СЏС… */
 			SFileInfo soFileInfo = { strFileTitle, p_soFileListOpt.m_strPath, soInfo.m_uiFileSize };
 			p_soFileListOpt.m_pmmapFileList->insert (std::make_pair (strFileTitle, soFileInfo));
 			break;
@@ -254,7 +254,7 @@ int FS_CreateFileList (SFileListInfo &p_soFileListOpt)
 	dirent *psoDirEnt = NULL;
 #endif
 
-	/* формируем строку поиска */
+	/* С„РѕСЂРјРёСЂСѓРµРј СЃС‚СЂРѕРєСѓ РїРѕРёСЃРєР° */
 	strFindPath = p_soFileListOpt.m_strPath;
 	strstStrLen = strFindPath.length ();
 #ifdef WIN32
@@ -266,7 +266,7 @@ int FS_CreateFileList (SFileListInfo &p_soFileListOpt)
 #endif
 
 	do {
-		/* открываем дескриптор поиска */
+		/* РѕС‚РєСЂС‹РІР°РµРј РґРµСЃРєСЂРёРїС‚РѕСЂ РїРѕРёСЃРєР° */
 #ifdef WIN32
 		hFind = FindFirstFileA (strFindPath.c_str(), &soFindData);
 		if (INVALID_HANDLE_VALUE == hFind) { iRetVal = GetLastError (); break; }
@@ -275,28 +275,28 @@ int FS_CreateFileList (SFileListInfo &p_soFileListOpt)
 		if (NULL == psoDir) { iRetVal = errno; break; }
 #endif
 
-		/* формирование списка файлов */
+		/* С„РѕСЂРјРёСЂРѕРІР°РЅРёРµ СЃРїРёСЃРєР° С„Р°Р№Р»РѕРІ */
 #ifdef WIN32
 		do {
 #else
 		while (NULL != (psoDirEnt = readdir (psoDir))) {
 #endif
-			/* обрабатываем сведения по очередному файлу */
+			/* РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј СЃРІРµРґРµРЅРёСЏ РїРѕ РѕС‡РµСЂРµРґРЅРѕРјСѓ С„Р°Р№Р»Сѓ */
 #ifdef WIN32
 			strFileTitle = soFindData.cFileName;
-			/* если найденный элемент является директорией */
+			/* РµСЃР»Рё РЅР°Р№РґРµРЅРЅС‹Р№ СЌР»РµРјРµРЅС‚ СЏРІР»СЏРµС‚СЃСЏ РґРёСЂРµРєС‚РѕСЂРёРµР№ */
 			if (FILE_ATTRIBUTE_DIRECTORY & soFindData.dwFileAttributes) {
 #else
 				strFileTitle = psoDirEnt->d_name;
 				if (DT_DIR == psoDirEnt->d_type) {
 #endif
-				/* проверяем необходимость поиска в директориях */
+				/* РїСЂРѕРІРµСЂСЏРµРј РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ РїРѕРёСЃРєР° РІ РґРёСЂРµРєС‚РѕСЂРёСЏС… */
 				if (0 != p_soFileListOpt.m_iLookNestedFold) {
-					/* проверяем не является ли текущая файл ссылкой на текущую или родительскую директорию */
+					/* РїСЂРѕРІРµСЂСЏРµРј РЅРµ СЏРІР»СЏРµС‚СЃСЏ Р»Рё С‚РµРєСѓС‰Р°СЏ С„Р°Р№Р» СЃСЃС‹Р»РєРѕР№ РЅР° С‚РµРєСѓС‰СѓСЋ РёР»Рё СЂРѕРґРёС‚РµР»СЊСЃРєСѓСЋ РґРёСЂРµРєС‚РѕСЂРёСЋ */
 					if (0 == strFileTitle.compare (".") || 0 == strFileTitle.compare ("..")) { continue; }
 					std::string strSubDir;
 					strSubDir = p_soFileListOpt.m_strPath;
-					/* добавляем разделитель в конец имени директории в случае необходимости */
+					/* РґРѕР±Р°РІР»СЏРµРј СЂР°Р·РґРµР»РёС‚РµР»СЊ РІ РєРѕРЅРµС† РёРјРµРЅРё РґРёСЂРµРєС‚РѕСЂРёРё РІ СЃР»СѓС‡Р°Рµ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё */
 					strstStrLen = strSubDir.length ();
 #ifdef WIN32
 					if ('\\' != strSubDir[strstStrLen - 1] && '/' != strSubDir[strstStrLen - 1]) {
@@ -313,7 +313,7 @@ int FS_CreateFileList (SFileListInfo &p_soFileListOpt)
 					iFnRes = FS_CreateFileList (soOpt);
 				}
 			} else {
-				/* иначе считаем, что найденный элемент является файлом */
+				/* РёРЅР°С‡Рµ СЃС‡РёС‚Р°РµРј, С‡С‚Рѕ РЅР°Р№РґРµРЅРЅС‹Р№ СЌР»РµРјРµРЅС‚ СЏРІР»СЏРµС‚СЃСЏ С„Р°Р№Р»РѕРј */
 				std::string strFileName;
 				size_t stFileSize;
 				FILE *psoFile = NULL;
@@ -367,14 +367,14 @@ int CFileList::CURL_Init (SFileInfo &p_soCURLLibInfo)
 
 		SetDllDirectoryA (p_soCURLLibInfo.m_strDir.c_str ());
 
-		/* загружаем библиотеку */
+		/* Р·Р°РіСЂСѓР¶Р°РµРј Р±РёР±Р»РёРѕС‚РµРєСѓ */
 		m_hCURLLib = LoadLibraryA ("libcurl.dll");
 		if (NULL == m_hCURLLib) {
 			iRetVal = GetLastError ();
 			break;
 		}
 
-		/* загружаем необходимые функции из библиотеки */
+		/* Р·Р°РіСЂСѓР¶Р°РµРј РЅРµРѕР±С…РѕРґРёРјС‹Рµ С„СѓРЅРєС†РёРё РёР· Р±РёР±Р»РёРѕС‚РµРєРё */
 		if (NULL == fn_curl_global_init) {
 			fn_curl_global_init = reinterpret_cast<typeCURLGlobalInit>(GetProcAddress (m_hCURLLib, "curl_global_init"));
 			if (NULL == fn_curl_global_init) {
@@ -422,7 +422,7 @@ int CFileList::CURL_Init (SFileInfo &p_soCURLLibInfo)
 
 	} while (0);
 
-	/* если возникла ошибка освобождаем библиотеку */
+	/* РµСЃР»Рё РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° РѕСЃРІРѕР±РѕР¶РґР°РµРј Р±РёР±Р»РёРѕС‚РµРєСѓ */
 	if (iRetVal) {
 		CURL_Cleanup ();
 	}

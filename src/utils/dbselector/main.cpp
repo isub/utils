@@ -1,4 +1,4 @@
-#include "utils/dbpool/dbpool.h" /* чтобы не заморачиваться с заголовками и макросами OTL */
+#include "utils/dbpool/dbpool.h" /* С‡С‚РѕР±С‹ РЅРµ Р·Р°РјРѕСЂР°С‡РёРІР°С‚СЊСЃСЏ СЃ Р·Р°РіРѕР»РѕРІРєР°РјРё Рё РјР°РєСЂРѕСЃР°РјРё OTL */
 #include "utils/config/config.h"
 #include <errno.h>
 #include <stdio.h>
@@ -25,7 +25,7 @@ int main (int argc, char *argv[])
 	}
 
 	do {
-		/* загружаем конфигурацию приложения */
+		/* Р·Р°РіСЂСѓР¶Р°РµРј РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ РїСЂРёР»РѕР¶РµРЅРёСЏ */
 		iFnRes = coConf.LoadConf(pszConf, 0);
 		if (iFnRes) {
 			LOG_E(coLog, "config is not loaded: error code: '%d'", iFnRes);
@@ -40,7 +40,7 @@ int main (int argc, char *argv[])
 			if (iFnRes)
 				LOG_W(coLog, "logger is not initialized: error code: '%d'; file name '%s'", iFnRes, strLogFileMask.c_str());
 		}
-		/* загружаем имя текущей БД */
+		/* Р·Р°РіСЂСѓР¶Р°РµРј РёРјСЏ С‚РµРєСѓС‰РµР№ Р‘Р” */
 		std::string strFileName;
 		char mcCurrentDB[32];
 		FILE *psoFile = NULL;
@@ -72,28 +72,28 @@ int main (int argc, char *argv[])
 		LOG_D(coLog, "current DB profile is: '%s'", mcCurrentDB);
 		fclose(psoFile);
 		psoFile = NULL;
-		/* тестовое подключение к текущей БД */
+		/* С‚РµСЃС‚РѕРІРѕРµ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє С‚РµРєСѓС‰РµР№ Р‘Р” */
 		iFnRes = test_db(mcCurrentDB, coConf, coLog);
-		/* если текущая БД в активном состоянии завершаем работу */
+		/* РµСЃР»Рё С‚РµРєСѓС‰Р°СЏ Р‘Р” РІ Р°РєС‚РёРІРЅРѕРј СЃРѕСЃС‚РѕСЏРЅРёРё Р·Р°РІРµСЂС€Р°РµРј СЂР°Р±РѕС‚Сѓ */
 		if (0 == iFnRes) {
 			LOG_N(coLog, "current DB '%s' is in active state", mcCurrentDB);
 			break;
 		} else {
 			LOG_N(coLog, "current DB '%s': test result code: '%d'", mcCurrentDB, iFnRes);
 		}
-		/* проверяем состояние другой БД */
+		/* РїСЂРѕРІРµСЂСЏРµРј СЃРѕСЃС‚РѕСЏРЅРёРµ РґСЂСѓРіРѕР№ Р‘Р” */
 		if (0 == strcmp("local_db", mcCurrentDB)) {
 			strcpy(mcCurrentDB, "alt_db");
 		} else {
 			strcpy(mcCurrentDB, "local_db");
 		}
 		iFnRes = test_db(mcCurrentDB, coConf, coLog);
-		/* если возникла ошибка */
+		/* РµСЃР»Рё РІРѕР·РЅРёРєР»Р° РѕС€РёР±РєР° */
 		if (iFnRes) {
 			LOG_N(coLog, "next DB '%s': test result code: '%d'", mcCurrentDB, iFnRes);
 			break;
 		}
-		/* если состояние другой БД активно переключаемся на нее */
+		/* РµСЃР»Рё СЃРѕСЃС‚РѕСЏРЅРёРµ РґСЂСѓРіРѕР№ Р‘Р” Р°РєС‚РёРІРЅРѕ РїРµСЂРµРєР»СЋС‡Р°РµРјСЃСЏ РЅР° РЅРµРµ */
 		std::string strParamVal;
 		const char *pszParamName;
 		if (0 == strcmp(mcCurrentDB, "local_db")) {
@@ -108,15 +108,15 @@ int main (int argc, char *argv[])
 			break;
 		}
 		iFnRes = system(strParamVal.c_str());
-		/* если скрипт завершился неудачно */
+		/* РµСЃР»Рё СЃРєСЂРёРїС‚ Р·Р°РІРµСЂС€РёР»СЃСЏ РЅРµСѓРґР°С‡РЅРѕ */
 		if (iFnRes) {
 			iRetVal = iFnRes;
 			LOG_F(coLog, "system executed with error: code: '%d'; program name: '%s'", iFnRes, strParamVal.c_str());
 			break;
 		}
-		/* пишем в лог-файл об успешном завершении операции */
+		/* РїРёС€РµРј РІ Р»РѕРі-С„Р°Р№Р» РѕР± СѓСЃРїРµС€РЅРѕРј Р·Р°РІРµСЂС€РµРЅРёРё РѕРїРµСЂР°С†РёРё */
 		LOG_N(coLog, "settings configured to: '%s'", mcCurrentDB);
-		/* сохраняем имя текущей БД */
+		/* СЃРѕС…СЂР°РЅСЏРµРј РёРјСЏ С‚РµРєСѓС‰РµР№ Р‘Р” */
 		psoFile = fopen(strFileName.c_str(), "w");
 		if (NULL == psoFile) {
 			iRetVal = errno;
@@ -214,7 +214,7 @@ int test_db(const char *p_pszDBName, CConfig &p_coConf, CLog &p_coLog)
 			iRetVal = -10;
 			break;
 		}
-		/* если текущая БД является активной завершаем работу */
+		/* РµСЃР»Рё С‚РµРєСѓС‰Р°СЏ Р‘Р” СЏРІР»СЏРµС‚СЃСЏ Р°РєС‚РёРІРЅРѕР№ Р·Р°РІРµСЂС€Р°РµРј СЂР°Р±РѕС‚Сѓ */
 		if (0 == strDBStatus.compare("CURRENT")) {
 			break;
 		} else {

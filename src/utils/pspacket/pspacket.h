@@ -13,19 +13,19 @@ typedef unsigned __int32 __uint32_t;
 
 class PSPACK_SPEC CPSPacket {
 public:
-	/* инициализация буфера */
+	/* РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Р±СѓС„РµСЂР° */
 	int Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum = 0, __uint16_t p_ui16ReqType = 0);
-	/* изменение номера пакета */
+	/* РёР·РјРµРЅРµРЅРёРµ РЅРѕРјРµСЂР° РїР°РєРµС‚Р° */
 	int SetReqNum (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, int p_iValidate = 1);
-	/* изменение типа пакета */
+	/* РёР·РјРµРЅРµРЅРёРµ С‚РёРїР° РїР°РєРµС‚Р° */
 	int SetReqType (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16ReqType, int p_iValidate = 1);
-	/* добавление атрибута к пакету */
+	/* РґРѕР±Р°РІР»РµРЅРёРµ Р°С‚СЂРёР±СѓС‚Р° Рє РїР°РєРµС‚Сѓ */
 	int AddAttr (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16Type, const void *p_pValue, __uint16_t p_ui16ValueLen, int p_iValidate = 1);
-	/* проверка длины пакета и суммы длин атрибутов */
+	/* РїСЂРѕРІРµСЂРєР° РґР»РёРЅС‹ РїР°РєРµС‚Р° Рё СЃСѓРјРјС‹ РґР»РёРЅ Р°С‚СЂРёР±СѓС‚РѕРІ */
 	int Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize);
-	/* разбор пакета */
+	/* СЂР°Р·Р±РѕСЂ РїР°РєРµС‚Р° */
 	void EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttrList);
 	int Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, std::multimap<__uint16_t,SPSReqAttr*> &p_pumapAttrList, int p_iValidate = 1);
-	/* возвращает количество записанных в буфер символов, в случае ошибки возвращаемое значение равно -1 */
+	/* РІРѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ Р·Р°РїРёСЃР°РЅРЅС‹С… РІ Р±СѓС„РµСЂ СЃРёРјРІРѕР»РѕРІ, РІ СЃР»СѓС‡Р°Рµ РѕС€РёР±РєРё РІРѕР·РІСЂР°С‰Р°РµРјРѕРµ Р·РЅР°С‡РµРЅРёРµ СЂР°РІРЅРѕ -1 */
 	int Parse (const SPSRequest *p_psoBuf, size_t p_stBufSize, char *p_pmcOutBuf, size_t p_stOutBufSize);
 };
