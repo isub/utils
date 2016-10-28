@@ -244,7 +244,7 @@ int CPSPacket::Parse (
       } else {
         psoPSReqAttr->m_pvData = NULL;
       }
-      psoPSReqAttr->m_usAttrLen = ui16AttrLen;
+      psoPSReqAttr->m_usDataLen = ui16AttrLen;
       psoPSReqAttr->m_usAttrType = ntohs (psoTmp->m_usAttrType);
       p_pumapAttrList.insert (std::make_pair (psoPSReqAttr->m_usAttrType, psoPSReqAttr));
       /* определяем указатель на следующий атрибут */
@@ -330,9 +330,9 @@ int CPSPacket::Parse (
 #endif
         mcString,
         sizeof (mcString),
-        " attribute code: 0x%04x; length: %u; value: ",
+        " attribute code: 0x%04x; data length: %u; value: ",
         iter->second->m_usAttrType,
-        iter->second->m_usAttrLen);
+        iter->second->m_usDataLen);
       /* если произошла ошика завершаем формирование атрибутов */
       if (0 < iFnRes) {
         if (static_cast<size_t>(iFnRes) >= sizeof (mcString)) {
@@ -344,7 +344,7 @@ int CPSPacket::Parse (
       }
       mcString[iFnRes] = '\0';
       /* выводим значение атрибута по байтам */
-      for (size_t i = 0; i < iter->second->m_usAttrLen && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
+      for (size_t i = 0; i < iter->second->m_usDataLen && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
         if (0x20 <= reinterpret_cast<char*>(iter->second->m_pvData)[i] && 0x7F > reinterpret_cast<char*>(iter->second->m_pvData)[i]) {
           mcString[iFnRes] = reinterpret_cast<char*>(iter->second->m_pvData)[i];
           ++iFnRes;

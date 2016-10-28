@@ -13,7 +13,7 @@ typedef unsigned __int32 __uint32_t;
 
 struct SPSReqAttrParsed {
   unsigned short m_usAttrType;
-  unsigned short m_usAttrLen;
+  unsigned short m_usDataLen;
   void *m_pvData;
 };
 
