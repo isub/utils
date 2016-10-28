@@ -117,7 +117,8 @@ int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize) {
   return iRetVal;
 }
 
-void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttrList) {
+void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttrList)
+{
   SPSReqAttr *psoTmp;
   std::multimap<__uint16_t,SPSReqAttr*>::iterator iterList;
 
@@ -130,21 +131,8 @@ void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttr
   p_mmapAttrList.clear ();
 }
 
-void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttrParsed*> &p_mmapAttrList) {
-  SPSReqAttrParsed *psoTmp;
-  std::multimap<__uint16_t,SPSReqAttrParsed*>::iterator iterList;
-
-  for (iterList = p_mmapAttrList.begin(); iterList != p_mmapAttrList.end(); ++iterList) {
-    psoTmp = iterList->second;
-    if (psoTmp) {
-      if (NULL != psoTmp->m_pvData) {
-        free (psoTmp->m_pvData);
-      }
-      if (NULL != psoTmp) {
-        free (psoTmp);
-      }
-    }
-  }
+void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttrParsed> &p_mmapAttrList)
+{
   p_mmapAttrList.clear ();
 }
 
@@ -208,12 +196,12 @@ int CPSPacket::Parse (
 int CPSPacket::Parse (
   const SPSRequest *p_psoBuf,
   size_t p_stBufSize,
-  std::multimap<__uint16_t,SPSReqAttrParsed*> &p_pumapAttrList,
+  std::multimap<__uint16_t,SPSReqAttrParsed> &p_pumapAttrList,
   int p_iValidate)
 {
   int iRetVal = 0;
   SPSReqAttr *psoTmp;
-  SPSReqAttrParsed *psoPSReqAttr;
+  SPSReqAttrParsed soPSReqAttr;
   __uint16_t
     ui16PackLen,
     ui16AttrLen;
@@ -237,16 +225,13 @@ int CPSPacket::Parse (
       /* определяем длину атрибута */
       ui16AttrLen = ntohs (psoTmp->m_usAttrLen) - sizeof(*psoTmp);
       /* добавляем атрибут в список */
-      psoPSReqAttr = (SPSReqAttrParsed*) malloc (sizeof(*psoPSReqAttr));
       if (0 < ui16AttrLen) {
-        psoPSReqAttr->m_pvData = (SPSReqAttr*) malloc (ui16AttrLen);
-        memcpy (psoPSReqAttr->m_pvData, ((char*)psoTmp) + sizeof(*psoTmp), ui16AttrLen);
-      } else {
-        psoPSReqAttr->m_pvData = NULL;
+        soPSReqAttr.m_pvData = (SPSReqAttr*) malloc (ui16AttrLen);
+        memcpy (soPSReqAttr.m_pvData, ((char*)psoTmp) + sizeof(*psoTmp), ui16AttrLen);
       }
-      psoPSReqAttr->m_usDataLen = ui16AttrLen;
-      psoPSReqAttr->m_usAttrType = ntohs (psoTmp->m_usAttrType);
-      p_pumapAttrList.insert (std::make_pair (psoPSReqAttr->m_usAttrType, psoPSReqAttr));
+      soPSReqAttr.m_usDataLen = ui16AttrLen;
+      soPSReqAttr.m_usAttrType = ntohs (psoTmp->m_usAttrType);
+      p_pumapAttrList.insert (std::make_pair (soPSReqAttr.m_usAttrType, soPSReqAttr));
       /* определяем указатель на следующий атрибут */
       psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
     }
@@ -261,7 +246,7 @@ int CPSPacket::Parse (
   __uint32_t &p_ui32ReqNum,
   __uint16_t &p_ui16ReqType,
   __uint16_t &p_ui16PackLen,
-  std::multimap<__uint16_t,SPSReqAttrParsed*> &p_pumapAttrList,
+  std::multimap<__uint16_t,SPSReqAttrParsed> &p_pumapAttrList,
   int p_iValidate)
 {
     int iRetVal = 0;
