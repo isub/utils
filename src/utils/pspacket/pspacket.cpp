@@ -4,7 +4,7 @@
 #include <stdio.h>
 #ifdef WIN32
 #  include <Winsock2.h>
-#  include "ps_common.h"
+#  include "utils/ps_common.h"
 #  pragma  comment(lib, "ws2_32.lib")
 #else
 #  include <arpa/inet.h>
@@ -130,6 +130,24 @@ void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttr
   p_mmapAttrList.clear ();
 }
 
+void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttrParsed*> &p_mmapAttrList) {
+  SPSReqAttrParsed *psoTmp;
+  std::multimap<__uint16_t,SPSReqAttrParsed*>::iterator iterList;
+
+  for (iterList = p_mmapAttrList.begin(); iterList != p_mmapAttrList.end(); ++iterList) {
+    psoTmp = iterList->second;
+    if (psoTmp) {
+      if (NULL != psoTmp->m_pvData) {
+        free (psoTmp->m_pvData);
+      }
+      if (NULL != psoTmp) {
+        free (psoTmp);
+      }
+    }
+  }
+  p_mmapAttrList.clear ();
+}
+
 int CPSPacket::Parse (
   const SPSRequest *p_psoBuf,
   size_t p_stBufSize,
@@ -160,7 +178,7 @@ int CPSPacket::Parse (
       /* добавляем атрибут в список */
       psoPSReqAttr = (SPSReqAttr*) malloc (ui16AttrLen);
       memcpy (psoPSReqAttr, psoTmp, ui16AttrLen);
-      p_pumapAttrList.insert (std::make_pair (ntohs (psoTmp->m_usAttrType), (SPSReqAttr*)psoPSReqAttr));
+      p_pumapAttrList.insert (std::make_pair (ntohs (psoTmp->m_usAttrType), psoPSReqAttr));
       /* определяем указатель на следующий атрибут */
       psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
     }
@@ -194,7 +212,7 @@ int CPSPacket::Parse (
   int p_iValidate)
 {
   int iRetVal = 0;
-  SPSReqAttrParsed *psoTmp;
+  SPSReqAttr *psoTmp;
   SPSReqAttrParsed *psoPSReqAttr;
   __uint16_t
     ui16PackLen,
@@ -204,8 +222,12 @@ int CPSPacket::Parse (
 
   do {
     /* валидация пакета */
-    if (p_iValidate) { iRetVal = Validate (p_psoBuf, p_stBufSize); }
-    if (iRetVal) { break; }
+    if (p_iValidate) {
+      iRetVal = Validate (p_psoBuf, p_stBufSize);
+    }
+    if (iRetVal) {
+      break;
+    }
     /* определяем длину пакета */
     ui16PackLen = ntohs (p_psoBuf->m_usPackLen);
     /* инициализируем указатель на атрибут начальным значением */
@@ -213,13 +235,18 @@ int CPSPacket::Parse (
     /* обходим все атрибуты */
     while (((char*)p_psoBuf + ui16PackLen) > ((char*)psoTmp)) {
       /* определяем длину атрибута */
-      ui16AttrLen = ntohs (psoTmp->m_usAttrLen);
+      ui16AttrLen = ntohs (psoTmp->m_usAttrLen) - sizeof(*psoTmp);
       /* добавляем атрибут в список */
-      psoPSReqAttr = (SPSReqAttr*) malloc (ui16AttrLen);
-      memcpy (psoPSReqAttr, psoTmp, ui16AttrLen);
-      psoPSReqAttr->m_usAttrLen = ui16AttrLen - sizeof(SPSReqAttr);
+      psoPSReqAttr = (SPSReqAttrParsed*) malloc (sizeof(*psoPSReqAttr));
+      if (0 < ui16AttrLen) {
+        psoPSReqAttr->m_pvData = (SPSReqAttr*) malloc (ui16AttrLen);
+        memcpy (psoPSReqAttr->m_pvData, ((char*)psoTmp) + sizeof(*psoTmp), ui16AttrLen);
+      } else {
+        psoPSReqAttr->m_pvData = NULL;
+      }
+      psoPSReqAttr->m_usAttrLen = ui16AttrLen;
       psoPSReqAttr->m_usAttrType = ntohs (psoTmp->m_usAttrType);
-      p_pumapAttrList.insert (std::make_pair (ntohs (psoTmp->m_usAttrType), (SPSReqAttr*)psoPSReqAttr));
+      p_pumapAttrList.insert (std::make_pair (psoPSReqAttr->m_usAttrType, psoPSReqAttr));
       /* определяем указатель на следующий атрибут */
       psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
     }
@@ -234,7 +261,7 @@ int CPSPacket::Parse (
   __uint32_t &p_ui32ReqNum,
   __uint16_t &p_ui16ReqType,
   __uint16_t &p_ui16PackLen,
-  std::multimap<__uint16_t,SPSReqAttrParsed**> &p_pumapAttrList,
+  std::multimap<__uint16_t,SPSReqAttrParsed*> &p_pumapAttrList,
   int p_iValidate)
 {
     int iRetVal = 0;
@@ -259,7 +286,7 @@ int CPSPacket::Parse (
   int iFnRes, iStrLen;
   char mcString[0x1000];
   size_t stWrtInd, stStrLen;
-  std::multimap<__uint16_t,SPSReqAttr*> mapAttrList;
+  std::multimap<__uint16_t,SPSReqAttrParsed*> mapAttrList;
 
   do {
     /* разбор атрибутов пакета */
@@ -272,14 +299,20 @@ int CPSPacket::Parse (
     iFnRes = snprintf (
 #endif
       mcString,
-      sizeof (mcString) -1,
+      sizeof (mcString),
       "request number: 0x%08x; type: 0x%04x; length: %u;",
       ntohl (p_psoBuf->m_uiReqNum),
       ntohs (p_psoBuf->m_usReqType),
       ntohs (p_psoBuf->m_usPackLen));
-    if (0 >= iFnRes) { iRetVal = -1; break; }
-    /* для linux: если строка целиком не уместилась в буфер (под Windows это не работает) */
-    if (static_cast<size_t>(iFnRes) >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
+    if (0 < iFnRes) {
+      if (sizeof (mcString) > static_cast<size_t>(iFnRes)) {
+      } else {
+        iFnRes = sizeof (mcString) - 1;
+      }
+    } else {
+      iRetVal = -1;
+      break;
+    }
     mcString[iFnRes] = '\0';
     stWrtInd = 0;
     stStrLen = p_stOutBufSize > static_cast<size_t>(iFnRes) ? iFnRes : p_stOutBufSize - 1;
@@ -288,7 +321,7 @@ int CPSPacket::Parse (
     stWrtInd = stStrLen;
     /* обходим все атрибуты */
     bool bStop = false;
-    for (std::multimap<__uint16_t,SPSReqAttr*>::iterator iter = mapAttrList.begin(); iter != mapAttrList.end (); ++iter) {
+    for (std::multimap<__uint16_t,SPSReqAttrParsed*>::iterator iter = mapAttrList.begin(); iter != mapAttrList.end (); ++iter) {
       /* формируем заголовок атрибута */
 #ifdef WIN32
       iFnRes = _snprintf (
@@ -296,39 +329,51 @@ int CPSPacket::Parse (
       iFnRes = snprintf (
 #endif
         mcString,
-        sizeof (mcString) - 1,
+        sizeof (mcString),
         " attribute code: 0x%04x; length: %u; value: ",
-        ntohs (iter->second->m_usAttrType),
-        ntohs (iter->second->m_usAttrLen));
+        iter->second->m_usAttrType,
+        iter->second->m_usAttrLen);
       /* если произошла ошика завершаем формирование атрибутов */
-      if (0 >= iFnRes) { iRetVal = -1; break; }
-      if (static_cast<size_t>(iFnRes) >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
+      if (0 < iFnRes) {
+        if (static_cast<size_t>(iFnRes) >= sizeof (mcString)) {
+          iFnRes = sizeof (mcString) - 1;
+        }
+      } else {
+        iRetVal = -1;
+        break;
+      }
       mcString[iFnRes] = '\0';
       /* выводим значение атрибута по байтам */
-      for (size_t i = sizeof (SPSReqAttr); i < ntohs (iter->second->m_usAttrLen) && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
-        if (0x20 <= reinterpret_cast<char*>(iter->second)[i] && 0x7F > reinterpret_cast<char*>(iter->second)[i]) {
-          mcString[iFnRes] = reinterpret_cast<char*>(iter->second)[i];
+      for (size_t i = 0; i < iter->second->m_usAttrLen && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
+        if (0x20 <= reinterpret_cast<char*>(iter->second->m_pvData)[i] && 0x7F > reinterpret_cast<char*>(iter->second->m_pvData)[i]) {
+          mcString[iFnRes] = reinterpret_cast<char*>(iter->second->m_pvData)[i];
           ++iFnRes;
         } else {
-          /* если следующий символ не уместится в буфер - завершаем формирование атрибута */
-          if (static_cast<size_t>(iFnRes) + 10 > sizeof(mcString) - 1) { bStop =  true; break; }
 #ifdef WIN32
           iStrLen = _snprintf (
 #else
           iStrLen = snprintf (
 #endif
             &mcString[iFnRes],
-            sizeof (mcString) - 1 - iFnRes,
+            sizeof (mcString) - iFnRes,
             "\\x%02x",
-            reinterpret_cast<unsigned char*>(iter->second)[i]);
+            reinterpret_cast<unsigned char*>(iter->second->m_pvData)[i]);
           /* если при выводе очередного байта возникла ошибка прекращаем обработку атрибута */
-          if (0 >= iStrLen) { bStop =  true; break; }
-          /* для linux: если строка целиком не уместилась в буфер (под Windows это не работает) */
-          if (static_cast<size_t>(iStrLen) >= sizeof (mcString) - 1 - iFnRes) { iStrLen = sizeof (mcString) - 1 - iFnRes; }
+          if (0 < iStrLen) {
+            if (sizeof (mcString) - iFnRes > static_cast<size_t> (iStrLen)) {
+            } else {
+              iStrLen = sizeof (mcString) - 1 - iFnRes;
+            }
+          } else {
+            bStop =  true;
+            break;
+          }
           iFnRes += iStrLen;
         }
         /* досрочно завершаем вывод атрибута */
-        if (bStop) { break; }
+        if (bStop) {
+          break;
+        }
       }
       mcString[iFnRes] = '\0';
       if (iRetVal) {
@@ -340,7 +385,9 @@ int CPSPacket::Parse (
         p_pmcOutBuf[stWrtInd] = '\0';
       }
       /* если формирование атрибута прервано завершаем вывод всего пакета */
-      if (bStop) { break; }
+      if (bStop) {
+        break;
+      }
     }
     if (0 == iRetVal) {
       iRetVal = static_cast<int>(stWrtInd);

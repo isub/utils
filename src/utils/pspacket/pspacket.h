@@ -11,7 +11,11 @@ typedef unsigned __int32 __uint32_t;
 #  define  PSPACK_SPEC
 #endif
 
-typedef SPSReqAttr SPSReqAttrParsed;
+struct SPSReqAttrParsed {
+  unsigned short m_usAttrType;
+  unsigned short m_usAttrLen;
+  void *m_pvData;
+};
 
 class PSPACK_SPEC CPSPacket {
 public:
@@ -27,6 +31,7 @@ public:
   int Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize);
   /* разбор пакета */
   void EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttrList);
+  void EraseAttrList (std::multimap<__uint16_t,SPSReqAttrParsed*> &p_mmapAttrList);
   int Parse (
     const SPSRequest *p_psoBuf,
     size_t p_stBufSize,
