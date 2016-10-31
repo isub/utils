@@ -26,8 +26,12 @@ struct SPSReqAttrParsed {
   SPSReqAttrParsed (const SPSReqAttrParsed &p_soData) {
     m_usAttrType = p_soData.m_usAttrType;
     m_usDataLen = p_soData.m_usDataLen;
-    m_pvData = malloc (m_usDataLen);
-    memcpy (m_pvData, p_soData.m_pvData, m_usDataLen);
+    if (m_usDataLen) {
+      m_pvData = malloc (m_usDataLen);
+      memcpy (m_pvData, p_soData.m_pvData, m_usDataLen);
+    } else {
+      m_pvData = NULL;
+    }
   };
   ~SPSReqAttrParsed () { if (m_pvData) free (m_pvData); };
 };

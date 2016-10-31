@@ -199,7 +199,6 @@ int CPSPacket::Parse (
 {
   int iRetVal = 0;
   SPSReqAttr *psoTmp;
-  SPSReqAttrParsed soPSReqAttr;
   __uint16_t ui16PackLen, ui16AttrLen;
 
   EraseAttrList (p_pumapAttrList);
@@ -218,17 +217,20 @@ int CPSPacket::Parse (
     psoTmp = (SPSReqAttr*)((char*)p_psoBuf + sizeof(SPSRequest));
     /* обходим все атрибуты */
     while (((char*)p_psoBuf + ui16PackLen) > ((char*)psoTmp)) {
-      /* определяем длину атрибута */
-      ui16AttrLen = ntohs (psoTmp->m_usAttrLen);
-      /* добавляем атрибут в список */
-      if (sizeof(*psoTmp) < ui16AttrLen) {
-        soPSReqAttr.m_pvData = (SPSReqAttr*) malloc (ui16AttrLen - sizeof(*psoTmp));
-        memcpy (soPSReqAttr.m_pvData, ((char*)psoTmp) + sizeof(*psoTmp), ui16AttrLen - sizeof(*psoTmp));
+      {
+        SPSReqAttrParsed soPSReqAttr;
+        /* определяем длину атрибута */
+        ui16AttrLen = ntohs (psoTmp->m_usAttrLen);
+        /* добавляем атрибут в список */
+        if (sizeof(*psoTmp) < ui16AttrLen) {
+          soPSReqAttr.m_pvData = (SPSReqAttr*) malloc (ui16AttrLen - sizeof(*psoTmp));
+          memcpy (soPSReqAttr.m_pvData, ((char*)psoTmp) + sizeof(*psoTmp), ui16AttrLen - sizeof(*psoTmp));
+        }
+        soPSReqAttr.m_usDataLen = ui16AttrLen - sizeof(*psoTmp);
+        soPSReqAttr.m_usAttrType = ntohs (psoTmp->m_usAttrType);
+        p_pumapAttrList.insert (std::make_pair (soPSReqAttr.m_usAttrType, soPSReqAttr));
+        /* определяем указатель на следующий атрибут */
       }
-      soPSReqAttr.m_usDataLen = ui16AttrLen - sizeof(*psoTmp);
-      soPSReqAttr.m_usAttrType = ntohs (psoTmp->m_usAttrType);
-      p_pumapAttrList.insert (std::make_pair (soPSReqAttr.m_usAttrType, soPSReqAttr));
-      /* определяем указатель на следующий атрибут */
       psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
     }
   } while (0);
