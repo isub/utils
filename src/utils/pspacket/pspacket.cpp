@@ -299,7 +299,7 @@ int CPSPacket::Parse (
     stWrtInd = iFnRes;
 #ifdef WIN32
 #else
-    p_pmcOutBuf[stWrtInd - 1] = '\0';
+    p_pmcOutBuf[stWrtInd] = '\0';
 #endif
     if (stWrtInd > p_stOutBufSize) {
       break;
@@ -333,7 +333,7 @@ int CPSPacket::Parse (
       stWrtInd += iFnRes;
 #ifdef WIN32
 #else
-      p_pmcOutBuf[stWrtInd - 1] = '\0';
+      p_pmcOutBuf[stWrtInd] = '\0';
 #endif
       if (stWrtInd > p_stOutBufSize) {
         break;

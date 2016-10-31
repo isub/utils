@@ -1,6 +1,10 @@
 #include "utils/ps_common.h"
-#include <stdlib.h>
 #include <map>
+#include <stdlib.h>
+#ifdef WIN32
+#else
+# include <string.h>
+#endif
 
 #ifdef  WIN32
 #  ifdef  PSPACK_IMPORT
@@ -18,14 +22,14 @@ struct SPSReqAttrParsed {
   unsigned short m_usAttrType;
   unsigned short m_usDataLen;
   void *m_pvData;
-  SPSReqAttrParsed::SPSReqAttrParsed () { m_pvData = NULL; };
-  SPSReqAttrParsed::SPSReqAttrParsed (SPSReqAttrParsed &p_soData) {
+  SPSReqAttrParsed () { m_pvData = NULL; };
+  SPSReqAttrParsed (const SPSReqAttrParsed &p_soData) {
     m_usAttrType = p_soData.m_usAttrType;
     m_usDataLen = p_soData.m_usDataLen;
     m_pvData = malloc (m_usDataLen);
     memcpy (m_pvData, p_soData.m_pvData, m_usDataLen);
   };
-  SPSReqAttrParsed::~SPSReqAttrParsed () { if (m_pvData) free (m_pvData); };
+  ~SPSReqAttrParsed () { if (m_pvData) free (m_pvData); };
 };
 
 class PSPACK_SPEC CPSPacket {
