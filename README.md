@@ -5,7 +5,6 @@ example of using CPSPacket interface:
 
 #include <stdio.h>
 #include "utils/pspacket/pspacket.h"
-
 int main(int argc, char *argv[])
 {
   int iBufSize;
