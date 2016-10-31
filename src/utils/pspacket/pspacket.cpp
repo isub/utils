@@ -1,14 +1,12 @@
-#include <map>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #ifdef WIN32
 #  include <Winsock2.h>
-#  include "utils/ps_common.h"
 #  pragma  comment(lib, "ws2_32.lib")
 #else
 #  include <arpa/inet.h>
-#  include "utils/ps_common.h"
 #endif
 
 #include "pspacket.h"
@@ -202,9 +200,7 @@ int CPSPacket::Parse (
   int iRetVal = 0;
   SPSReqAttr *psoTmp;
   SPSReqAttrParsed soPSReqAttr;
-  __uint16_t
-    ui16PackLen,
-    ui16AttrLen;
+  __uint16_t ui16PackLen, ui16AttrLen;
 
   EraseAttrList (p_pumapAttrList);
 
@@ -223,13 +219,13 @@ int CPSPacket::Parse (
     /* обходим все атрибуты */
     while (((char*)p_psoBuf + ui16PackLen) > ((char*)psoTmp)) {
       /* определяем длину атрибута */
-      ui16AttrLen = ntohs (psoTmp->m_usAttrLen) - sizeof(*psoTmp);
+      ui16AttrLen = ntohs (psoTmp->m_usAttrLen);
       /* добавляем атрибут в список */
-      if (0 < ui16AttrLen) {
-        soPSReqAttr.m_pvData = (SPSReqAttr*) malloc (ui16AttrLen);
-        memcpy (soPSReqAttr.m_pvData, ((char*)psoTmp) + sizeof(*psoTmp), ui16AttrLen);
+      if (sizeof(*psoTmp) < ui16AttrLen) {
+        soPSReqAttr.m_pvData = (SPSReqAttr*) malloc (ui16AttrLen - sizeof(*psoTmp));
+        memcpy (soPSReqAttr.m_pvData, ((char*)psoTmp) + sizeof(*psoTmp), ui16AttrLen - sizeof(*psoTmp));
       }
-      soPSReqAttr.m_usDataLen = ui16AttrLen;
+      soPSReqAttr.m_usDataLen = ui16AttrLen - sizeof(*psoTmp);
       soPSReqAttr.m_usAttrType = ntohs (psoTmp->m_usAttrType);
       p_pumapAttrList.insert (std::make_pair (soPSReqAttr.m_usAttrType, soPSReqAttr));
       /* определяем указатель на следующий атрибут */
@@ -268,9 +264,8 @@ int CPSPacket::Parse (
   size_t p_stOutBufSize)
 {
   int iRetVal = 0;
-  int iFnRes, iStrLen;
-  char mcString[0x1000];
-  size_t stWrtInd, stStrLen;
+  int iFnRes;
+  size_t stWrtInd;
   std::multimap<__uint16_t,SPSReqAttrParsed> mapAttrList;
 
   do {
@@ -279,95 +274,109 @@ int CPSPacket::Parse (
     if (iRetVal) { break; }
     /* формируем заголовок пакета */
 #ifdef WIN32
-    iFnRes = _snprintf (
+    iFnRes = _snprintf_s (
 #else
     iFnRes = snprintf (
 #endif
-      mcString,
-      sizeof (mcString),
+      p_pmcOutBuf,
+      p_stOutBufSize,
+#ifdef WIN32
+      p_stOutBufSize - 1,
+#endif
       "request number: 0x%08x; type: 0x%04x; length: %u;",
       ntohl (p_psoBuf->m_uiReqNum),
       ntohs (p_psoBuf->m_usReqType),
       ntohs (p_psoBuf->m_usPackLen));
     if (0 < iFnRes) {
-      if (sizeof (mcString) > static_cast<size_t>(iFnRes)) {
+      if (p_stOutBufSize > static_cast<size_t>(iFnRes)) {
       } else {
-        iFnRes = sizeof (mcString) - 1;
+        iFnRes = p_stOutBufSize;
       }
     } else {
       iRetVal = -1;
       break;
     }
-    mcString[iFnRes] = '\0';
-    stWrtInd = 0;
-    stStrLen = p_stOutBufSize > static_cast<size_t>(iFnRes) ? iFnRes : p_stOutBufSize - 1;
-    memcpy (p_pmcOutBuf, mcString, stStrLen);
-    p_pmcOutBuf[stStrLen] = '\0';
-    stWrtInd = stStrLen;
+    stWrtInd = iFnRes;
+#ifdef WIN32
+#else
+    p_pmcOutBuf[stWrtInd - 1] = '\0';
+#endif
+    if (stWrtInd > p_stOutBufSize) {
+      break;
+    }
     /* обходим все атрибуты */
     bool bStop = false;
     for (std::multimap<__uint16_t,SPSReqAttrParsed>::iterator iter = mapAttrList.begin(); iter != mapAttrList.end (); ++iter) {
       /* формируем заголовок атрибута */
 #ifdef WIN32
-      iFnRes = _snprintf (
+      iFnRes = _snprintf_s (
 #else
       iFnRes = snprintf (
 #endif
-        mcString,
-        sizeof (mcString),
+        &p_pmcOutBuf[stWrtInd],
+        p_stOutBufSize - stWrtInd,
+#ifdef _WIN32
+        p_stOutBufSize - stWrtInd - 1,
+#endif
         " attribute code: 0x%04x; data length: %u; value: ",
         iter->second.m_usAttrType,
         iter->second.m_usDataLen);
-      /* если произошла ошика завершаем формирование атрибутов */
+      /* если произошла ошибка завершаем формирование атрибутов */
       if (0 < iFnRes) {
-        if (static_cast<size_t>(iFnRes) >= sizeof (mcString)) {
-          iFnRes = sizeof (mcString) - 1;
+        if (static_cast<size_t>(iFnRes) >= p_stOutBufSize - stWrtInd) {
+          iFnRes = p_stOutBufSize - stWrtInd;
         }
       } else {
         iRetVal = -1;
         break;
       }
-      mcString[iFnRes] = '\0';
+      stWrtInd += iFnRes;
+#ifdef WIN32
+#else
+      p_pmcOutBuf[stWrtInd - 1] = '\0';
+#endif
+      if (stWrtInd > p_stOutBufSize) {
+        break;
+      }
       /* выводим значение атрибута по байтам */
-      for (size_t i = 0; i < iter->second.m_usDataLen && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
+      for (size_t i = 0; i < iter->second.m_usDataLen && stWrtInd < p_stOutBufSize - 1; ++i) {
         if (0x20 <= reinterpret_cast<char*>(iter->second.m_pvData)[i] && 0x7F > reinterpret_cast<char*>(iter->second.m_pvData)[i]) {
-          mcString[iFnRes] = reinterpret_cast<char*>(iter->second.m_pvData)[i];
-          ++iFnRes;
+          p_pmcOutBuf[stWrtInd] = reinterpret_cast<char*>(iter->second.m_pvData)[i];
+          ++stWrtInd;
         } else {
 #ifdef WIN32
-          iStrLen = _snprintf (
+          iFnRes = _snprintf_s (
 #else
-          iStrLen = snprintf (
+          iFnRes = snprintf (
 #endif
-            &mcString[iFnRes],
-            sizeof (mcString) - iFnRes,
+            &p_pmcOutBuf[stWrtInd],
+            p_stOutBufSize - stWrtInd,
+#ifdef _WIN32
+            p_stOutBufSize - stWrtInd - 1,
+#endif
             "\\x%02x",
             reinterpret_cast<unsigned char*>(iter->second.m_pvData)[i]);
           /* если при выводе очередного байта возникла ошибка прекращаем обработку атрибута */
-          if (0 < iStrLen) {
-            if (sizeof (mcString) - iFnRes > static_cast<size_t> (iStrLen)) {
+          if (0 < iFnRes) {
+            if (p_stOutBufSize - stWrtInd > static_cast<size_t> (iFnRes)) {
             } else {
-              iStrLen = sizeof (mcString) - 1 - iFnRes;
+              iFnRes = p_stOutBufSize - stWrtInd;
             }
           } else {
             bStop =  true;
             break;
           }
-          iFnRes += iStrLen;
+          stWrtInd += iFnRes;
         }
         /* досрочно завершаем вывод атрибута */
         if (bStop) {
           break;
         }
       }
-      mcString[iFnRes] = '\0';
-      if (iRetVal) {
-        break;
+      p_pmcOutBuf[stWrtInd] = '\0';
+      if (0 == iRetVal) {
       } else {
-        stStrLen = p_stOutBufSize - stWrtInd > static_cast<size_t>(iFnRes) ? iFnRes : p_stOutBufSize - stWrtInd - 1;
-        memcpy (&p_pmcOutBuf[stWrtInd], mcString, stStrLen);
-        stWrtInd += stStrLen;
-        p_pmcOutBuf[stWrtInd] = '\0';
+        break;
       }
       /* если формирование атрибута прервано завершаем вывод всего пакета */
       if (bStop) {
