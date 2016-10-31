@@ -271,7 +271,7 @@ int CPSPacket::Parse (
   int iFnRes, iStrLen;
   char mcString[0x1000];
   size_t stWrtInd, stStrLen;
-  std::multimap<__uint16_t,SPSReqAttrParsed*> mapAttrList;
+  std::multimap<__uint16_t,SPSReqAttrParsed> mapAttrList;
 
   do {
     /* разбор атрибутов пакета */
@@ -306,7 +306,7 @@ int CPSPacket::Parse (
     stWrtInd = stStrLen;
     /* обходим все атрибуты */
     bool bStop = false;
-    for (std::multimap<__uint16_t,SPSReqAttrParsed*>::iterator iter = mapAttrList.begin(); iter != mapAttrList.end (); ++iter) {
+    for (std::multimap<__uint16_t,SPSReqAttrParsed>::iterator iter = mapAttrList.begin(); iter != mapAttrList.end (); ++iter) {
       /* формируем заголовок атрибута */
 #ifdef WIN32
       iFnRes = _snprintf (
@@ -316,8 +316,8 @@ int CPSPacket::Parse (
         mcString,
         sizeof (mcString),
         " attribute code: 0x%04x; data length: %u; value: ",
-        iter->second->m_usAttrType,
-        iter->second->m_usDataLen);
+        iter->second.m_usAttrType,
+        iter->second.m_usDataLen);
       /* если произошла ошика завершаем формирование атрибутов */
       if (0 < iFnRes) {
         if (static_cast<size_t>(iFnRes) >= sizeof (mcString)) {
@@ -329,9 +329,9 @@ int CPSPacket::Parse (
       }
       mcString[iFnRes] = '\0';
       /* выводим значение атрибута по байтам */
-      for (size_t i = 0; i < iter->second->m_usDataLen && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
-        if (0x20 <= reinterpret_cast<char*>(iter->second->m_pvData)[i] && 0x7F > reinterpret_cast<char*>(iter->second->m_pvData)[i]) {
-          mcString[iFnRes] = reinterpret_cast<char*>(iter->second->m_pvData)[i];
+      for (size_t i = 0; i < iter->second.m_usDataLen && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
+        if (0x20 <= reinterpret_cast<char*>(iter->second.m_pvData)[i] && 0x7F > reinterpret_cast<char*>(iter->second.m_pvData)[i]) {
+          mcString[iFnRes] = reinterpret_cast<char*>(iter->second.m_pvData)[i];
           ++iFnRes;
         } else {
 #ifdef WIN32
@@ -342,7 +342,7 @@ int CPSPacket::Parse (
             &mcString[iFnRes],
             sizeof (mcString) - iFnRes,
             "\\x%02x",
-            reinterpret_cast<unsigned char*>(iter->second->m_pvData)[i]);
+            reinterpret_cast<unsigned char*>(iter->second.m_pvData)[i]);
           /* если при выводе очередного байта возникла ошибка прекращаем обработку атрибута */
           if (0 < iStrLen) {
             if (sizeof (mcString) - iFnRes > static_cast<size_t> (iStrLen)) {
