@@ -275,16 +275,16 @@ int CPSPacket::Parse (
     iRetVal = Parse (p_psoBuf, p_stBufSize, mapAttrList);
     if (iRetVal) { break; }
     /* формируем заголовок пакета */
-#ifdef WIN32
-    iFnRes = _snprintf_s (
-#else
+//#ifdef WIN32
+//    iFnRes = _snprintf_s (
+//#else
     iFnRes = snprintf (
-#endif
+//#endif
       p_pmcOutBuf,
       p_stOutBufSize,
-#ifdef WIN32
-      p_stOutBufSize - 1,
-#endif
+//#ifdef WIN32
+//      p_stOutBufSize - 1,
+//#endif
       "request number: 0x%08x; type: 0x%04x; length: %u;",
       ntohl (p_psoBuf->m_uiReqNum),
       ntohs (p_psoBuf->m_usReqType),
@@ -310,16 +310,16 @@ int CPSPacket::Parse (
     bool bStop = false;
     for (std::multimap<__uint16_t,SPSReqAttrParsed>::iterator iter = mapAttrList.begin(); iter != mapAttrList.end (); ++iter) {
       /* формируем заголовок атрибута */
-#ifdef WIN32
-      iFnRes = _snprintf_s (
-#else
+//#ifdef WIN32
+//      iFnRes = _snprintf_s (
+//#else
       iFnRes = snprintf (
-#endif
+//#endif
         &p_pmcOutBuf[stWrtInd],
         p_stOutBufSize - stWrtInd,
-#ifdef _WIN32
-        p_stOutBufSize - stWrtInd - 1,
-#endif
+//#ifdef _WIN32
+//        p_stOutBufSize - stWrtInd - 1,
+//#endif
         " attribute code: 0x%04x; data length: %u; value: ",
         iter->second.m_usAttrType,
         iter->second.m_usDataLen);
@@ -346,16 +346,16 @@ int CPSPacket::Parse (
           p_pmcOutBuf[stWrtInd] = reinterpret_cast<char*>(iter->second.m_pvData)[i];
           ++stWrtInd;
         } else {
-#ifdef WIN32
-          iFnRes = _snprintf_s (
-#else
+//#ifdef WIN32
+//          iFnRes = _snprintf_s (
+//#else
           iFnRes = snprintf (
-#endif
+//#endif
             &p_pmcOutBuf[stWrtInd],
             p_stOutBufSize - stWrtInd,
-#ifdef _WIN32
-            p_stOutBufSize - stWrtInd - 1,
-#endif
+//#ifdef _WIN32
+//            p_stOutBufSize - stWrtInd - 1,
+//#endif
             "\\x%02x",
             reinterpret_cast<unsigned char*>(iter->second.m_pvData)[i]);
           /* если при выводе очередного байта возникла ошибка прекращаем обработку атрибута */
