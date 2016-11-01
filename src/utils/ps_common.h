@@ -67,7 +67,8 @@
 #define	RS_KC5          (unsigned short)0x0111 /* KC5 */
 
 #define	SS7GW_QUINTUPLET_REQ  (unsigned short)0x0702
-#define	SS7GW_QUINTUPLET_RESP (unsigned short)0x0703
+#define	SS7GW_QUINTUPLET_CONF (unsigned short)0x0703
+#define	SS7GW_QUINTUPLET_RESP (unsigned short)0x0704
 
 #define ATTR_RAND       (unsigned short)0x0201
 #define ATTR_AUTN       (unsigned short)0x0202
