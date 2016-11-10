@@ -187,67 +187,6 @@ int CPSPacket::Parse (
     return Parse(p_psoBuf,p_stBufSize,p_pumapAttrList,0);
 }
 
-int CPSPacket::Parse (
-  const SPSRequest *p_psoBuf,
-  size_t p_stBufSize,
-  std::multimap<__uint16_t,SPSReqAttrParsed*> &p_pumapAttrList,
-  int p_iValidate)
-{
-  int iRetVal = 0;
-  SPSReqAttrParsed *psoTmp;
-  SPSReqAttrParsed *psoPSReqAttr;
-  __uint16_t
-    ui16PackLen,
-    ui16AttrLen;
-
-  EraseAttrList (p_pumapAttrList);
-
-  do {
-    /* валидация пакета */
-    if (p_iValidate) { iRetVal = Validate (p_psoBuf, p_stBufSize); }
-    if (iRetVal) { break; }
-    /* определяем длину пакета */
-    ui16PackLen = ntohs (p_psoBuf->m_usPackLen);
-    /* инициализируем указатель на атрибут начальным значением */
-    psoTmp = (SPSReqAttr*)((char*)p_psoBuf + sizeof(SPSRequest));
-    /* обходим все атрибуты */
-    while (((char*)p_psoBuf + ui16PackLen) > ((char*)psoTmp)) {
-      /* определяем длину атрибута */
-      ui16AttrLen = ntohs (psoTmp->m_usAttrLen);
-      /* добавляем атрибут в список */
-      psoPSReqAttr = (SPSReqAttr*) malloc (ui16AttrLen);
-      memcpy (psoPSReqAttr, psoTmp, ui16AttrLen);
-      psoPSReqAttr->m_usAttrLen = ui16AttrLen - sizeof(SPSReqAttr);
-      psoPSReqAttr->m_usAttrType = ntohs (psoTmp->m_usAttrType);
-      p_pumapAttrList.insert (std::make_pair (ntohs (psoTmp->m_usAttrType), (SPSReqAttr*)psoPSReqAttr));
-      /* определяем указатель на следующий атрибут */
-      psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
-    }
-  } while (0);
-
-  return iRetVal;
-}
-
-int CPSPacket::Parse (
-  const SPSRequest *p_psoBuf,
-  size_t p_stBufSize,
-  __uint32_t &p_ui32ReqNum,
-  __uint16_t &p_ui16ReqType,
-  __uint16_t &p_ui16PackLen,
-  std::multimap<__uint16_t,SPSReqAttrParsed**> &p_pumapAttrList,
-  int p_iValidate)
-{
-    int iRetVal = 0;
-
-    /* валидация пакета */
-    if (p_iValidate) { iRetVal = Validate (p_psoBuf, p_stBufSize); }
-    if (iRetVal) { return iRetVal; }
-    p_ui32ReqNum=ntohl (p_psoBuf->m_uiReqNum);
-    p_ui16ReqType=ntohs (p_psoBuf->m_usReqType);
-    p_ui16PackLen=ntohs (p_psoBuf->m_usPackLen);
-
-    return Parse(p_psoBuf,p_stBufSize,p_pumapAttrList,0);
-}
 
 int CPSPacket::Parse (
   const SPSRequest *p_psoBuf,
