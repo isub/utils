@@ -26,6 +26,7 @@
 #define	PS_STATUS		(unsigned short)0x0007
 #define	PS_MDATTR		(unsigned short)0x0008
 #define	PS_ADMCMD		(unsigned short)0x0010
+#define GW_REQUEST_ID   (unsigned short)0x0011
 
 /*	IRBiS-PS CoA module attribute types
  *	0x03xx
@@ -58,6 +59,25 @@
 #define	RS_RAND3        (unsigned short)0x0109 /* RAND3 */
 #define	RS_SRES3        (unsigned short)0x010a /* SRES3 */
 #define	RS_KC3          (unsigned short)0x010b /* KC3 */
+#define	RS_RAND4        (unsigned short)0x010c /* RAND4 */
+#define	RS_SRES4        (unsigned short)0x010d /* SRES4 */
+#define	RS_KC4          (unsigned short)0x010e /* KC4 */
+#define	RS_RAND5        (unsigned short)0x010f /* RAND5 */
+#define	RS_SRES5        (unsigned short)0x0110 /* SRES5 */
+#define	RS_KC5          (unsigned short)0x0111 /* KC5 */
+
+#define	SS7GW_QUINTUPLET_REQ  (unsigned short)0x0702
+#define	SS7GW_QUINTUPLET_CONF (unsigned short)0x0703
+#define	SS7GW_QUINTUPLET_RESP (unsigned short)0x0704
+
+#define ATTR_RAND       (unsigned short)0x0201
+#define ATTR_AUTN       (unsigned short)0x0202
+#define ATTR_XRES       (unsigned short)0x0203
+#define ATTR_CK         (unsigned short)0x0204
+#define ATTR_IK         (unsigned short)0x0205
+
+#define	ATTR_REQUESTED_VECTORS  (unsigned short)0x0206
+#define	ATTR_RECEIVED_VECTORS   (unsigned short)0x0207
 
 #pragma pack(push,1)
 
