@@ -1,19 +1,18 @@
-#include <map>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #ifdef WIN32
 #  include <Winsock2.h>
-#  include "ps_common.h"
 #  pragma  comment(lib, "ws2_32.lib")
 #else
 #  include <arpa/inet.h>
-#  include "utils/ps_common.h"
 #endif
 
 #include "pspacket.h"
 
-int CPSPacket::Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, __uint16_t p_ui16ReqType) {
+int CPSPacket::Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, __uint16_t p_ui16ReqType)
+{
   int iRetVal = 0;
 
   do {
@@ -27,7 +26,8 @@ int CPSPacket::Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32
   return iRetVal;
 }
 
-int CPSPacket::SetReqNum (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, int p_iValidate) {
+int CPSPacket::SetReqNum (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, int p_iValidate)
+{
   int iRetVal = 0;
 
   do {
@@ -39,7 +39,8 @@ int CPSPacket::SetReqNum (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p
   return iRetVal;
 }
 
-int CPSPacket::SetReqType (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16ReqType, int p_iValidate) {
+int CPSPacket::SetReqType (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16ReqType, int p_iValidate)
+{
   int iRetVal = 0;
 
   do {
@@ -51,7 +52,8 @@ int CPSPacket::SetReqType (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t 
   return iRetVal;
 }
 
-int CPSPacket::AddAttr (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16Type, const void *p_pValue, __uint16_t p_ui16ValueLen, int p_iValidate) {
+int CPSPacket::AddAttr (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16Type, const void *p_pValue, __uint16_t p_ui16ValueLen, int p_iValidate)
+{
   int iRetVal = 0;
   SPSReqAttr *psoTmp;
   __uint16_t
@@ -78,7 +80,8 @@ int CPSPacket::AddAttr (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_u
   return iRetVal;
 }
 
-int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize) {
+int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stDataLen)
+{
   int iRetVal = 0;
   SPSReqAttr *psoTmp;
   __uint16_t
@@ -88,7 +91,10 @@ int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize) {
 
   do {
     /* проверяем достаточен ли размер буфера для заголовка пакета */
-    if (p_stBufSize < sizeof(SPSRequest)) { iRetVal = -1; break; }
+    if (p_stDataLen < sizeof(*p_psoBuf)) {
+      iRetVal = -1;
+      break;
+    }
     /* инициализируем суммарную длину начальным значением */
     ui16TotalLen = sizeof(SPSRequest);
     /* определяем длину пакета по заголовку */
@@ -102,7 +108,7 @@ int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize) {
       /* увеличиваем суммарную длину пакета */
       ui16TotalLen += ui16AttrLen;
       /* проверяем умещается ли пакет в буфере */
-      if (ui16TotalLen > p_stBufSize) { iRetVal = -1; break; }
+      if (ui16TotalLen > p_stDataLen) { iRetVal = -1; break; }
       /* определяем указатель на следующий атрибут */
       psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
       /* если суммарная длина больше длины пакета нет смысла проверять дальше */
@@ -117,7 +123,8 @@ int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize) {
   return iRetVal;
 }
 
-void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttrList) {
+void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttrList)
+{
   SPSReqAttr *psoTmp;
   std::multimap<__uint16_t,SPSReqAttr*>::iterator iterList;
 
@@ -127,6 +134,11 @@ void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttr
       free (psoTmp);
     }
   }
+  p_mmapAttrList.clear ();
+}
+
+void CPSPacket::EraseAttrList (std::multimap<__uint16_t,SPSReqAttrParsed> &p_mmapAttrList)
+{
   p_mmapAttrList.clear ();
 }
 
@@ -160,7 +172,7 @@ int CPSPacket::Parse (
       /* добавляем атрибут в список */
       psoPSReqAttr = (SPSReqAttr*) malloc (ui16AttrLen);
       memcpy (psoPSReqAttr, psoTmp, ui16AttrLen);
-      p_pumapAttrList.insert (std::make_pair (ntohs (psoTmp->m_usAttrType), (SPSReqAttr*)psoPSReqAttr));
+      p_pumapAttrList.insert (std::make_pair (ntohs (psoTmp->m_usAttrType), psoPSReqAttr));
       /* определяем указатель на следующий атрибут */
       psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
     }
@@ -187,6 +199,73 @@ int CPSPacket::Parse (
     return Parse(p_psoBuf,p_stBufSize,p_pumapAttrList,0);
 }
 
+int CPSPacket::Parse (
+  const SPSRequest *p_psoBuf,
+  size_t p_stBufSize,
+  std::multimap<__uint16_t,SPSReqAttrParsed> &p_pumapAttrList,
+  int p_iValidate)
+{
+  int iRetVal = 0;
+  SPSReqAttr *psoTmp;
+  __uint16_t ui16PackLen, ui16AttrLen;
+
+  EraseAttrList (p_pumapAttrList);
+
+  do {
+    /* валидация пакета */
+    if (p_iValidate) {
+      iRetVal = Validate (p_psoBuf, p_stBufSize);
+    }
+    if (iRetVal) {
+      break;
+    }
+    /* определяем длину пакета */
+    ui16PackLen = ntohs (p_psoBuf->m_usPackLen);
+    /* инициализируем указатель на атрибут начальным значением */
+    psoTmp = (SPSReqAttr*)((char*)p_psoBuf + sizeof(SPSRequest));
+    /* обходим все атрибуты */
+    while (((char*)p_psoBuf + ui16PackLen) > ((char*)psoTmp)) {
+      {
+        SPSReqAttrParsed soPSReqAttr;
+        /* определяем длину атрибута */
+        ui16AttrLen = ntohs (psoTmp->m_usAttrLen);
+        /* добавляем атрибут в список */
+        if (sizeof(*psoTmp) < ui16AttrLen) {
+          soPSReqAttr.m_pvData = (SPSReqAttr*) malloc (ui16AttrLen - sizeof(*psoTmp));
+          memcpy (soPSReqAttr.m_pvData, ((char*)psoTmp) + sizeof(*psoTmp), ui16AttrLen - sizeof(*psoTmp));
+        }
+        soPSReqAttr.m_usDataLen = ui16AttrLen - sizeof(*psoTmp);
+        soPSReqAttr.m_usAttrType = ntohs (psoTmp->m_usAttrType);
+        p_pumapAttrList.insert (std::make_pair (soPSReqAttr.m_usAttrType, soPSReqAttr));
+        /* определяем указатель на следующий атрибут */
+      }
+      psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
+    }
+  } while (0);
+
+  return iRetVal;
+}
+
+int CPSPacket::Parse (
+  const SPSRequest *p_psoBuf,
+  size_t p_stBufSize,
+  __uint32_t &p_ui32ReqNum,
+  __uint16_t &p_ui16ReqType,
+  __uint16_t &p_ui16PackLen,
+  std::multimap<__uint16_t,SPSReqAttrParsed> &p_pumapAttrList,
+  int p_iValidate)
+{
+    int iRetVal = 0;
+
+    /* валидация пакета */
+    if (p_iValidate) { iRetVal = Validate (p_psoBuf, p_stBufSize); }
+    if (iRetVal) { return iRetVal; }
+    p_ui32ReqNum=ntohl (p_psoBuf->m_uiReqNum);
+    p_ui16ReqType=ntohs (p_psoBuf->m_usReqType);
+    p_ui16PackLen=ntohs (p_psoBuf->m_usPackLen);
+
+    return Parse(p_psoBuf,p_stBufSize,p_pumapAttrList,0);
+}
 
 int CPSPacket::Parse (
   const SPSRequest *p_psoBuf,
@@ -195,10 +274,9 @@ int CPSPacket::Parse (
   size_t p_stOutBufSize)
 {
   int iRetVal = 0;
-  int iFnRes, iStrLen;
-  char mcString[0x1000];
-  size_t stWrtInd, stStrLen;
-  std::multimap<__uint16_t,SPSReqAttr*> mapAttrList;
+  int iFnRes;
+  size_t stWrtInd;
+  std::multimap<__uint16_t,SPSReqAttrParsed> mapAttrList;
 
   do {
     /* разбор атрибутов пакета */
@@ -206,80 +284,114 @@ int CPSPacket::Parse (
     if (iRetVal) { break; }
     /* формируем заголовок пакета */
 #ifdef WIN32
-    iFnRes = _snprintf (
+    iFnRes = _snprintf_s (
 #else
     iFnRes = snprintf (
 #endif
-      mcString,
-      sizeof (mcString) -1,
+      p_pmcOutBuf,
+      p_stOutBufSize,
+#ifdef WIN32
+      p_stOutBufSize - 1,
+#endif
       "request number: 0x%08x; type: 0x%04x; length: %u;",
       ntohl (p_psoBuf->m_uiReqNum),
       ntohs (p_psoBuf->m_usReqType),
       ntohs (p_psoBuf->m_usPackLen));
-    if (0 >= iFnRes) { iRetVal = -1; break; }
-    /* для linux: если строка целиком не уместилась в буфер (под Windows это не работает) */
-    if (static_cast<size_t>(iFnRes) >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
-    mcString[iFnRes] = '\0';
-    stWrtInd = 0;
-    stStrLen = p_stOutBufSize > static_cast<size_t>(iFnRes) ? iFnRes : p_stOutBufSize - 1;
-    memcpy (p_pmcOutBuf, mcString, stStrLen);
-    p_pmcOutBuf[stStrLen] = '\0';
-    stWrtInd = stStrLen;
+    if (0 < iFnRes) {
+      if (p_stOutBufSize > static_cast<size_t>(iFnRes)) {
+      } else {
+        iFnRes = p_stOutBufSize;
+      }
+    } else {
+      iRetVal = -1;
+      break;
+    }
+    stWrtInd = iFnRes;
+#ifdef WIN32
+#else
+    p_pmcOutBuf[stWrtInd] = '\0';
+#endif
+    if (stWrtInd > p_stOutBufSize) {
+      break;
+    }
     /* обходим все атрибуты */
     bool bStop = false;
-    for (std::multimap<__uint16_t,SPSReqAttr*>::iterator iter = mapAttrList.begin(); iter != mapAttrList.end (); ++iter) {
+    for (std::multimap<__uint16_t,SPSReqAttrParsed>::iterator iter = mapAttrList.begin(); iter != mapAttrList.end (); ++iter) {
       /* формируем заголовок атрибута */
 #ifdef WIN32
-      iFnRes = _snprintf (
+      iFnRes = _snprintf_s (
 #else
       iFnRes = snprintf (
 #endif
-        mcString,
-        sizeof (mcString) - 1,
-        " attribute code: 0x%04x; length: %u; value: ",
-        ntohs (iter->second->m_usAttrType),
-        ntohs (iter->second->m_usAttrLen));
-      /* если произошла ошика завершаем формирование атрибутов */
-      if (0 >= iFnRes) { iRetVal = -1; break; }
-      if (static_cast<size_t>(iFnRes) >= sizeof (mcString) - 1) { iFnRes = sizeof (mcString) - 1; }
-      mcString[iFnRes] = '\0';
-      /* выводим значение атрибута по байтам */
-      for (size_t i = sizeof (SPSReqAttr); i < ntohs (iter->second->m_usAttrLen) && static_cast<size_t>(iFnRes) < sizeof(mcString) - 1; ++i) {
-        if (0x20 <= reinterpret_cast<char*>(iter->second)[i] && 0x7F > reinterpret_cast<char*>(iter->second)[i]) {
-          mcString[iFnRes] = reinterpret_cast<char*>(iter->second)[i];
-          ++iFnRes;
-        } else {
-          /* если следующий символ не уместится в буфер - завершаем формирование атрибута */
-          if (static_cast<size_t>(iFnRes) + 10 > sizeof(mcString) - 1) { bStop =  true; break; }
-#ifdef WIN32
-          iStrLen = _snprintf (
-#else
-          iStrLen = snprintf (
+        &p_pmcOutBuf[stWrtInd],
+        p_stOutBufSize - stWrtInd,
+#ifdef _WIN32
+        p_stOutBufSize - stWrtInd - 1,
 #endif
-            &mcString[iFnRes],
-            sizeof (mcString) - 1 - iFnRes,
+        " attribute code: 0x%04x; data length: %u; value: ",
+        iter->second.m_usAttrType,
+        iter->second.m_usDataLen);
+      /* если произошла ошибка завершаем формирование атрибутов */
+      if (0 < iFnRes) {
+        if (static_cast<size_t>(iFnRes) >= p_stOutBufSize - stWrtInd) {
+          iFnRes = p_stOutBufSize - stWrtInd;
+        }
+      } else {
+        iRetVal = -1;
+        break;
+      }
+      stWrtInd += iFnRes;
+#ifdef WIN32
+#else
+      p_pmcOutBuf[stWrtInd] = '\0';
+#endif
+      if (stWrtInd > p_stOutBufSize) {
+        break;
+      }
+      /* выводим значение атрибута по байтам */
+      for (size_t i = 0; i < iter->second.m_usDataLen && stWrtInd < p_stOutBufSize - 1; ++i) {
+        if (0x20 <= reinterpret_cast<char*>(iter->second.m_pvData)[i] && 0x7F > reinterpret_cast<char*>(iter->second.m_pvData)[i]) {
+          p_pmcOutBuf[stWrtInd] = reinterpret_cast<char*>(iter->second.m_pvData)[i];
+          ++stWrtInd;
+        } else {
+#ifdef WIN32
+          iFnRes = _snprintf_s (
+#else
+          iFnRes = snprintf (
+#endif
+            &p_pmcOutBuf[stWrtInd],
+            p_stOutBufSize - stWrtInd,
+#ifdef _WIN32
+            p_stOutBufSize - stWrtInd - 1,
+#endif
             "\\x%02x",
-            reinterpret_cast<unsigned char*>(iter->second)[i]);
+            reinterpret_cast<unsigned char*>(iter->second.m_pvData)[i]);
           /* если при выводе очередного байта возникла ошибка прекращаем обработку атрибута */
-          if (0 >= iStrLen) { bStop =  true; break; }
-          /* для linux: если строка целиком не уместилась в буфер (под Windows это не работает) */
-          if (static_cast<size_t>(iStrLen) >= sizeof (mcString) - 1 - iFnRes) { iStrLen = sizeof (mcString) - 1 - iFnRes; }
-          iFnRes += iStrLen;
+          if (0 < iFnRes) {
+            if (p_stOutBufSize - stWrtInd > static_cast<size_t> (iFnRes)) {
+            } else {
+              iFnRes = p_stOutBufSize - stWrtInd;
+            }
+          } else {
+            bStop =  true;
+            break;
+          }
+          stWrtInd += iFnRes;
         }
         /* досрочно завершаем вывод атрибута */
-        if (bStop) { break; }
+        if (bStop) {
+          break;
+        }
       }
-      mcString[iFnRes] = '\0';
-      if (iRetVal) {
-        break;
+      p_pmcOutBuf[stWrtInd] = '\0';
+      if (0 == iRetVal) {
       } else {
-        stStrLen = p_stOutBufSize - stWrtInd > static_cast<size_t>(iFnRes) ? iFnRes : p_stOutBufSize - stWrtInd - 1;
-        memcpy (&p_pmcOutBuf[stWrtInd], mcString, stStrLen);
-        stWrtInd += stStrLen;
-        p_pmcOutBuf[stWrtInd] = '\0';
+        break;
       }
       /* если формирование атрибута прервано завершаем вывод всего пакета */
-      if (bStop) { break; }
+      if (bStop) {
+        break;
+      }
     }
     if (0 == iRetVal) {
       iRetVal = static_cast<int>(stWrtInd);
