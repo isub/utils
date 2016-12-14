@@ -1,6 +1,6 @@
 #include "stat.h"
-#include "log.h"
-#include "timemeasurer.h"
+#include "utils/log/log.h"
+#include "utils/timemeasurer/timemeasurer.h"
 
 #include <map>
 #include <string>
@@ -121,10 +121,9 @@ SStat * stat_get_branch (const char *p_pszObjName)
 	std::map<std::string,SStat*>::iterator iter;
 	std::string strObjName = p_pszObjName;
 	SStat *psoStat;
-	int iFnRes;
 
 	/* ищем соответствующую ветку */
-	iFnRes = pthread_mutex_lock (g_pmutexStat);
+	pthread_mutex_lock (g_pmutexStat);
 	iter = g_pmapStat->find(strObjName);
 	if (iter == g_pmapStat->end()) {
 		/* создаем новый объект */
@@ -136,7 +135,7 @@ SStat * stat_get_branch (const char *p_pszObjName)
 		/* используем найденный */
 		psoStat = iter->second;
 	}
-	iFnRes = pthread_mutex_unlock (g_pmutexStat);
+	pthread_mutex_unlock (g_pmutexStat);
 
 	return psoStat;
 }
@@ -157,8 +156,12 @@ void stat_measure (SStat *p_psoStat, const char *p_pszObjName, CTimeMeasurer *p_
 	SStat *psoWanted = NULL;
 	timeval tvDif;
 
+  memset (&tvDif, 0, sizeof (tvDif));
+
 	/* фиксируем продолжительность исполнения */
-	p_pcoTM->GetDifference (&tvDif, NULL, 0);
+  if (p_pcoTM) {
+    p_pcoTM->GetDifference (&tvDif, NULL, 0);
+  }
 
 	pthread_mutex_lock(&p_psoStat->m_mutexStat);
 	/* ищем соответствующий объект */
@@ -185,10 +188,14 @@ void stat_measure (SStat *p_psoStat, const char *p_pszObjName, CTimeMeasurer *p_
 		psoWanted->m_soTmMin = tvDif;
 		psoWanted->m_soTmMax = tvDif;
 	} else {
-		p_pcoTM->GetMin(&psoWanted->m_soTmMin, &tvDif);
-		p_pcoTM->GetMax(&psoWanted->m_soTmMax, &tvDif);
+    if (p_pcoTM) {
+      p_pcoTM->GetMin(&psoWanted->m_soTmMin, &tvDif);
+      p_pcoTM->GetMax(&psoWanted->m_soTmMax, &tvDif);
+    }
 	}
-	p_pcoTM->Add(&psoWanted->m_soTmTotal, &tvDif);
+  if (p_pcoTM) {
+    p_pcoTM->Add(&psoWanted->m_soTmTotal, &tvDif);
+  }
 	psoWanted->m_soTmLast = tvDif;
 	pthread_mutex_unlock(&psoWanted->m_mutexStat);
 
@@ -223,7 +230,6 @@ void * stat_output (void *p_pArg)
 	bool *bStop = (bool*)p_pArg;
 	timespec soTmSpec;
 	SStat *psoTmp;
-	bool bFirst = true;
 	std::string strMsg;
 	char mcBuf[0x1000], mcMin[64], mcMax[64], mcTotal[64], mcLast[64];
 	CTimeMeasurer coTM;
@@ -236,23 +242,26 @@ void * stat_output (void *p_pArg)
 		/**/
 		pthread_mutex_lock (g_pmutexStat);
 		strMsg.clear();
+    iFnRes = snprintf (mcBuf, sizeof (mcBuf), "\r\n             branch name             | total count |  diff  |  min. value  |    max. value    |  totol duration  |  last duration  | tot. avg |" );
+    if (0 < iFnRes) {
+      if (sizeof(mcBuf) > static_cast<size_t>(iFnRes)) {
+      } else {
+        mcBuf[sizeof(mcBuf)-1] = '\0';
+      }
+      strMsg = mcBuf; 
+    } else {
+      continue;
+    }
 		for (std::map<std::string,SStat*>::iterator iter = g_pmapStat->begin(); iter != g_pmapStat->end(); ++iter) {
 			strMsg += "\r\n";
-			bFirst = true;
 			psoTmp = iter->second;
 			for (; psoTmp; psoTmp = psoTmp->m_psoNext) {
 				pthread_mutex_lock (&psoTmp->m_mutexStat);
-				if (bFirst) {
-					bFirst = false;
-					strMsg += "branch name:";
-				} else {
-					strMsg += "\r\n";
-				}
 				coTM.ToString (&psoTmp->m_soTmMin, mcMin, sizeof(mcMin));
 				coTM.ToString (&psoTmp->m_soTmMax, mcMax, sizeof(mcMax));
 				coTM.ToString (&psoTmp->m_soTmTotal, mcTotal, sizeof(mcTotal));
 				coTM.ToString (&psoTmp->m_soTmLast, mcLast, sizeof(mcLast));
-				iFnRes = snprintf (mcBuf, sizeof (mcBuf), "%35s: TC:%10u; D:%6u; MIN:%12s; MAX:%16s; TT:%16s; L:%14s; A:%0.3f s/r;",
+				iFnRes = snprintf (mcBuf, sizeof (mcBuf), "%36s | %11lu | %6lu | %12s | %16s | %16s | %15s | %0.6f |\r\n",
 					psoTmp->m_strObjName.c_str (),
 					psoTmp->m_ui64Count,
 					psoTmp->m_ui64Count - psoTmp->m_ui64CountPrec,
@@ -264,10 +273,10 @@ void * stat_output (void *p_pArg)
           } else {
             mcBuf[sizeof(mcBuf)-1] = '\0';
           }
+          strMsg += mcBuf;
         } else {
           continue;
         }
-				strMsg += mcBuf;
 				pthread_mutex_unlock (&psoTmp->m_mutexStat);
 			}
 		}

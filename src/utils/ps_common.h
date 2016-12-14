@@ -79,6 +79,26 @@
 #define	ATTR_REQUESTED_VECTORS  (unsigned short)0x0206
 #define	ATTR_RECEIVED_VECTORS   (unsigned short)0x0207
 
+/*	IRBiS-PS PCRF module request types
+ *	0x10xx
+ */
+#define PCRF_CMD_INSERT_SESSION 0x1000  /* insert/update session info in session cache */
+#define PCRF_CMD_REMOVE_SESSION 0x1001  /* remove session info from session cache */
+
+/*	IRBiS-PS PCRF module attribute types
+ *	0x10xx
+ */
+/* attribute and value pair */
+/* irbis-ps attribute payload format */
+/* 0-15      | 15-31  | 32-47   | 48-63      | 64-*        */
+/* vendor id | avp id | padding | avp length | avp payload */
+#define PCRF_ATTR_AVP   0x1000
+#define PCRF_ATTR_CGI   0x1001
+#define PCRF_ATTR_ECGI  0x1002
+#define PCRF_ATTR_IMEI  0x1003
+#define PCRF_ATTR_IMSI  0x1004
+#define PCRF_ATTR_PSES  0x1005
+
 #pragma pack(push,1)
 
 /*	Атрибут запроса в формате IRBiS-PS */
