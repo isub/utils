@@ -59,6 +59,7 @@
 #define PS_COMMAND	(unsigned short)0x0306
 #define PS_FRAMEDIP	(unsigned short)0x0307
 #define PS_SESSTATUS	(unsigned short)0x0308
+#define PS_NASPORTID	(unsigned short)0x0309
 
 #pragma pack(push,1)
 /*	Атрибут запроса в формате IRBiS-PS

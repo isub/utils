@@ -40,6 +40,7 @@
 #define PS_COMMAND	(unsigned short)0x0306
 #define PS_FRAMEDIP	(unsigned short)0x0307
 #define PS_SESSTATUS	(unsigned short)0x0308
+#define PS_NASPORTID	(unsigned short)0x0309
 
 /* IRBiS-PS SS7 gateway request types */
 #define	SS7GW_IMSI_REQ  (unsigned short)0x0602 /* request-IMSI */
@@ -98,6 +99,7 @@
 #define PCRF_ATTR_IMEI  0x1003
 #define PCRF_ATTR_IMSI  0x1004
 #define PCRF_ATTR_PSES  0x1005
+#define PCRF_ATTR_IPCANTYPE  0x1006
 
 #pragma pack(push,1)
 
