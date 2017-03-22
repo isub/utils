@@ -108,17 +108,27 @@
 /*  EIR request types
  *  0x11xx
  */
-#define EIR_REQ             0x1100
-#define EIR_RESP            0x1101
+#define EIR_CHECKIMEI_REQ                     0x1100
+#define EIR_CHECKIMEI_RESP                    0x1101
+#define EIR_IDENTITYCHK_REQ                   0x1102
+#define EIR_IDENTITYCHK_RESP                  0x1103
 
- /*  EIR attribute types
+/*  EIR attribute types
  *  0x11xx
  */
-#define EIR_DOMAIN_TYPE     0x1100
-#define EIR_IMEI            PCRF_ATTR_IMEI
-#define EIR_IMEI            PCRF_ATTR_IMSI
-#define EIR_IMEISV          PCRF_ATTR_IMSI
-#define EIR_STATUS          0x1101
+#define EIR_IMEI                              PCRF_ATTR_IMEI
+#define EIR_IMEISV                            0x1100
+#define EIR_IMSI                              PCRF_ATTR_IMSI
+#define EIR_EQUIPMENT_STATUS                  0x1101
+
+/* EIR result code */                         
+#define EIR_DIAMETER_ERROR_EQUIPMENT_UNKNOWN  5422
+#define EIR_SUCCESS                           0
+
+/* Equipment-Status */                        
+#define EIR_EQUIPMENT_STATUS_WHITELISTED      0
+#define EIR_EQUIPMENT_STATUS_BLACKLISTED      1
+#define EIR_EQUIPMENT_STATUS_GREYLISTED       2
 
 #pragma pack(push,1)
 
