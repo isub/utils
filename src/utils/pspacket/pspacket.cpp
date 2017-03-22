@@ -185,7 +185,8 @@ int CPSPacket::Parse (
   const SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t &p_ui32ReqNum,
   __uint16_t &p_ui16ReqType,
   __uint16_t &p_ui16PackLen,
-  std::multimap<__uint16_t,SPSReqAttr*> &p_pumapAttrList, int p_iValidate)
+  std::multimap<__uint16_t,SPSReqAttr*> &p_pumapAttrList,
+  int p_iValidate)
 {
     int iRetVal = 0;
 

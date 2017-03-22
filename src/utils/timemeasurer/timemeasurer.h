@@ -28,6 +28,8 @@ public:
 	void GetMax (timeval *p_psoA, const timeval *p_psoB);
 	/* сумма записывается в p_psoA */
 	void Add (timeval *p_psoA, const timeval *p_psoB);
+	/* разница записывается в p_psoA */
+	void Sub (timeval *p_psoA, const timeval *p_psoB);
 	/* текстовое представление */
 	void ToString (timeval *p_psoTv, char *p_pszString, size_t p_stMaxLen);
 private:
