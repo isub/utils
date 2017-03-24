@@ -4,10 +4,12 @@
 /*	IRBiS-PS request types
  *	0x00xx
  */
-#define	MONIT_REQ	(unsigned short)0x0000
-#define	MONIT_RSP	(unsigned short)0x0001
-#define	ADMIN_REQ	(unsigned short)0x0002
-#define	ADMIN_RSP	(unsigned short)0x0003
+#define MONIT_REQ    (unsigned short)0x0000
+#define MONIT_RSP    (unsigned short)0x0001
+#define ADMIN_REQ    (unsigned short)0x0002
+#define ADMIN_RSP    (unsigned short)0x0003
+#define ARE_Y_ALIVE  (unsigned short)0x0004
+#define I_AM_ALIVE   (unsigned short)0x0005
 
 /*	IRBiS-PS request types
  *	0x03xx
