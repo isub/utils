@@ -19,7 +19,7 @@ bool *g_bStopThread;
 
 void * stat_output (void *p_pArg);
 
-#define MYDELETE(a) if (a) { delete a; a = NULL; }
+#define MYDELETE(a) if (NULL != a) { delete a; a = NULL; }
 
 struct SStat {
 	std::string m_strObjName;	/* имя объекта статистики */
@@ -90,21 +90,23 @@ int stat_fin()
 		pthread_join (*g_ptThread, NULL);
 		MYDELETE (g_ptThread);
 	}
-	iRetVal = pthread_mutex_lock (g_pmutexStat);
-	if (g_pmapStat) {
-		std::map<std::string,SStat*>::iterator iter;
-		iter = g_pmapStat->begin();
-		/* обходим все ветки */
-		for (; iter != g_pmapStat->end(); ++iter) {
-			/* обходим все объекты ветки */
-			delete iter->second;
-		}
-		MYDELETE (g_pmapStat);
-	}
-	iRetVal = pthread_mutex_unlock (g_pmutexStat);
+  if( NULL != g_pmutexStat ) {
+    iRetVal = pthread_mutex_lock (g_pmutexStat);
+    if (g_pmapStat) {
+      std::map<std::string,SStat*>::iterator iter;
+      iter = g_pmapStat->begin();
+      /* обходим все ветки */
+      for (; iter != g_pmapStat->end(); ++iter) {
+        /* обходим все объекты ветки */
+        delete iter->second;
+      }
+      MYDELETE (g_pmapStat);
+    }
+    iRetVal = pthread_mutex_unlock (g_pmutexStat);
+  	iRetVal = pthread_mutex_destroy (g_pmutexStat);
+  }
 
-	iRetVal = pthread_mutex_destroy (g_pmutexStat);
-	MYDELETE (g_pmutexStat);
+  MYDELETE (g_pmutexStat);
 	MYDELETE (g_pmutexThread);
 	MYDELETE (g_bStopThread);
 

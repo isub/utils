@@ -43,6 +43,7 @@ struct SPSReqAttrParsed {
 class PSPACK_SPEC CPSPacket {
 public:
   /* инициализация буфера */
+  /* возвращает 0 в случае успеха */
   int Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum = 0, __uint16_t p_ui16ReqType = 0);
   /* изменение номера пакета */
   int SetReqNum (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, int p_iValidate = 1);

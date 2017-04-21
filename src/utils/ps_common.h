@@ -122,6 +122,7 @@
 #define EIR_IMEISV                            0x1100
 #define EIR_IMSI                              PCRF_ATTR_IMSI
 #define EIR_EQUIPMENT_STATUS                  0x1101
+#define EIR_SV                                0x1102
 
 /* EIR result code */                         
 #define EIR_DIAMETER_ERROR_EQUIPMENT_UNKNOWN  5422
