@@ -11,7 +11,8 @@
 
 #include "pspacket.h"
 
-int CPSPacket::Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, __uint16_t p_ui16ReqType) {
+int CPSPacket::Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, __uint16_t p_ui16ReqType)
+{
   int iRetVal = 0;
 
   do {
@@ -25,7 +26,8 @@ int CPSPacket::Init (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32
   return iRetVal;
 }
 
-int CPSPacket::SetReqNum (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, int p_iValidate) {
+int CPSPacket::SetReqNum (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p_ui32ReqNum, int p_iValidate)
+{
   int iRetVal = 0;
 
   do {
@@ -37,7 +39,8 @@ int CPSPacket::SetReqNum (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t p
   return iRetVal;
 }
 
-int CPSPacket::SetReqType (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16ReqType, int p_iValidate) {
+int CPSPacket::SetReqType (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16ReqType, int p_iValidate)
+{
   int iRetVal = 0;
 
   do {
@@ -49,7 +52,8 @@ int CPSPacket::SetReqType (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t 
   return iRetVal;
 }
 
-int CPSPacket::AddAttr (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16Type, const void *p_pValue, __uint16_t p_ui16ValueLen, int p_iValidate) {
+int CPSPacket::AddAttr (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16Type, const void *p_pValue, __uint16_t p_ui16ValueLen, int p_iValidate)
+{
   int iRetVal = 0;
   SPSReqAttr *psoTmp;
   __uint16_t
@@ -76,7 +80,8 @@ int CPSPacket::AddAttr (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_u
   return iRetVal;
 }
 
-int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize) {
+int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stDataLen)
+{
   int iRetVal = 0;
   SPSReqAttr *psoTmp;
   __uint16_t
@@ -86,7 +91,10 @@ int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize) {
 
   do {
     /* проверяем достаточен ли размер буфера для заголовка пакета */
-    if (p_stBufSize < sizeof(SPSRequest)) { iRetVal = -1; break; }
+    if (p_stDataLen < sizeof(*p_psoBuf)) {
+      iRetVal = -1;
+      break;
+    }
     /* инициализируем суммарную длину начальным значением */
     ui16TotalLen = sizeof(SPSRequest);
     /* определяем длину пакета по заголовку */
@@ -101,7 +109,7 @@ int CPSPacket::Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize) {
       /* увеличиваем суммарную длину пакета */
       ui16TotalLen += ui16AttrLen;
       /* проверяем умещается ли пакет в буфере */
-      if (ui16TotalLen > p_stBufSize) { iRetVal = -1; break; }
+      if (ui16TotalLen > p_stDataLen) { iRetVal = -1; break; }
       /* определяем указатель на следующий атрибут */
       psoTmp = (SPSReqAttr*)((char*)psoTmp + ui16AttrLen);
       /* если суммарная длина больше длины пакета нет смысла проверять дальше */
@@ -178,7 +186,8 @@ int CPSPacket::Parse (
   const SPSRequest *p_psoBuf, size_t p_stBufSize, __uint32_t &p_ui32ReqNum,
   __uint16_t &p_ui16ReqType,
   __uint16_t &p_ui16PackLen,
-  std::multimap<__uint16_t,SPSReqAttr*> &p_pumapAttrList, int p_iValidate)
+  std::multimap<__uint16_t,SPSReqAttr*> &p_pumapAttrList,
+  int p_iValidate)
 {
     int iRetVal = 0;
 

@@ -22,7 +22,9 @@ struct SPSReqAttrParsed {
   unsigned short m_usAttrType;
   unsigned short m_usDataLen;
   void *m_pvData;
-  SPSReqAttrParsed () { m_pvData = NULL; };
+  SPSReqAttrParsed () {
+    m_pvData = NULL;
+  };
   SPSReqAttrParsed (const SPSReqAttrParsed &p_soData) {
     m_usAttrType = p_soData.m_usAttrType;
     m_usDataLen = p_soData.m_usDataLen;
@@ -33,7 +35,9 @@ struct SPSReqAttrParsed {
       m_pvData = NULL;
     }
   };
-  ~SPSReqAttrParsed () { if (m_pvData) free (m_pvData); };
+  ~SPSReqAttrParsed () {
+    if (m_pvData) free (m_pvData);
+  };
 };
 
 class PSPACK_SPEC CPSPacket {
@@ -47,7 +51,7 @@ public:
   /* добавление атрибута к пакету */
   int AddAttr (SPSRequest *p_psoBuf, size_t p_stBufSize, __uint16_t p_ui16Type, const void *p_pValue, __uint16_t p_ui16ValueLen, int p_iValidate = 1);
   /* проверка длины пакета и суммы длин атрибутов */
-  int Validate (const SPSRequest *p_psoBuf, size_t p_stBufSize);
+  int Validate (const SPSRequest *p_psoBuf, size_t p_stDataLen);
   /* разбор пакета */
   void EraseAttrList (std::multimap<__uint16_t,SPSReqAttr*> &p_mmapAttrList);
   void EraseAttrList (std::multimap<__uint16_t,SPSReqAttrParsed> &p_mmapAttrList);

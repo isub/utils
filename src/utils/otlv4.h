@@ -1,5 +1,5 @@
 // =================================================================================
-// ORACLE, ODBC and DB2/CLI Template Library, Version 4.0.376,
+// ORACLE, ODBC and DB2/CLI Template Library, Version 4.0.385,
 // Copyright (C) 1996-2016, Sergei Kuchin (skuchin@gmail.com)
 //
 // This library is free software. Permission to use, copy, modify,
@@ -26,7 +26,7 @@
 #include "otl_include_0.h"
 #endif
 
-#define OTL_VERSION_NUMBER (0x040178L)
+#define OTL_VERSION_NUMBER (0x040181L)
 
 #if defined(OTL_CPP_14_ON)
 #define OTL_CPP_11_ON
@@ -47,6 +47,71 @@
 
 #if defined(_MSC_VER) && (_MSC_VER==1800)
 #define OTL_CPP_11_ON
+#endif
+
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__<=407) && (__GNUC__*100+__GNUC_MINOR__>=404)
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+
+// auto-detection of "std" compiler switches
+
+#if defined(_MSC_VER)
+
+// >= VC++ 2015 Update 3, and /std:c++14
+#if defined(_MSVC_LANG) && (_MSVC_LANG==201402L)
+#if !defined(OTL_CPP_11_ON)
+#define OTL_CPP_11_ON
+#endif
+#if !defined(OTL_CPP_14_ON)
+#define OTL_CPP_14_ON
+#endif
+#endif
+
+// >= VC++ 2015 Update 3, and /std:c++latest
+#if defined(_MSVC_LANG) && (_MSVC_LANG>201402L)
+#if !defined(OTL_CPP_11_ON)
+#define OTL_CPP_11_ON
+#endif
+#if !defined(OTL_CPP_14_ON)
+#define OTL_CPP_14_ON
+#endif
+#endif
+
+#endif
+
+#if defined(__clang__) || defined(__GNUC__)
+// clang or g++
+#if defined(__cplusplus) && (__cplusplus==201103L)
+
+// std=c++11 is used
+#if !defined(OTL_CPP_11_ON)
+#define OTL_CPP_11_ON
+#endif
+
+#elif defined(__cplusplus) && (__cplusplus==201402L)
+
+// std=c++14 is used
+#if !defined(OTL_CPP_11_ON)
+#define OTL_CPP_11_ON
+#endif
+#if !defined(OTL_CPP_14_ON)
+#define OTL_CPP_14_ON
+#endif
+
+#elif defined(__cplusplus) && (__cplusplus>201402L)
+
+// std=c++17 / std=c++1z is used
+#if !defined(OTL_CPP_11_ON)
+#define OTL_CPP_11_ON
+#endif
+#if !defined(OTL_CPP_14_ON)
+#define OTL_CPP_14_ON
+#endif
+#if !defined(OTL_CPP_17_ON)
+#define OTL_CPP_17_ON
+#endif
+
+#endif
 #endif
 
 #if defined(OTL_CPP_11_ON) && defined(OTL_FUNC_THROW_SPEC_ON)
@@ -257,21 +322,29 @@
 #endif
 
 #if defined(OTL_ORA11G)
+#if !defined(OTL_ORA10G_R2)
 #define OTL_ORA10G_R2
+#endif
 #if defined(OTL_UNICODE)
 #define OTL_ORA_UNICODE_LONG_LENGTH_IN_BYTES
 #endif
 #endif
 
 #if defined(OTL_ORA12C)
+#if !defined(OTL_ORA11G_R2)
 #define OTL_ORA11G_R2
+#endif
 #if defined(OTL_UNICODE)
+#if !defined(OTL_ORA_UNICODE_LONG_LENGTH_IN_BYTES)
 #define OTL_ORA_UNICODE_LONG_LENGTH_IN_BYTES
+#endif
 #endif
 #endif
 
 #if defined(OTL_ORA11G_R2)
+#if !defined(OTL_ORA10G_R2)
 #define OTL_ORA10G_R2
+#endif
 #if defined(OTL_UNICODE) && !defined(OTL_ORA_UNICODE_LONG_LENGTH_IN_BYTES)
 #define OTL_ORA_UNICODE_LONG_LENGTH_IN_BYTES
 #endif
@@ -591,7 +664,7 @@ OTL_BIGINT_TO_STR and OTL_STR_TO_BIGINT are defined
 #if defined(OTL_ORA_OCI_ENV_CREATE) &&                                         \
     (!defined(OTL_ORA8I) && !defined(OTL_ORA9I) && !defined(OTL_ORA10G) &&     \
      !defined(OTL_ORA10G_R2))
-#error OTL_ORA_OCI_ENV_CREATE can be only defined when OTL_ORA8I, OTL_ORA9I, OTL_ORA10G, OTL_ORA10G_R2, or OTL_ORA11G is defined
+#error OTL_ORA_OCI_ENV_CREATE can be only defined when OTL_ORA8I, OTL_ORA9I, OTL_ORA10G, OTL_ORA10G_R2, or OTL_ORA11G, or OTL_ORA11G_R2, or OTL_ORA12C is defined
 #endif
 // --------------------------------------------------------------------
 
@@ -766,7 +839,7 @@ OTL_BIGINT_TO_STR and OTL_STR_TO_BIGINT are defined
   }
 #endif
 
-#if !defined(OTL_TRACE_RLOGON_ORA8) && defined(OTL_ORA8)
+#if !defined(OTL_TRACE_LEVEL_NOCHECK_ON_LOGON) && !defined(OTL_TRACE_RLOGON_ORA8) && defined(OTL_ORA8)
 #define OTL_TRACE_RLOGON_ORA8(level, class_name, func_name, tnsname, userid,   \
                               passwd, auto_commit)                             \
   if (OTL_TRACE_LEVEL & level) {                                               \
@@ -791,13 +864,66 @@ OTL_BIGINT_TO_STR and OTL_STR_TO_BIGINT are defined
     OTL_TRACE_STREAM << auto_commit << ");";                                   \
     OTL_TRACE_STREAM << OTL_TRACE_LINE_SUFFIX;                                 \
   }
+#elif defined(OTL_TRACE_LEVEL_NOCHECK_ON_LOGON) && !defined(OTL_TRACE_RLOGON_ORA8) && defined(OTL_ORA8)
+#define OTL_TRACE_RLOGON_ORA8(level, class_name, func_name, tnsname, userid,   \
+                              passwd, auto_commit)                             \
+  {                                                                            \
+    char temp_connect_str[2048];                                               \
+    OTL_STRCPY_S(temp_connect_str, sizeof(temp_connect_str), userid);          \
+    OTL_STRCAT_S(temp_connect_str, sizeof(temp_connect_str), "/");             \
+    size_t sz = strlen(passwd);                                                \
+    for (size_t i = 0; i < sz; ++i)                                            \
+      OTL_STRCAT_S(temp_connect_str, sizeof(temp_connect_str), "*");           \
+    size_t tns_sz = strlen(tnsname);                                           \
+    if (tns_sz > 0) {                                                          \
+      OTL_STRCAT_S(temp_connect_str, sizeof(temp_connect_str), "@");           \
+      OTL_STRCAT_S(temp_connect_str, sizeof(temp_connect_str), tnsname);       \
+    }                                                                          \
+    OTL_TRACE_STREAM << OTL_TRACE_LINE_PREFIX;                                 \
+    OTL_TRACE_STREAM << class_name << "(this=";                                \
+    OTL_TRACE_STREAM << OTL_RCAST(void *, this);                               \
+    OTL_TRACE_STREAM << ")::" func_name "(";                                   \
+    OTL_TRACE_STREAM << "connect_str=\"";                                      \
+    OTL_TRACE_STREAM << temp_connect_str;                                      \
+    OTL_TRACE_STREAM << "\", auto_commit=";                                    \
+    OTL_TRACE_STREAM << auto_commit << ");";                                   \
+    OTL_TRACE_STREAM << OTL_TRACE_LINE_SUFFIX;                                 \
+  }
 #endif
 
-#if !defined(OTL_TRACE_RLOGON_ODBC) &&                                         \
-    (defined(OTL_ODBC) || defined(OTL_DB2_CLI))
+#if !defined(OTL_TRACE_LEVEL_NOCHECK_ON_LOGON)  && !defined(OTL_TRACE_RLOGON_ODBC) \
+    && (defined(OTL_ODBC) || defined(OTL_DB2_CLI))
 #define OTL_TRACE_RLOGON_ODBC(level, class_name, func_name, tnsname, userid,   \
                               passwd, auto_commit)                             \
-  if (OTL_TRACE_LEVEL & level) {                                               \
+   if (OTL_TRACE_LEVEL & level) {                                              \
+    char temp_connect_str2[2048];                                              \
+    OTL_STRCPY_S(temp_connect_str2, sizeof(temp_connect_str2), userid);        \
+    OTL_STRCAT_S(temp_connect_str2, sizeof(temp_connect_str2), "/");           \
+    size_t sz = strlen(passwd);                                                \
+    for (size_t i = 0; i < sz; ++i)                                            \
+      OTL_STRCAT_S(temp_connect_str2, sizeof(temp_connect_str2), "*");         \
+    size_t tns_sz = strlen(tnsname);                                           \
+    if (tns_sz > 0) {                                                          \
+      OTL_STRCAT_S(temp_connect_str2, sizeof(temp_connect_str2), "@");         \
+      OTL_STRCAT_S(temp_connect_str2, sizeof(temp_connect_str2), tnsname);     \
+    }                                                                          \
+    OTL_TRACE_STREAM << OTL_TRACE_LINE_PREFIX;                                 \
+    OTL_TRACE_STREAM << class_name;                                            \
+    OTL_TRACE_STREAM << "(this=";                                              \
+    OTL_TRACE_STREAM << OTL_RCAST(void *, this);                               \
+    OTL_TRACE_STREAM << ")::" func_name "(";                                   \
+    OTL_TRACE_STREAM << "connect_str=\"";                                      \
+    OTL_TRACE_STREAM << temp_connect_str2;                                     \
+    OTL_TRACE_STREAM << "\", auto_commit=";                                    \
+    OTL_TRACE_STREAM << auto_commit;                                           \
+    OTL_TRACE_STREAM << ");";                                                  \
+    OTL_TRACE_STREAM << OTL_TRACE_LINE_SUFFIX;                                 \
+  }
+#elif defined(OTL_TRACE_LEVEL_NOCHECK_ON_LOGON)  && !defined(OTL_TRACE_RLOGON_ODBC) \
+    && (defined(OTL_ODBC) || defined(OTL_DB2_CLI))
+#define OTL_TRACE_RLOGON_ODBC(level, class_name, func_name, tnsname, userid,   \
+                              passwd, auto_commit)                             \
+  {                                                                            \
     char temp_connect_str2[2048];                                              \
     OTL_STRCPY_S(temp_connect_str2, sizeof(temp_connect_str2), userid);        \
     OTL_STRCAT_S(temp_connect_str2, sizeof(temp_connect_str2), "/");           \
@@ -2104,15 +2230,21 @@ inline void convert_date(otl_oracle_date &t, const otl_datetime &s) {
 
 class otl_null {
 public:
+
   otl_null() {}
+
   ~otl_null() {}
+
+  otl_null(const otl_null&){}
 
 private:
 #if (defined(_MSC_VER) && (_MSC_VER == 1200))
   int dummy; // this is to fix a compiler bug in VC++ 6.0
 #endif
 };
-
+#if defined(OTL_ORA_SDO_GEOMETRY)
+struct OCIType;
+#endif
 class otl_column_desc {
 public:
   char *name;
@@ -2136,6 +2268,21 @@ public:
   int char_size;
 #endif
 
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  char *name_type;
+  OCIType *colOCIType;
+#endif
+
+private:
+
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  int name_type_len_;
+#endif
+
+  int name_len_;
+
+public:
+
   otl_column_desc()
       : name(nullptr), dbtype(0), otl_var_dbtype(0), dbsize(0), scale(0),
         prec(0), nullok(0),
@@ -2143,10 +2290,19 @@ public:
     defined(OTL_CONTAINER_CLASSES_HAVE_OPTIONAL_MEMBERS)
         charset_form(0), char_size(0),
 #endif
-        name_len_(0) {
-  }
+#if defined(OTL_ORA_SDO_GEOMETRY)
+        name_type(nullptr), colOCIType(nullptr), name_type_len_(0),
+#endif
+        name_len_(0)
+    {
+    }
 
-  ~otl_column_desc() { delete[] name; }
+  ~otl_column_desc() { 
+    if(name)delete[] name;
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    if(name_type)delete[] name_type;
+#endif
+  }
 
   otl_column_desc &operator=(const otl_column_desc &desc) {
     if (name_len_ >= desc.name_len_)
@@ -2172,7 +2328,21 @@ public:
     charset_form = desc.charset_form;
     char_size = desc.char_size;
 #endif
-
+#if defined(OTL_ORA_SDO_GEOMETRY)
+	if(name_type_len_ >= desc.name_type_len_ && name_type)
+          OTL_STRCPY_S(name_type, name_type_len_, desc.name);
+	else if(name_type == nullptr && desc.name_type != nullptr){
+          name_type = new char[OTL_SCAST(size_t, desc.name_type_len_)];
+          name_type_len_ = desc.name_type_len_;
+          OTL_STRCPY_S(name_type, name_type_len_, desc.name_type);
+	}else if(name_type_len_ < desc.name_type_len_ && desc.name_type != nullptr){
+          delete[] name_type;
+          name_type = new char[OTL_SCAST(size_t, desc.name_type_len_)];
+          name_type_len_ = desc.name_type_len_;
+          OTL_STRCPY_S(name_type, name_type_len_, desc.name_type);
+	}
+	colOCIType = desc.colOCIType;
+#endif
     return *this;
   }
 
@@ -2184,11 +2354,22 @@ public:
     defined(OTL_CONTAINER_CLASSES_HAVE_OPTIONAL_MEMBERS)
         charset_form(desc.charset_form), char_size(desc.char_size),
 #endif
-        name_len_(desc.name_len_) {
-    if (desc.name != nullptr) {
-      name = new char[OTL_SCAST(size_t,desc.name_len_)];
-      OTL_STRCPY_S(name, name_len_, desc.name);
-    }
+#if defined(OTL_ORA_SDO_GEOMETRY)
+        colOCIType(desc.colOCIType),
+        name_type_len_(desc.name_type_len_),
+#endif
+      name_len_(desc.name_len_) 
+    {
+      if (desc.name != nullptr) {
+        name = new char[OTL_SCAST(size_t,desc.name_len_)];
+        OTL_STRCPY_S(name, name_len_, desc.name);
+      }
+#if defined(OTL_ORA_SDO_GEOMETRY)
+      if(desc.name_type != nullptr){
+        name_type = new char[OTL_SCAST(size_t, desc.name_type_len_)];
+        OTL_STRCPY_S(name_type, name_type_len_, desc.name_type);
+      }
+#endif
   }
 
 #if defined(OTL_ANSI_CPP_11_RVAL_REF_SUPPORT)
@@ -2211,6 +2392,13 @@ public:
     charset_form = desc.charset_form;
     char_size = desc.char_size;
 #endif
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    name_type = desc.name_type;
+    name_type_len_ = desc.name_type_len_;
+    desc.name_type = nullptr;
+    desc.name_type_len_ = 0;
+    colOCIType = desc.colOCIType;
+#endif
     return *this;
   }
 
@@ -2227,9 +2415,19 @@ public:
         charset_form(desc.charset_form),
         char_size(desc.char_size),
 #endif
-        name_len_(desc.name_len_) {
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    name_type(desc.name_type),
+    colOCIType(desc.colOCIType),
+    name_type_len_(desc.name_type_len_),
+#endif
+    name_len_(desc.name_len_) 
+  {
     desc.name = nullptr;
     desc.name_len_ = 0;
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    desc.name_type = nullptr;
+    desc.name_type_len_ = 0;
+#endif
   }
 
 #endif
@@ -2250,9 +2448,23 @@ public:
       name[len - 1] = 0;
     }
   }
-
-private:
-  int name_len_;
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  void set_name_type(const char *aname, const int aname_len = 0){
+    int len;
+    if(aname_len == 0)
+      len = OTL_SCAST(int, strlen(aname)) + 1;
+    else
+      len = aname_len + 1;
+    if(name_type_len_ < len){
+      if(name_type)delete[] name_type;
+      name_type = new char[OTL_SCAST(size_t, len)];
+      name_type_len_ = len;
+      for(int i = 0; i < len - 1; ++i)
+        name_type[i] = aname[i];
+      name_type[len - 1] = 0;
+    }
+  }
+#endif
 };
 
 class otl_var_desc {
@@ -2340,6 +2552,9 @@ enum otl_var_enum : unsigned char {
   otl_var_bfloat = 28,
   otl_var_bdouble = 29,
   otl_var_lob_stream = 100
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    ,otl_var_sdo_geometry = 101
+#endif
 };
 #else
 typedef unsigned char otl_var_enum;
@@ -2386,6 +2601,11 @@ const otl_var_enum otl_var_bfloat = 28;
 const otl_var_enum otl_var_bdouble = 29;
 
 const otl_var_enum otl_var_lob_stream = 100;
+
+#if defined(OTL_ORA_SDO_GEOMETRY)
+const otl_var_enum otl_var_sdo_geometry = 101;
+#endif
+
 #endif
 
 const int otl_bigint_str_size = 40;
@@ -3768,7 +3988,7 @@ public:
 
   otl_value() : v(), ind(true) {}
 
-  virtual ~otl_value() {}
+  ~otl_value() {}
 
   otl_value(const otl_value<TData> &var) : v(var.v), ind(var.ind) {}
 
@@ -3788,7 +4008,7 @@ public:
     return *this;
   }
 
-  otl_value<TData> &operator=(const otl_null &) {
+  otl_value<TData> &operator=(const otl_null) {
     ind = true;
     return *this;
   }
@@ -3796,25 +4016,74 @@ public:
   bool is_null(void) const { return ind; }
   void set_null(void) { ind = true; }
   void set_non_null(void) { ind = false; }
+  void set_null(const bool null){ind=null;}
 };
 
+template <OTL_TYPE_NAME TData, const TData null_value> class otl_compact_value {
+public:
+
+  TData v;
+
+  otl_compact_value() : v(null_value) {}
+
+  ~otl_compact_value(){}
+
+  otl_compact_value(const otl_compact_value<TData,null_value> &var) : v(var.v) {}
+
+  otl_compact_value(const TData &var) : v(var) {}
+
+  otl_compact_value(const otl_null) : v(null_value) {}
+
+  otl_compact_value<TData,null_value> &operator=(const otl_compact_value<TData,null_value> &var) {
+    v = var.v;
+    return *this;
+  }
+
+  otl_compact_value<TData,null_value> &operator=(const TData &var) {
+    v = var;
+    return *this;
+  }
+
+  otl_compact_value<TData,null_value> &operator=(const otl_null) {
+    v=null_value;
+    return *this;
+  }
+
+  bool is_null(void) const { return v==null_value; }
+  void set_null(const bool null){if(null)v=null_value;}
+
+};
+
+
 template <OTL_TYPE_NAME TData>
-STD_NAMESPACE_PREFIX ostream &operator<<(STD_NAMESPACE_PREFIX ostream &s,
-                                         const otl_value<TData> &var) {
-  if (var.ind)
-    s << "NULL";
+inline STD_NAMESPACE_PREFIX ostream &operator<<(STD_NAMESPACE_PREFIX ostream &s,
+                                                const otl_value<TData> &var) {
+  if(var.is_null())
+    s<<"NULL";
   else
-    s << var.v;
+    s<<var.v;
+  return s;
+}
+
+template <OTL_TYPE_NAME TData, const TData null_value>
+inline STD_NAMESPACE_PREFIX ostream &operator<<
+  (STD_NAMESPACE_PREFIX ostream &s,
+   const otl_compact_value<TData,null_value> &var) {
+  if(var.is_null())
+    s<<"NULL";
+  else
+    s<<var.v;
   return s;
 }
 
 #if defined(OTL_DISABLE_OPERATOR_GT_GT_FOR_OTL_VALUE_OTL_DATETIME)
 #else
+
 inline STD_NAMESPACE_PREFIX ostream &operator<<(
-    STD_NAMESPACE_PREFIX ostream &s, const otl_value<otl_datetime> &var) {
-  if (var.ind)
-    s << "NULL";
-  else {
+  STD_NAMESPACE_PREFIX ostream &s, const otl_value<otl_datetime> &var) {
+  if(var.is_null())
+    s<<"NULL";
+  else{
 #if !defined(OTL_TRACE_LEVEL)
 
 #if !defined(OTL_LEGACY_TRACE_DATETIME_FORMAT_ON)
@@ -3835,6 +4104,7 @@ inline STD_NAMESPACE_PREFIX ostream &operator<<(
   }
   return s;
 }
+
 #endif
 
 #endif
@@ -4947,7 +5217,11 @@ public:
 
   void init(const bool select_stm_flag, const int aftype, const int aelem_size,
             const otl_stream_buffer_size_type aarray_size,
-            const void *connect_struct = 0, const int apl_tab_flag = 0) {
+            const void *connect_struct = 0, const int apl_tab_flag = 0
+#if defined(OTL_ORA_SDO_GEOMETRY)
+            ,OCIType* colOCIType = nullptr
+#endif
+  ){
     ftype = aftype;
 #if defined(OTL_ORA_UNICODE) || defined(OTL_ORA_UTF8)
     if (ftype == otl_var_nchar)
@@ -4960,7 +5234,11 @@ public:
     pl_tab_flag = apl_tab_flag;
     bound = 0;
     var_struct.init(select_stm_flag, aftype, elem_size, aarray_size,
-                    connect_struct, pl_tab_flag);
+                    connect_struct, pl_tab_flag
+#if defined(OTL_ORA_SDO_GEOMETRY)
+                    ,colOCIType
+#endif
+                   );
   }
 
   int get_param_type(void) { return param_type; }
@@ -6282,6 +6560,13 @@ public:
                   &adb.get_connect_struct());
         break;
       case 'S':
+#if defined(OTL_ORA_SDO_GEOMETRY)
+        if(t2 == 'D')
+          v->init(false, otl_var_sdo_geometry, adb.get_max_long_size(),
+                  OTL_SCAST(otl_stream_buffer_size_type, array_size),
+                  &adb.get_connect_struct(),0,adb.get_connect_struct().getGeometryTDO());
+        else
+#endif
         v->init(false, otl_var_short, sizeof(short),
                 OTL_SCAST(otl_stream_buffer_size_type, array_size),
                 &adb.get_connect_struct(), pl_tab_flag);
@@ -6681,7 +6966,9 @@ private:
 #endif
 
 #endif
-
+#if defined(OTL_ORA_SDO_GEOMETRY)
+struct oci_spatial_geometry;
+#endif
 template <OTL_TYPE_NAME TExceptionStruct, OTL_TYPE_NAME TConnectStruct,
           OTL_TYPE_NAME TCursorStruct, OTL_TYPE_NAME TVariableStruct,
           OTL_TYPE_NAME TSelectCursorStruct, OTL_TYPE_NAME TTimestampStruct>
@@ -6904,12 +7191,24 @@ public:
       int temp_code_type = otl_tmpl_variable<TVariableStruct>::int2ext(
           sl_desc_tmp[i - 1].dbtype);
       if (temp_code_type == otl_unsupported_type) {
+#ifdef OTL_ORA_SDO_GEOMETRY
+        if(sl_desc_tmp[i - 1].name_type && 
+           strcmp(sl_desc_tmp[i - 1].name_type, "SDO_GEOMETRY") != 0){
+          otl_var_info_col3(i - 1, sl_desc_tmp[i - 1].dbtype,
+                            sl_desc_tmp[i - 1].name, this->var_info,
+                            sizeof(this->var_info));
+          throw OTL_TMPL_EXCEPTION(
+            otl_error_msg_27, otl_error_code_27,
+            this->stm_label ? this->stm_label : this->stm_text, this->var_info);
+        }
+#else
         otl_var_info_col3(i - 1, sl_desc_tmp[i - 1].dbtype,
                           sl_desc_tmp[i - 1].name, this->var_info,
                           sizeof(this->var_info));
         throw OTL_TMPL_EXCEPTION(
-            otl_error_msg_27, otl_error_code_27,
-            this->stm_label ? this->stm_label : this->stm_text, this->var_info);
+          otl_error_msg_27, otl_error_code_27,
+          this->stm_label ? this->stm_label : this->stm_text, this->var_info);
+#endif // OTL_ORA_SDO_GEOMETRY
       }
       ++sld_tmp_len;
       if (sld_tmp_len == loc_ptr.get_arr_size()) {
@@ -6936,7 +7235,11 @@ public:
 #endif
       sl[j].init(true, ftype, elem_size,
                  OTL_SCAST(otl_stream_buffer_size_type, (this->array_size)),
-                 &this->adb->get_connect_struct());
+                 &this->adb->get_connect_struct()
+#if defined(OTL_ORA_SDO_GEOMETRY)
+                 ,0, sl_desc_tmp[j].colOCIType
+#endif
+				 );
       sl[j].get_var_struct().set_lob_stream_mode(this->lob_stream_mode);
     }
     if (sl_desc) {
@@ -7330,6 +7633,19 @@ public:
     return *this;                                                              \
   }
 #else
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  OTL_TMPL_SELECT_STREAM &operator >> (oci_spatial_geometry &s) {
+    check_if_executed();
+    if(eof_intern())
+      return *this;
+    get_next();
+    if(check_type(otl_var_sdo_geometry) && !eof_intern()){
+      sl[cur_col].get_var_struct().read_geometry(s, this->cur_row);
+      look_ahead();
+    }
+    return *this;
+  }
+#endif
 #define OTL_D1(T, T_type)                                                      \
   OTL_TMPL_SELECT_STREAM &operator>>(T &n) {                                   \
     check_if_executed();                                                       \
@@ -7600,7 +7916,6 @@ public:
     return *this;
   }
 #endif
-
   int check_in_type_throw(int type_code) {
     otl_var_info_var(this->vl[cur_in]->get_name(),
                      this->vl[cur_in]->get_ftype(), type_code, var_info,
@@ -8007,6 +8322,27 @@ public:
     return *this;
   }
 
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  OTL_TMPL_SELECT_STREAM &operator << (const oci_spatial_geometry &s){
+    check_in_var();
+    if(check_in_type(otl_var_sdo_geometry, this->adb->get_max_long_size())){
+      int rc = this->vl[cur_in]->get_var_struct().write_geometry(s, cur_in);
+      if(rc == 0){
+        if(this->adb)
+          this->adb->increment_throw_count();
+        if(this->adb && this->adb->get_throw_count() > 1)
+          return *this;
+        if(otl_uncaught_exception())
+          return *this;
+        throw OTL_TMPL_EXCEPTION(this->adb->get_connect_struct(),
+                                 this->stm_label ? this->stm_label
+                                 : this->stm_text);
+      }
+    }
+    get_in_next();
+    return *this;
+  }
+#endif
 private:
 #if defined(OTL_ANSI_CPP_11_DELETE_SPEC_SUPPORT)
 public:
@@ -9226,6 +9562,31 @@ public:
 #undef OTL_TMPL_CUR_DUMMY
 #endif
 
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  OTL_TMPL_OUT_STREAM &operator << (const oci_spatial_geometry &s){
+    if(this->vl_len > 0){
+      get_next();
+      if(check_type(otl_var_sdo_geometry, this->adb->get_max_long_size())){
+        int rc = this->vl[cur_x]->get_var_struct().write_geometry(s, cur_y);
+        if(rc == 0){
+          if(this->adb)
+            this->adb->increment_throw_count();
+          if(this->adb && this->adb->get_throw_count() > 1)
+            return *this;
+          if(otl_uncaught_exception())
+            return *this;
+          throw OTL_TMPL_EXCEPTION(this->adb->get_connect_struct(),
+                                   this->stm_label ? this->stm_label
+                                   : this->stm_text);
+        }
+      }
+      this->vl[cur_x]->set_not_null(cur_y);
+      check_buf();
+    }
+    return *this;
+  }
+#endif
+
   otl_tmpl_out_stream()
       : OTL_TMPL_CURSOR(), auto_commit_flag(0), dirty(0), cur_x(0), cur_y(0),
         array_size(0), in_exception_flag(0), in_destruct_flag(0),
@@ -10101,6 +10462,29 @@ public:
   }
 #endif
 
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  OTL_TMPL_INOUT_STREAM &operator >> (oci_spatial_geometry &s){
+    if(eof())
+      return *this;
+    if(check_in_type(otl_var_sdo_geometry, this->adb->get_max_long_size())){
+      int rc = in_vl[cur_in_x]->get_var_struct().read_geometry(s, cur_in_x);
+      if(rc == 0){
+        if(this->adb)
+          this->adb->increment_throw_count();
+        if(this->adb && this->adb->get_throw_count() > 1)
+          return *this;
+        if(otl_uncaught_exception())
+          return *this;
+        throw OTL_TMPL_EXCEPTION(this->adb->get_connect_struct(),
+                                 this->stm_label ? this->stm_label
+                                 : this->stm_text);
+      }
+      null_fetched = is_null_intern();
+    }
+    get_in_next();
+    return *this;
+  }
+#endif
   otl_tmpl_inout_stream()
       : OTL_TMPL_OUT_STREAM(), in_vl(nullptr), iv_len(0), cur_in_x(0),
         cur_in_y(0), in_y_len(0), null_fetched(0), avl(nullptr), avl_len(0),
@@ -18167,9 +18551,20 @@ inline otl_connect &operator>>(otl_connect &connect, otl_stream &s) {
 #if (defined(OTL_STL) || defined(OTL_VALUE_TEMPLATE_ON)) &&                    \
     defined(OTL_VALUE_TEMPLATE)
 template <OTL_TYPE_NAME TData>
-otl_stream &operator<<(otl_stream &s,
-                       const otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
-  if (var.ind)
+inline otl_stream &operator<<(otl_stream &s,
+                              const otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+  if (var.is_null())
+    s << otl_null();
+  else
+    s << var.v;
+  return s;
+}
+
+template <OTL_TYPE_NAME TData, const TData null_value>
+inline otl_stream &operator<<
+(otl_stream &s,
+ const otl_compact_value<TData,null_value> &var) OTL_THROWS_OTL_EXCEPTION {
+  if (var.is_null())
     s << otl_null();
   else
     s << var.v;
@@ -18177,13 +18572,25 @@ otl_stream &operator<<(otl_stream &s,
 }
 
 template <OTL_TYPE_NAME TData>
-otl_stream &operator>>(otl_stream &s,
-                       otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
-  s >> var.v;
-  if (s.is_null())
-    var.ind = true;
+inline otl_stream &operator>>(otl_stream &s,
+                              otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+  s>>var.v;
+  if(s.is_null())
+    var.set_null(true);
   else
-    var.ind = false;
+    var.set_null(false);
+  return s;
+}
+
+template <OTL_TYPE_NAME TData, const TData null_value>
+inline otl_stream &operator>>
+(otl_stream &s,
+ otl_compact_value<TData,null_value> &var) OTL_THROWS_OTL_EXCEPTION {
+  s>>var.v;
+  if(s.is_null())
+    var.set_null(true);
+  else
+    var.set_null(false);
   return s;
 }
 
@@ -18418,6 +18825,9 @@ private:
   int lob_prefetch_size;
 #endif
 
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  OCIType *geometryTDO;
+#endif
 public:
   enum bigint_type {
 #if defined(OTL_BIGINT) &&                                                     \
@@ -18519,6 +18929,11 @@ public:
     return 1;
 #endif
   }
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  OCIType* getGeometryTDO(){
+    return geometryTDO;
+  }
+#endif
 
   otl_conn()
       : envhp(nullptr), srvhp(nullptr), errhp(nullptr), svchp(nullptr),
@@ -18533,6 +18948,9 @@ public:
 #if defined(OTL_ORA11G_R2) || defined(OTL_ORA12C)
         ,
         lob_prefetch_size(0)
+#endif
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    , geometryTDO(nullptr)
 #endif
   {
   }
@@ -18766,8 +19184,68 @@ public:
     status = OCIAttrSet(
         OTL_RCAST(dvoid *, svchp), OTL_SCAST(ub4, OCI_HTYPE_SVCCTX),
         OTL_RCAST(dvoid *, authp), 0, OTL_SCAST(ub4, OCI_ATTR_SESSION), errhp);
-    if (status)
-      return 0;
+    if (status)return 0;
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    OCIParam *paramp = nullptr;
+    OCIRef *type_ref = nullptr;
+    OCIDescribe *dschp = nullptr;
+    
+
+    void* temp_ptr2=OTL_RCAST(void*, &dschp);
+    status = OCIHandleAlloc(
+    OTL_RCAST(dvoid *, envhp), OTL_RCAST(dvoid**,temp_ptr2), 
+      OTL_SCAST(ub4, OCI_HTYPE_DESCRIBE), 0, nullptr);
+    if(status)return 0;
+    text objptr[] = "MDSYS.SDO_GEOMETRY";
+    size_t objp_len = strlen(OTL_RCAST(char*,objptr));
+    status = OCIDescribeAny(
+      svchp, errhp, 
+      OTL_RCAST(dvoid *, objptr),
+      OTL_SCAST(ub4, objp_len),
+      OTL_SCAST(ub1, OCI_OTYPE_NAME), 
+      OTL_SCAST(ub1, OCI_DEFAULT), 
+      OTL_SCAST(ub1, OCI_PTYPE_TYPE), dschp);
+    if(status)return 0;
+    status = OCIAttrGet(
+      OTL_RCAST(dvoid *, dschp),
+      OTL_SCAST(ub4, OCI_HTYPE_DESCRIBE), 
+      OTL_RCAST(dvoid *, &paramp), 
+      nullptr, 
+      OTL_SCAST(ub4, OCI_ATTR_PARAM), errhp);
+    if(status)return 0;
+    status = OCIAttrGet(
+      OTL_RCAST(dvoid *, paramp), 
+      OTL_SCAST(ub4, OCI_DTYPE_PARAM), 
+      OTL_RCAST(dvoid *, &type_ref), 
+      nullptr, 
+      OTL_SCAST(ub4, OCI_ATTR_REF_TDO), errhp);
+    if(status)return 0;
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+    void* temp_ptr=OTL_RCAST(void*,&geometryTDO);
+    status = OCIObjectPin(
+      envhp, 
+      errhp, 
+      type_ref, 
+      nullptr, 
+      /*OCIPinOpt::*/OCI_PIN_ANY, 
+      OTL_SCAST(ub2, OCI_DURATION_SESSION), 
+      /*OCILockOpt::*/OCI_LOCK_NONE, 
+      OTL_RCAST(dvoid**,temp_ptr));
+    if(status)return 0;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+#endif
     in_session = 1;
     auto_commit = aauto_commit;
     ++session_begin_count;
@@ -19070,6 +19548,17 @@ class otl_inout_stream;
 class otl_refcur_stream;
 class otl_ref_select_stream;
 
+#if defined(OTL_ORA_SDO_GEOMETRY)
+struct oci_spatial_geometry{
+  bool isNull;
+  unsigned int gtype;
+  int srid;
+  double x, y, z;
+  
+  STD_NAMESPACE_PREFIX vector<int> eleminfo;
+  STD_NAMESPACE_PREFIX vector<double> ordinates;
+};
+#endif
 class otl_var {
 private:
   friend class otl_cur;
@@ -19115,7 +19604,41 @@ private:
   ub4 total_read_blob_amt;
   bool charz_flag;
   bool select_stm_flag;
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  OCIType *oraOCIType;
+  struct OCISDOPointObj{
+    OCINumber x;
+    OCINumber y;
+    OCINumber z;
+  };
 
+  struct OCISDOGeometryObj{
+    OCINumber gtype;
+    OCINumber srid;
+    OCISDOPointObj point;
+    OCIArray *elem_info;
+    OCIArray *ordinates;
+  };
+
+  struct OCISDOPointInd{
+    OCIInd _atomic;
+    OCIInd x;
+    OCIInd y;
+    OCIInd z;
+  };
+
+  struct OCISDOGeometryInd{
+    OCIInd _atomic;
+    OCIInd gtype;
+    OCIInd srid;
+    OCISDOPointInd point;
+    OCIInd elem_info;
+    OCIInd ordinates;
+  };
+  OCISDOGeometryObj **sdoobj;
+  OCISDOGeometryInd **sdoind;
+  bool needFree;
+#endif
 public:
   void set_total_read_blob_amt(const int new_total_read_blob_amt) {
     total_read_blob_amt = OTL_SCAST(ub4, new_total_read_blob_amt);
@@ -19134,6 +19657,11 @@ public:
 
   void set_charz_flag(const bool acharz_flag) { charz_flag = acharz_flag; }
 
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+
   otl_var()
       : p_v(nullptr), p_ind(nullptr), p_rlen(nullptr), p_rcode(nullptr),
         ftype(0), array_size(0), elem_size(0), nls_flag(false), lob(nullptr),
@@ -19151,20 +19679,30 @@ public:
 #if defined(OTL_UNICODE) || defined(OTL_ORA_UTF8)
         csfrm(SQLCS_IMPLICIT), 
 #endif
-read_blob_amt(0),
-        total_read_blob_amt(0), charz_flag(false), select_stm_flag(false) {
-  }
+        read_blob_amt(0),
+        total_read_blob_amt(0), charz_flag(false), select_stm_flag(false)
+#if defined(OTL_ORA_SDO_GEOMETRY)
+      ,oraOCIType(nullptr)
+      ,sdoobj(nullptr)
+      ,sdoind(nullptr)
+#endif
+    {
+    }
 
   virtual ~otl_var() {
-    int i;
     if (ftype == otl_var_refcur && cda != nullptr) {
       OCIHandleFree(OTL_RCAST(dvoid *, cda), OCI_HTYPE_STMT);
       cda = nullptr;
     }
     if (ftype == otl_var_blob || (ftype == otl_var_clob && lob != nullptr)) {
-      for (i = 0; i < array_size; ++i)
+#if defined(OTL_ORA11G)||defined(OTL_ORA11G_R2)||defined(OTL_ORA12C)
+      OCIArrayDescriptorFree(OTL_RCAST(dvoid**,lob),
+                             OTL_SCAST(ub4, OCI_DTYPE_LOB));
+#else
+      for (int i = 0; i < array_size; ++i)
         OCIDescriptorFree(OTL_RCAST(dvoid *, lob[i]),
                           OTL_SCAST(ub4, OCI_DTYPE_LOB));
+#endif
     }
 #if (defined(OTL_ORA8I) || defined(OTL_ORA9I)) && defined(OTL_ORA_TIMESTAMP)
     if ((ftype == otl_var_timestamp || ftype == otl_var_tz_timestamp ||
@@ -19181,17 +19719,54 @@ read_blob_amt(0),
         dtype = OCI_DTYPE_TIMESTAMP_TZ;
         break;
       }
-      for (i = 0; i < array_size; ++i)
+#if defined(OTL_ORA11G)||defined(OTL_ORA11G_R2)||defined(OTL_ORA12C)
+      OCIArrayDescriptorFree(OTL_RCAST(dvoid**,timestamp),dtype);
+#else
+      for (int i = 0; i < array_size; ++i)
         OCIDescriptorFree(OTL_RCAST(dvoid *, timestamp[i]), dtype);
+#endif
     }
 #endif
-    delete[] p_v;
-    delete[] p_ind;
-    delete[] p_rlen;
-    delete[] p_rcode;
+	if(p_v)
+		delete[] p_v;
+	if(p_ind)
+		delete[] p_ind;
+	if(p_rlen)
+		delete[] p_rlen;
+	if(p_rcode)
+		delete[] p_rcode;
     if (!ext_buf_flag)
       delete[] buf;
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+
+#if defined(OTL_ORA_SDO_GEOMETRY)
+	if(sdoobj){
+          if(needFree){
+            for(int i = 0;i < array_size;i++){
+              OCIObjectFree(connect->get_envhp(),
+                            connect->get_errhp(),
+                            OTL_RCAST(dvoid*, sdoobj[i]),
+                            OCI_OBJECTFREE_FORCE);
+            }
+          }
+          delete[] sdoobj;
+	}
+	if(sdoind)delete[] sdoind;
+#endif
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+
   }
+
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
 
   int write_dt(void *trg, const void *src, const int
 #if (defined(OTL_ORA8I) || defined(OTL_ORA9I)) && defined(OTL_ORA_TIMESTAMP)
@@ -19291,7 +19866,11 @@ read_blob_amt(0),
 
   void init(const bool aselect_stm_flag, const int aftype, int &aelem_size,
             const otl_stream_buffer_size_type aarray_size,
-            const void *connect_struct = nullptr, const int apl_tab_flag = 0) {
+            const void *connect_struct = nullptr, const int apl_tab_flag = 0
+#if defined(OTL_ORA_SDO_GEOMETRY)
+            ,OCIType* oraOCIType_ =nullptr
+#endif
+  ) {
     int i;
     ub4 lobEmpty = 0;
     select_stm_flag = aselect_stm_flag;
@@ -19314,19 +19893,44 @@ read_blob_amt(0),
         apl_tab_flag)
       act_elem_size = sizeof(otl_oracle_date);
 #endif
-    if (ftype == otl_var_refcur) {
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    if(ftype == otl_var_sdo_geometry){
       array_size = aarray_size;
-      elem_size = 1;
-#if defined(__GNUC__) && (__GNUC__ >= 4)
-      void *temp_cda = &cda;
+      elem_size = aelem_size;
+      oraOCIType = oraOCIType_;
+      lob = nullptr;
+      p_v = nullptr;
+      p_ind = nullptr;
+      p_rlen = nullptr;
+      p_rcode = nullptr;
+      if(oraOCIType){
+        sdoind = new OCISDOGeometryInd*[OTL_SCAST(size_t, array_size)];
+        sdoobj = new OCISDOGeometryObj*[OTL_SCAST(size_t, array_size)];
+        p_ind = new sb2[OTL_SCAST(size_t, array_size)];
+        for(size_t j = 0;j < OTL_SCAST(size_t, array_size);j++){
+          sdoind[j] = nullptr;
+          sdoobj[j] = nullptr;
+          p_ind[j] = 0;
+        }
+      }else{
+        sdoind = nullptr;
+        sdoobj = nullptr;
+      }
+    }else
 #endif
-      OCIHandleAlloc(OTL_RCAST(dvoid *, connect->get_envhp()),
+      if (ftype == otl_var_refcur) {
+        array_size = aarray_size;
+        elem_size = 1;
 #if defined(__GNUC__) && (__GNUC__ >= 4)
-                     OTL_RCAST(dvoid **, temp_cda),
+        void *temp_cda = &cda;
+#endif
+        OCIHandleAlloc(OTL_RCAST(dvoid *, connect->get_envhp()),
+#if defined(__GNUC__) && (__GNUC__ >= 4)
+                       OTL_RCAST(dvoid **, temp_cda),
 #else
-                     OTL_RCAST(dvoid **, &cda),
+                       OTL_RCAST(dvoid **, &cda),
 #endif
-                     OCI_HTYPE_STMT, 0, nullptr);
+                       OCI_HTYPE_STMT, 0, nullptr);
 #if (defined(OTL_ORA8I) || defined(OTL_ORA9I)) && defined(OTL_ORA_TIMESTAMP)
     } else if ((ftype == otl_var_timestamp || ftype == otl_var_tz_timestamp ||
                 ftype == otl_var_ltz_timestamp) &&
@@ -19358,10 +19962,22 @@ read_blob_amt(0),
           dtype = OCI_DTYPE_TIMESTAMP_TZ;
           break;
         }
+#if defined(OTL_ORA11G)||defined(OTL_ORA11G_R2)||defined(OTL_ORA12C)
+        OCIArrayDescriptorAlloc
+          (OTL_RCAST(dvoid*,connect->envhp),
+           OTL_RCAST(dvoid**,&timestamp[0]),
+           dtype,
+           OTL_SCAST(ub4,array_size),
+           0,
+           nullptr);        
+#endif
         for (i = 0; i < array_size; ++i) {
+#if defined(OTL_ORA11G)||defined(OTL_ORA11G_R2)||defined(OTL_ORA12C)
+#else
           OCIDescriptorAlloc(OTL_RCAST(dvoid *, connect->envhp),
                              OTL_RCAST(dvoid **, &timestamp[i]), dtype, 0,
                              nullptr);
+#endif
           write_dt(timestamp[i], &dt, 1);
         }
       } else
@@ -19375,11 +19991,23 @@ read_blob_amt(0),
       p_ind = new sb2[OTL_SCAST(size_t,array_size)];
       p_rlen = nullptr;
       p_rcode = nullptr;
+#if defined(OTL_ORA11G)||defined(OTL_ORA11G_R2)||defined(OTL_ORA12C)
+        OCIArrayDescriptorAlloc
+          (OTL_RCAST(dvoid*,connect->envhp),
+           OTL_RCAST(dvoid**,&lob[0]),
+           OTL_SCAST(ub4, OCI_DTYPE_LOB),
+           OTL_SCAST(ub4,array_size),
+           0,
+           nullptr);        
+#endif
       if (connect != nullptr) {
         for (i = 0; i < array_size; ++i) {
+#if defined(OTL_ORA11G)||defined(OTL_ORA11G_R2)||defined(OTL_ORA12C)
+#else
           OCIDescriptorAlloc(OTL_RCAST(dvoid *, connect->get_envhp()),
                              OTL_RCAST(dvoid **, &lob[i]),
                              OTL_SCAST(ub4, OCI_DTYPE_LOB), 0, nullptr);
+#endif
           lobEmpty = 0;
           OCIAttrSet(OTL_RCAST(dvoid *, lob[i]), OCI_DTYPE_LOB,
                      OTL_RCAST(dvoid *, &lobEmpty), 0, OCI_ATTR_LOBEMPTY,
@@ -19823,6 +20451,478 @@ read_blob_amt(0),
     return 1;
   }
 
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  bool getValue(OCINumber *num, unsigned int &value){
+	  int status = OCINumberToInt(connect->get_errhp(), 
+                                      num, 
+                                      sizeof(unsigned int), 
+                                      OCI_NUMBER_UNSIGNED,
+                                      OTL_RCAST(dvoid*, &value));
+	  if(status)
+            return false;
+          else
+            return true;
+  }
+
+  bool getValue(OCINumber *num, int &value){
+    int status = OCINumberToInt(connect->get_errhp(), 
+                                num, sizeof(int), 
+                                OCI_NUMBER_SIGNED,
+                                OTL_RCAST(dvoid*, &value));
+    if(status)
+      return false;
+    else
+      return true;
+  }
+
+  bool getValue(OCINumber *num, double &value){
+    int status = OCINumberToReal(connect->get_errhp(), 
+                                 num, sizeof(double),
+                                 OTL_RCAST(dvoid*, &value));
+    if(status)
+      return false;
+    else
+      return true;
+  }
+
+  bool getArraySize(OCIColl *coll, int &nSize){
+    int status = OCICollSize(connect->get_envhp(), 
+                             connect->get_errhp(), 
+                             coll,
+                             OTL_RCAST(sb4*, &nSize));
+    if(status)
+      return false;
+    else
+      return true;
+  }
+
+  int read_geometry(oci_spatial_geometry& geometry, int ndx){
+    if(!sdoobj || !sdoind || !sdoobj[ndx] || !sdoind[ndx]){
+      geometry.isNull = true;
+      return 0;
+    }
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+    if(sdoind[ndx]->_atomic == OCI_IND_NULL){
+      geometry.isNull = true;
+      return 1;
+    }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+
+    if(!getValue(&sdoobj[ndx]->gtype, geometry.gtype)){
+      geometry.isNull = true;
+      return 0;
+    }
+    int nDims = (geometry.gtype / 1000) % 10;
+    int iType = geometry.gtype % 100;
+    if(iType == 0){
+      geometry.isNull = true;
+      return 0;
+    }
+    if((geometry.gtype / 100) % 10 != 0){
+      return 0;
+    }
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+    if(sdoind[ndx]->srid == OCI_IND_NOTNULL){
+      if(!getValue(&sdoobj[ndx]->srid, geometry.srid)){
+        geometry.isNull = true;
+        return 0;
+      }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+    }
+    int nElems;
+    if(!getArraySize(sdoobj[ndx]->elem_info, nElems)){
+      geometry.isNull = true;
+      return 0;
+    }
+    int nOrds;
+    if(!getArraySize(sdoobj[ndx]->ordinates, nOrds)){
+      geometry.isNull = true;
+      return 0;
+    }
+    if(iType == 1 && nElems == 0){
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+      if(sdoind[ndx]->_atomic != OCI_IND_NOTNULL ||
+         sdoind[ndx]->point.x != OCI_IND_NOTNULL ||
+         sdoind[ndx]->point.y != OCI_IND_NOTNULL){
+        geometry.isNull = true;
+        return 0;
+      }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+      if(!getValue(&sdoobj[ndx]->point.x, geometry.x)){
+        geometry.isNull = true;
+        return 0;
+      }
+      if(!getValue(&sdoobj[ndx]->point.y, geometry.y)){
+        geometry.isNull = true;
+        return 0;
+      }
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+      if(nDims > 2){
+        if(sdoind[ndx]->point.z != OCI_IND_NOTNULL){
+          geometry.isNull = true;
+          return 0;
+        }
+        if(!getValue(&sdoobj[ndx]->point.z, geometry.z)){
+          geometry.isNull = true;
+          return 0;
+        }
+      }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+      geometry.isNull = false;
+      return 1;
+    }else{
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+      if(sdoind[ndx]->_atomic != OCI_IND_NOTNULL){
+        geometry.isNull = true;
+        return 0;
+      }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+
+      geometry.eleminfo.resize(OTL_SCAST(size_t,nElems));
+#if defined(OTL_ORA10G_R2)
+      {
+        uword nelems = OTL_SCAST(uword,nElems);
+        std::vector<boolean> exists(OTL_SCAST(size_t,nElems));
+        std::vector<OCINumber*> numbers(OTL_SCAST(size_t,nElems));
+        int result = OCICollGetElemArray(connect->get_envhp(), connect->get_errhp(),
+                                         sdoobj[ndx]->elem_info,
+                                         OTL_SCAST(sb4, 0),
+                                         &exists[0],
+                                         OTL_RCAST(void**, &numbers[0]), nullptr, &nelems);
+        if(result || !exists[0]){
+          geometry.isNull = true;
+          return 0;
+        }
+        for(unsigned int i = 0; i < nelems; i++){
+          if(!getValue(numbers[i], geometry.eleminfo[i])){
+            geometry.isNull = true;
+            return 0;
+          }
+        }
+      }
+#else
+      for(int i = 0; i < nElems;i++){
+        boolean exists(true);
+        OCINumber* numbers;
+        int result = OCICollGetElem(connect->get_envhp(), 
+                                    connect->get_errhp(), 
+                                    sdoobj[ndx]->elem_info, 
+                                    i, 
+                                    &exists, (void**)&numbers, 
+                                    0);
+        if(result || !exists){
+          geometry.isNull = true;
+          return 0;
+        }
+        if(!getValue(numbers, geometry.eleminfo[i])){
+          geometry.isNull = true;
+          return 0;
+        }
+      }
+#endif
+      geometry.ordinates.resize(OTL_SCAST(size_t,nOrds));
+#if defined(OTL_ORA10G_R2)
+      {
+        std::vector<boolean> exists(OTL_SCAST(size_t,nOrds));
+        std::vector<OCINumber*> numbers(OTL_SCAST(size_t,nOrds));
+        uword nords = OTL_SCAST(uword,nOrds);
+        int result = OCICollGetElemArray(connect->get_envhp(), 
+                                         connect->get_errhp(),
+                                         sdoobj[ndx]->ordinates,
+                                         OTL_SCAST(sb4, 0),
+                                         &exists[0],
+                                         OTL_RCAST(void**, &numbers[0]), nullptr, &nords);
+        if(result != OCI_SUCCESS || !exists[0]){
+          geometry.isNull = true;
+          return 0;
+        }
+        result = OCINumberToRealArray(connect->get_errhp(), 
+                                      OTL_CCAST(const OCINumber **,&numbers[0]),
+                                      nords, 
+                                      sizeof(double), 
+                                      &geometry.ordinates[0]);
+        if(result != OCI_SUCCESS){
+          geometry.isNull = true;
+          return 0;
+        }
+      }
+#else
+      for(int i = 0; i < nOrds;i++){
+        boolean exists(true);
+        void* numbers;
+        int result = OCICollGetElem(connect->get_envhp(), 
+                                    connect->get_errhp(), 
+                                    sdoobj[ndx]->ordinates, 
+                                    i, 
+                                    &exists, 
+                                    (void**)&numbers, 
+                                    0);
+        if(result || !exists){
+          geometry.isNull = true;
+          return 0;
+        }
+        if(!getValue((OCINumber*)numbers, geometry.ordinates[i])){
+          geometry.isNull = true;
+          return 0;
+        }
+      }
+#endif
+    }
+    geometry.isNull = false;
+    return 1;
+  }
+
+  int write_geometry(const oci_spatial_geometry& g, int ndx){
+    sb4 n;
+    int status = OCICollSize(connect->get_envhp(), 
+                             connect->get_errhp(), 
+                             sdoobj[ndx]->elem_info, 
+                             &n);
+    if(status)return 0;
+    status = OCICollTrim(connect->get_envhp(), 
+                         connect->get_errhp(), 
+                         n, 
+                         sdoobj[ndx]->elem_info);
+    if(status)return 0;
+    
+    status = OCICollSize(connect->get_envhp(), 
+                         connect->get_errhp(), 
+                         sdoobj[ndx]->ordinates, 
+                         &n);
+    if(status)return 0;
+    status = OCICollTrim(connect->get_envhp(), 
+                         connect->get_errhp(), 
+                         n, 
+                         sdoobj[ndx]->ordinates);
+    if(status)return 0;
+    if(g.isNull){
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+      sdoind[ndx]->_atomic = OCI_IND_NULL;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+    }else{
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+      sdoind[ndx]->_atomic = OCI_IND_NOTNULL;
+      sdoind[ndx]->gtype = OCI_IND_NOTNULL;
+      sdoind[ndx]->srid = OCI_IND_NOTNULL;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+      
+      status = OCINumberFromInt(connect->get_errhp(), 
+                                OTL_RCAST(CONST dvoid*, &g.gtype), 
+                                sizeof(unsigned int), 
+                                OCI_NUMBER_UNSIGNED, 
+                                &sdoobj[ndx]->gtype);
+      if(status)return 0;
+      status = OCINumberFromInt(connect->get_errhp(), 
+                                OTL_RCAST(CONST dvoid*, &g.srid), 
+                                sizeof(int), 
+                                OCI_NUMBER_SIGNED, 
+                                &sdoobj[ndx]->srid);
+      if(status)return 0;
+      if(g.gtype % 100 == 1){
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+        sdoind[ndx]->point._atomic = OCI_IND_NOTNULL;
+        sdoind[ndx]->point.x = OCI_IND_NOTNULL;
+        sdoind[ndx]->point.y = OCI_IND_NOTNULL;
+        sdoind[ndx]->elem_info = OCI_IND_NULL;
+        sdoind[ndx]->ordinates = OCI_IND_NULL;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+        status = OCINumberFromReal(connect->get_errhp(), 
+                                   OTL_RCAST(CONST dvoid*, &g.x), 
+                                   sizeof(double), 
+                                   &sdoobj[ndx]->point.x);
+        if(status)return 0;
+        status = OCINumberFromReal(connect->get_errhp(), 
+                                   OTL_RCAST(CONST dvoid*, &g.y), 
+                                   sizeof(double), 
+                                   &sdoobj[ndx]->point.y);
+        if(status)return 0;
+        if((g.gtype / 1000 % 10) == 3){
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+          sdoind[ndx]->point.z = OCI_IND_NOTNULL;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+          status = OCINumberFromReal(connect->get_errhp(), 
+                                     OTL_RCAST(CONST dvoid*, &g.z), 
+                                     sizeof(double), 
+                                     &sdoobj[ndx]->point.z);
+          if(status)return 0;
+        }else
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+          sdoind[ndx]->point.z = OCI_IND_NULL;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+      }else{
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+        sdoind[ndx]->point._atomic = OCI_IND_NULL;
+        sdoind[ndx]->elem_info = g.eleminfo.size() == 0 ? OCI_IND_NULL : OCI_IND_NOTNULL;
+        sdoind[ndx]->ordinates = g.ordinates.size() == 0 ? OCI_IND_NULL : OCI_IND_NOTNULL;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+        for(std::size_t ind_elem = 0;ind_elem < g.eleminfo.size();ind_elem++){
+          OCINumber n2;
+          status = OCINumberFromInt(connect->get_errhp(), 
+                                    OTL_RCAST(CONST dvoid*, 
+                                              &g.eleminfo[ind_elem]), 
+                                    sizeof(int), 
+                                    OCI_NUMBER_SIGNED, 
+                                    &n2);
+          if(status)return 0;
+          status = OCICollAppend(connect->get_envhp(), 
+                                 connect->get_errhp(), 
+                                 OTL_RCAST(CONST dvoid*, &n2), 
+                                 nullptr, 
+                                 sdoobj[ndx]->elem_info);
+          if(status)return 0;
+        }
+        for(std::size_t ind_elem = 0;ind_elem < g.ordinates.size();ind_elem++){
+          OCINumber n2;
+          status = OCINumberFromReal(connect->get_errhp(), 
+                                     OTL_RCAST(CONST dvoid*, 
+                                               &g.ordinates[ind_elem]), 
+                                     sizeof(double), 
+                                     &n2);
+          if(status)return 0;
+          status = OCICollAppend(connect->get_envhp(), 
+                                 connect->get_errhp(), 
+                                 OTL_RCAST(CONST dvoid*, &n2), 
+                                 nullptr, 
+                                 sdoobj[ndx]->ordinates);
+          if(status)return 0;
+        }
+      }
+    }
+    return 1;
+  }
+#endif
   void set_null(int ndx) { p_ind[ndx] = -1; }
 
   void set_not_null(int ndx, int pelem_size) {
@@ -20128,6 +21228,15 @@ read_blob_amt(0),
           aelem_size = otl_date_str_size;
         } else
           aftype = otl_var_timestamp;
+        break;
+#endif
+
+#if defined(OTL_ORA_SDO_GEOMETRY)
+      case otl_unsupported_type:
+        if(strcmp(desc.name_type, "SDO_GEOMETRY") == 0) {
+          aftype = otl_var_sdo_geometry;
+          aelem_size = max_long_size;
+        }
         break;
 #endif
       }
@@ -20629,6 +21738,10 @@ public:
       return SQLT_CLOB;
     case otl_var_blob:
       return SQLT_BLOB;
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    case otl_var_sdo_geometry:
+      return SQLT_NTY;
+#endif
     default:
       return 0;
     }
@@ -20640,7 +21753,54 @@ public:
     OCIBind *bindpp;
 
     int db_ftype = 0;
-
+#if defined(OTL_ORA_SDO_GEOMETRY)
+    if(ftype == otl_var_sdo_geometry){
+      if(v.sdoobj && v.array_size > 0 && !v.sdoobj[0]){
+        v.needFree = true;
+        for(int i = 0;i<v.array_size;i++){
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+          status = OCIObjectNew(
+            db->get_envhp(), errhp, db->get_svchp(),
+            OTL_SCAST(ub2, OCI_TYPECODE_OBJECT),
+            v.oraOCIType,
+            nullptr,
+            OTL_SCAST(ub2, OCI_DURATION_SESSION), 1,
+            OTL_RCAST(dvoid **, &v.sdoobj[i]));
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+          if(status)return 0;
+          status = OCIObjectGetInd(db->get_envhp(),
+                                   errhp, 
+                                   OTL_RCAST(dvoid *, v.sdoobj[i]),
+                                   OTL_RCAST(dvoid **, &v.sdoind[i]));
+          if(status)return 0;
+        }
+      }
+      status = OCIBindByName(
+        cda, &bindpp, errhp, OTL_RCAST(text *, OTL_CCAST(char *, name)),
+        OTL_SCAST(sb4, strlen(name)), nullptr, 
+        OTL_SCAST(sb4, 0), 
+        OTL_SCAST(ub2, tmpl_ftype2ora_ftype(ftype)), 
+        OTL_RCAST(dvoid *, v.p_ind), nullptr, nullptr, 
+        OTL_SCAST(ub4, 0), nullptr, OTL_SCAST(ub4, OCI_DEFAULT));
+      if(status)return 0;
+      status = OCIBindObject(bindpp, errhp, v.oraOCIType, 
+                             OTL_RCAST(dvoid **, v.sdoobj), nullptr,
+                             OTL_RCAST(dvoid **, v.sdoind), nullptr);
+      if(status)return 0;
+    }else
+#endif
     if (ftype == otl_var_refcur) {
       status = OCIBindByName(
           cda, &bindpp, errhp, OTL_RCAST(text *, OTL_CCAST(char *, name)),
@@ -20680,29 +21840,28 @@ public:
         if (ftype == otl_var_float || ftype == otl_var_double)
           db_ftype = extFloat;
         status = OCIBindByName(
-            cda, &bindpp, errhp, OTL_RCAST(text *, OTL_CCAST(char *, name)),
-            OTL_SCAST(sb4, strlen(name)), OTL_RCAST(dvoid *, v.p_v),
-            OTL_SCAST(sb4,
-                      ftype == otl_var_raw
-                          ? OTL_SCAST(size_t, var_elem_size) + sizeof(short)
-                          : OTL_SCAST(size_t, var_elem_size)),
-            OTL_SCAST(ub2, v.charz_flag ? extCharZ : db_ftype),
-            OTL_RCAST(dvoid *, v.p_ind), nullptr, nullptr,
-            OTL_SCAST(ub4, v.max_tab_len), OTL_RCAST(ub4 *, &v.cur_tab_len),
-            OTL_SCAST(ub4, OCI_DEFAULT));
+          cda, &bindpp, errhp, OTL_RCAST(text *, OTL_CCAST(char *, name)),
+          OTL_SCAST(sb4, strlen(name)), OTL_RCAST(dvoid *, v.p_v),
+          OTL_SCAST(sb4,
+                    ftype == otl_var_raw
+                    ? OTL_SCAST(size_t, var_elem_size) + sizeof(short)
+                    : OTL_SCAST(size_t, var_elem_size)),
+          OTL_SCAST(ub2, v.charz_flag ? extCharZ : db_ftype),
+          OTL_RCAST(dvoid *, v.p_ind), nullptr, nullptr,
+          OTL_SCAST(ub4, v.max_tab_len), OTL_RCAST(ub4 *, &v.cur_tab_len),
+          OTL_SCAST(ub4, OCI_DEFAULT));
       } else {
         status = OCIBindByName(
-            cda, &bindpp, errhp, OTL_RCAST(text *, OTL_CCAST(char *, name)),
-            OTL_SCAST(sb4, strlen(name)), OTL_RCAST(dvoid *, v.p_v),
-            OTL_SCAST(sb4,
-                      ftype == otl_var_raw
-                          ? OTL_SCAST(size_t, var_elem_size) + sizeof(short)
-                          : OTL_SCAST(size_t, var_elem_size)),
-            OTL_SCAST(ub2, db_ftype), OTL_RCAST(dvoid *, v.p_ind), nullptr,
-            nullptr, 0, nullptr, OTL_SCAST(ub4, OCI_DEFAULT));
+          cda, &bindpp, errhp, OTL_RCAST(text *, OTL_CCAST(char *, name)),
+          OTL_SCAST(sb4, strlen(name)), OTL_RCAST(dvoid *, v.p_v),
+          OTL_SCAST(sb4,
+                    ftype == otl_var_raw
+                    ? OTL_SCAST(size_t, var_elem_size) + sizeof(short)
+                    : OTL_SCAST(size_t, var_elem_size)),
+          OTL_SCAST(ub2, db_ftype), OTL_RCAST(dvoid *, v.p_ind), nullptr,
+          nullptr, 0, nullptr, OTL_SCAST(ub4, OCI_DEFAULT));
       }
-      if (status)
-        return 0;
+      if (status)return 0;
 #if defined(OTL_UNICODE)
       if (ftype == otl_var_char || ftype == otl_var_varchar_long) {
         if (ftype != otl_var_varchar_long) {
@@ -20718,8 +21877,7 @@ public:
         v.csid = OTL_UNICODE_ID;
         status = OCIAttrSet(bindpp, OCI_HTYPE_BIND, &v.csid, 0,
                             OCI_ATTR_CHARSET_ID, errhp);
-        if (status)
-          return 0;
+        if (status)return 0;
         if (ftype == otl_var_varchar_long)
           v.unicode_var_len = elem_size - OTL_SCAST(int, sizeof(sb4));
         else {
@@ -20734,8 +21892,7 @@ public:
         }
         status = OCIAttrSet(bindpp, OCI_HTYPE_BIND, &v.unicode_var_len, 0,
                             OCI_ATTR_MAXDATA_SIZE, errhp);
-        if (status)
-          return 0;
+        if (status)return 0;
       }
 #endif
 
@@ -20747,8 +21904,7 @@ public:
           v.csfrm = OTL_SCAST(ub1, db->char_set_);
         status = OCIAttrSet(bindpp, OCI_HTYPE_BIND, &v.csfrm, 0,
                             OTL_SCAST(ub4, OCI_ATTR_CHARSET_FORM), errhp);
-        if (status)
-          return 0;
+        if (status)return 0;
       }
 #endif
 
@@ -20803,7 +21959,31 @@ public:
            const int ftype, const int /*param_type*/) {
     OCIDefine *defnp;
     int db_ftype = 0;
-
+#if defined(OTL_ORA_SDO_GEOMETRY)
+	if(ftype == otl_var_sdo_geometry){
+		v.needFree = false;
+          status = OCIDefineByPos(cda, &defnp, errhp, OTL_SCAST(ub4, column_num),
+                                  OTL_RCAST(dvoid *, v.sdoobj), OTL_SCAST(sb4, 0),
+                                  OTL_SCAST(ub2, tmpl_ftype2ora_ftype(ftype)),
+                                  OTL_RCAST(dvoid *, v.p_ind),
+                                  OTL_RCAST(ub2 *, v.p_rlen),
+                                  OTL_RCAST(ub2 *, v.p_rcode), OTL_SCAST(ub4, OCI_DEFAULT));
+          if(status)
+            return 0;
+          status = OCIDefineObject(defnp,
+                                   errhp,
+                                   v.oraOCIType,
+                                   OTL_RCAST(dvoid **, v.sdoobj), 
+                                   nullptr,
+                                   OTL_RCAST(dvoid **, v.sdoind),
+                                   nullptr
+		);
+          if(status)
+            return 0;
+          else
+            return 1;
+	}else
+#endif
     if (ftype != otl_var_clob && ftype != otl_var_blob) {
       int var_elem_size;
 #if defined(OTL_UNICODE)
@@ -20932,6 +22112,11 @@ public:
     ub4 col_name_len;
     ub4 pos_num;
 
+#ifdef OTL_ORA_SDO_GEOMETRY
+    text *col_type_name;
+    ub4 col_type_name_len;
+#endif // OTL_ORA_SDO_GEOMETRY
+
     eof_desc = 0;
     if (straight_select && pos_nbr == 0) {
       status = OCIStmtExecute(db->get_svchp(), cda, errhp, 0, 0, nullptr,
@@ -21048,6 +22233,60 @@ public:
     if (status != OCI_SUCCESS)
       return 0;
     col.nullok = nullok;
+
+#ifdef OTL_ORA_SDO_GEOMETRY
+#if defined(__GNUC__) && (__GNUC__ >= 4)
+    void *temp_col_type_name = &col_type_name;
+#endif
+    if(col.dbtype == SQLT_NTY){
+      status=OCIAttrGet(OTL_RCAST(dvoid *, pard), OTL_SCAST(ub4, OCI_DTYPE_PARAM),
+#if defined(__GNUC__) && (__GNUC__ >= 4)
+                        OTL_RCAST(dvoid **, temp_col_type_name),
+#else
+                        OTL_RCAST(dvoid **, &col_type_name),
+#endif
+                        OTL_RCAST(ub4 *, &col_type_name_len),
+                        OTL_SCAST(ub4, OCI_ATTR_TYPE_NAME), OTL_RCAST(OCIError *, errhp));
+      if(status != OCI_SUCCESS)
+        return 0;
+      col.set_name_type(OTL_RCAST(char *, col_type_name), OTL_SCAST(int, col_type_name_len));
+      OCIRef *typeRef = nullptr;
+      void* temp_ptr=OTL_RCAST(void*, &typeRef);
+      status = OCIAttrGet(
+        OTL_RCAST(dvoid *, pard), OTL_SCAST(ub4, OCI_DTYPE_PARAM),
+        temp_ptr, nullptr, OTL_SCAST(ub4, OCI_ATTR_REF_TDO),
+        OTL_RCAST(OCIError *, errhp));
+      if(status != OCI_SUCCESS)
+        return 0;
+      
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+      void* temp_ptr3=OTL_RCAST(void*,&col.colOCIType);
+      status = OCIObjectPin(db->get_envhp(), 
+                            db->get_errhp(), 
+                            typeRef, 
+                            nullptr, 
+                            OCI_PIN_ANY, 
+                            OCI_DURATION_SESSION, 
+                            OCI_LOCK_NONE, 
+                            (void**)temp_ptr3);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=407)
+#pragma GCC diagnostic pop
+#endif
+      if(status != OCI_SUCCESS)
+        return 0;
+    }
+
+#endif
     return 1;
   }
 
@@ -23840,6 +25079,17 @@ public:
     otl_ora8_inout_stream::operator<<(s);
     return *this;
   }
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  otl_inout_stream &operator >> (oci_spatial_geometry &n){
+    otl_ora8_inout_stream::operator >> (n);
+    return *this;
+  }
+
+  otl_inout_stream &operator<<(const oci_spatial_geometry &s){
+    otl_ora8_inout_stream::operator<< (s);
+    return *this;
+  }
+#endif
 
 protected:
   otl_connect *adb2;
@@ -24768,6 +26018,19 @@ public:
     }
     return *this;
   }
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  otl_ref_select_stream &operator >> (oci_spatial_geometry &s){
+    check_if_executed();
+    if(eof_intern())
+      return *this;
+    get_next();
+    if(check_type(otl_var_sdo_geometry) && !eof_intern()){
+      sl[cur_col].get_var_struct().read_geometry(s, cur_row);
+      look_ahead();
+    }
+    return *this;
+  }
+#endif
 
   otl_ref_select_stream &operator<<(const otl_null & /*n*/) {
     check_in_var();
@@ -24975,6 +26238,37 @@ public:
     return *this;
   }
 
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  otl_ref_select_stream &operator << (const oci_spatial_geometry &s){
+    check_in_var();
+    if(check_in_type(otl_var_sdo_geometry, this->adb->get_max_long_size())){
+      int rc = this->vl[cur_in]->get_var_struct().write_geometry(s, cur_in);
+      if(rc == 0){
+        char temp_var_info[256];
+        otl_var_info_var(vl[cur_in]->get_name(), vl[cur_in]->get_ftype(),
+                         otl_var_char, temp_var_info, sizeof(temp_var_info));
+        if(this->adb)
+          this->adb->increment_throw_count();
+        if(this->adb && this->adb->get_throw_count() > 1)
+          return *this;
+        if(otl_uncaught_exception())
+          return *this;
+#if defined(OTL_EXCEPTION_COPIES_INPUT_STRING_IN_CASE_OF_OVERFLOW)
+        throw otl_exception(otl_error_msg_4, otl_error_code_4,
+                            stm_label ? stm_label : stm_text, temp_var_info,
+                            OTL_RCAST(const void *, s),
+                            OTL_SCAST(int, vl[cur_in]->get_elem_size()));
+#else
+        throw otl_exception(otl_error_msg_4, otl_error_code_4,
+                            stm_label ? stm_label : stm_text, temp_var_info);
+#endif
+      }
+    }
+    get_in_next();
+    return *this;
+  }
+#endif
+
 #define OTL_D8(T, T_type)                                                      \
   otl_ref_select_stream &operator<<(const T n) {                               \
     check_in_var();                                                            \
@@ -25179,7 +26473,11 @@ protected:
 #endif
         sl[j].init(true, ftype, elem_size,
                    OTL_SCAST(otl_stream_buffer_size_type, array_size),
-                   &adb->get_connect_struct());
+                   &adb->get_connect_struct()
+#if defined(OTL_ORA_SDO_GEOMETRY)
+                   , 0, sl_desc_tmp[j].colOCIType
+#endif
+          );
       }
       if (sl_desc) {
         delete[] sl_desc;
@@ -28700,7 +29998,41 @@ OTL_THROWS_OTL_EXCEPTION:
     inc_next_ov();
     return *this;
   }
-
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  OTL_ORA_COMMON_READ_STREAM &
+  operator >> (oci_spatial_geometry &s) OTL_THROWS_OTL_EXCEPTION{
+    last_oper_was_read_op = true;
+    switch(shell->stream_type){
+    case otl_no_stream_type:
+      break;
+    case otl_inout_stream_type:
+      last_eof_rc = (*io)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "oci_spatial_geometry&");
+#endif
+      (*io)->operator >> (s);
+      break;
+    case otl_select_stream_type:
+      last_eof_rc = (*ss)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "oci_spatial_geometry&");
+#endif
+      (*ss)->operator >> (s);
+      break;
+    case otl_refcur_stream_type:
+      last_eof_rc = (*ref_ss)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "oci_spatial_geometry&");
+#endif
+      (*ref_ss)->operator >> (s);
+      break;
+    }
+    shell->lob_stream_flag = true;
+    OTL_TRACE_WRITE(" lob stream", "operator >>", "oci_spatial_geometry&")
+      inc_next_ov();
+    return *this;
+  }
+#endif
 #if !defined(OTL_UNICODE)
   otl_stream &operator<<(const char c) OTL_THROWS_OTL_EXCEPTION {
     last_oper_was_read_op = false;
@@ -29166,6 +30498,31 @@ OTL_THROWS_OTL_EXCEPTION:
     return *this;
   }
 
+#if defined(OTL_ORA_SDO_GEOMETRY)
+  OTL_ORA_COMMON_READ_STREAM &
+  operator << (oci_spatial_geometry &s) OTL_THROWS_OTL_EXCEPTION{
+    last_oper_was_read_op = false;
+    reset_end_marker();
+    OTL_TRACE_READ("geometry", "operator <<", "oci_spatial_geometry&");
+    switch(shell->stream_type){
+    case otl_no_stream_type:
+      break;
+    case otl_inout_stream_type:
+      (*io)->operator<<(s);
+      break;
+    case otl_select_stream_type:
+      (*ss)->operator<<(s);
+      break;
+    case otl_refcur_stream_type:
+      (*ref_ss)->operator<<(s);
+      if(!(*ov) && (*ref_ss)->get_sl())
+        create_var_desc();
+      break;
+    }
+    inc_next_iov();
+    return *this;
+  }
+#endif
 private:
 #if defined(OTL_ANSI_CPP_11_DELETE_SPEC_SUPPORT)
 public:
@@ -29578,9 +30935,9 @@ inline otl_connect &operator>>(otl_connect &connect, otl_stream &s) {
 #if (defined(OTL_STL) || defined(OTL_VALUE_TEMPLATE_ON)) &&                    \
     defined(OTL_VALUE_TEMPLATE)
 template <OTL_TYPE_NAME TData>
-otl_stream &operator<<(otl_stream &s,
-                       const otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
-  if (var.ind)
+inline otl_stream &operator<<(otl_stream &s,
+                              const otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+  if (var.is_null())
     s << otl_null();
   else
     s << var.v;
@@ -29588,24 +30945,59 @@ otl_stream &operator<<(otl_stream &s,
 }
 
 template <OTL_TYPE_NAME TData>
-otl_stream &operator>>(otl_stream &s,
-                       otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+inline otl_stream &operator>>(otl_stream &s,
+                              otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
   s >> var.v;
-  if (s.is_null())
-    var.ind = true;
+  if(s.is_null())
+    var.set_null(true);
   else
-    var.ind = false;
+    var.set_null(false);
   return s;
 }
 
 template <OTL_TYPE_NAME TData>
-otl_refcur_stream &operator>>(otl_refcur_stream &s,
-                              otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+inline otl_refcur_stream &operator>>(otl_refcur_stream &s,
+                                     otl_value<TData> &var) OTL_THROWS_OTL_EXCEPTION {
   s >> var.v;
-  if (s.is_null())
-    var.ind = true;
+  if(s.is_null())
+    var.set_null(true);
   else
-    var.ind = false;
+    var.set_null(false);
+  return s;
+}
+
+template <OTL_TYPE_NAME TData, const TData null_value>
+inline otl_stream &operator<<
+(otl_stream &s,
+ const otl_compact_value<TData,null_value> &var) OTL_THROWS_OTL_EXCEPTION {
+  if (var.is_null())
+    s << otl_null();
+  else
+    s << var.v;
+  return s;
+}
+
+template <OTL_TYPE_NAME TData, const TData null_value>
+inline otl_stream &operator>>
+(otl_stream &s,
+ otl_compact_value<TData,null_value> &var) OTL_THROWS_OTL_EXCEPTION {
+  s >> var.v;
+  if(s.is_null())
+    var.set_null(true);
+  else
+    var.set_null(false);
+  return s;
+}
+
+template <OTL_TYPE_NAME TData, const TData null_value>
+inline otl_refcur_stream &operator>>
+(otl_refcur_stream &s,
+ otl_compact_value<TData,null_value> &var) OTL_THROWS_OTL_EXCEPTION {
+  s >> var.v;
+  if(s.is_null())
+    var.set_null(true);
+  else
+    var.set_null(false);
   return s;
 }
 
@@ -31125,16 +32517,33 @@ private:
 #endif
 
 template <OTL_TYPE_NAME OTLStreamType, OTL_TYPE_NAME OutputIterator>
-inline void otl_read_from_stream(OTLStreamType &s, OutputIterator result)
-    OTL_THROWS_OTL_EXCEPTION {
+inline void otl_read_from_stream
+(OTLStreamType &s, 
+ OutputIterator result,
+ size_t max_number_of_rows_to_read=0) OTL_THROWS_OTL_EXCEPTION {
   typename OutputIterator::container_type::value_type v;
-  while (!s.eof()) {
-    s >> v;
-#if defined(OTL_CPP_11_ON) || defined(_MSC_VER) && (_MSC_VER >= 1600)
-    *result++ = std::move(v);
+  if(max_number_of_rows_to_read == 0){
+    while (!s.eof()) {
+      s >> v;
+#if defined(OTL_CPP_11_ON)
+      *result++ = std::move(v);
 #else
-    *result++ = v;
+      *result++ = v;
 #endif
+    }
+  }else{
+    size_t rpc=0;
+    while (!s.eof()) {
+      s >> v;
+      ++rpc;
+      if(rpc > max_number_of_rows_to_read)
+        return;
+#if defined(OTL_CPP_11_ON)
+      *result++ = std::move(v);
+#else
+      *result++ = v;
+#endif
+    }
   }
 }
 
@@ -32154,6 +33563,84 @@ inline void otl_write_row(S &s, const T1 &t1, const T2 &t2, const T3 &t3,
 #include <memory>
 #include <vector>
 
+#if defined(OTL_CLANG_THREAD_SAFETY_ON)
+#define OTL_THREAD_ANNOTATION_ATTRIBUTE(x) __attribute__((x))
+#else
+#define OTL_THREAD_ANNOTATION_ATTRIBUTE(x)
+#endif
+
+#define OTL_CAPABILITY(x) OTL_THREAD_ANNOTATION_ATTRIBUTE(capability(x))
+#define OTL_SCOPED_CAPABILITY OTL_THREAD_ANNOTATION_ATTRIBUTE(scoped_lockable)
+#define OTL_GUARDED_BY(x) OTL_THREAD_ANNOTATION_ATTRIBUTE(guarded_by(x))
+#define OTL_PT_GUARDED_BY(x) OTL_THREAD_ANNOTATION_ATTRIBUTE(pt_guarded_by(x))
+#define OTL_ACQUIRED_BEFORE(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(acquired_before(__VA_ARGS__))
+#define OTL_ACQUIRED_AFTER(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(acquired_after(__VA_ARGS__))
+#define OTL_REQUIRES(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(requires_capability(__VA_ARGS__))
+#define OTL_REQUIRES_SHARED(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(requires_shared_capability(__VA_ARGS__))
+#define OTL_ACQUIRE(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(acquire_capability(__VA_ARGS__))
+#define OTL_ACQUIRE_SHARED(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(acquire_shared_capability(__VA_ARGS__))
+#define OTL_RELEASE(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(release_capability(__VA_ARGS__))
+#define OTL_RELEASE_SHARED(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(release_shared_capability(__VA_ARGS__))
+#define OTL_TRY_ACQUIRE(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(try_acquire_capability(__VA_ARGS__))
+#define OTL_TRY_ACQUIRE_SHARED(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(try_acquire_shared_capability(__VA_ARGS__))
+#define OTL_EXCLUDES(...) OTL_THREAD_ANNOTATION_ATTRIBUTE(locks_excluded(__VA_ARGS__))
+#define OTL_ASSERT_CAPABILITY(x) OTL_THREAD_ANNOTATION_ATTRIBUTE(assert_capability(x))
+#define OTL_ASSERT_SHARED_CAPABILITY(x) OTL_THREAD_ANNOTATION_ATTRIBUTE(assert_shared_capability(x))
+#define OTL_RETURN_CAPABILITY(x) OTL_THREAD_ANNOTATION_ATTRIBUTE(lock_returned(x))
+#define OTL_NO_THREAD_SAFETY_ANALYSIS OTL_THREAD_ANNOTATION_ATTRIBUTE(no_thread_safety_analysis)
+
+  class OTL_CAPABILITY("mutex") otl_recursive_mutex{
+  private:
+    
+    std::recursive_mutex mutex_;
+    
+  public:
+
+    otl_recursive_mutex(): mutex_(){}
+    ~otl_recursive_mutex(){}
+    void lock() OTL_ACQUIRE(){mutex_.lock();}
+    void unlock() OTL_RELEASE(){mutex_.unlock();}
+    std::recursive_mutex& get_mutex(){return mutex_;}
+    const otl_recursive_mutex& operator!() const {return *this;}
+
+
+  };
+
+  class OTL_SCOPED_CAPABILITY otl_recursive_mutex_guard {
+  public:
+
+    otl_recursive_mutex_guard(otl_recursive_mutex* mut) OTL_ACQUIRE(mut) : mutex_ptr_(mut)
+    {
+      mutex_ptr_->lock();
+    }
+
+    ~otl_recursive_mutex_guard() OTL_RELEASE() 
+    {
+      mutex_ptr_->unlock();
+    }
+
+    otl_recursive_mutex_guard(const otl_recursive_mutex_guard& src) : mutex_ptr_(src.mutex_ptr_){}
+ 
+    otl_recursive_mutex_guard(otl_recursive_mutex_guard&& src) : mutex_ptr_(src.mutex_ptr_){}
+
+    otl_recursive_mutex_guard& operator=(const otl_recursive_mutex_guard& src)
+    {
+      mutex_ptr_=src.mutex_ptr_;
+      return *this;
+    }
+
+    otl_recursive_mutex_guard& operator=(otl_recursive_mutex_guard&& src)
+    {
+      mutex_ptr_=src.mutex_ptr_;
+      return *this;
+    }
+
+  private:
+
+    otl_recursive_mutex* mutex_ptr_;
+
+  };
+
   template<class OTLConnect, class OTLException>
   class otl_connect_pool{
   public:
@@ -32185,7 +33672,7 @@ inline void otl_write_row(S &s, const T1 &t1, const T2 &t2, const T3 &t3,
               const size_t new_min_pool_size=8,
               const size_t new_max_pool_size=32)
       OTL_THROWS_OTL_EXCEPTION{
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       if(pool_open_)close(true);
       pool_open_=true;
       min_pool_size_=new_min_pool_size;
@@ -32206,7 +33693,7 @@ inline void otl_write_row(S &s, const T1 &t1, const T2 &t2, const T3 &t3,
     // pool is empty or closed, return an empty unique pointer.
     connect_ptr get() OTL_NO_THROW{
       connect_ptr ptr;
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       if(pool_open_ && pool_.size()>0){
         // if the pool is not empty, return an element from the
         // the end of the pool.
@@ -32220,7 +33707,7 @@ inline void otl_write_row(S &s, const T1 &t1, const T2 &t2, const T3 &t3,
     // is transferred / moved from the caller to the pool. Return
     // false if the pool is full or closed.
     bool put(connect_ptr&& p) OTL_NO_THROW{
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       if(!pool_open_)return false;
       if(pool_.size()<max_pool_size_){
         // if the pool is not filled up to its maximum size, add the
@@ -32237,7 +33724,7 @@ inline void otl_write_row(S &s, const T1 &t1, const T2 &t2, const T3 &t3,
     // connections.
     void shrink_pool(const size_t new_min_pool_size, 
                      const bool ignore_errors=false) OTL_THROWS_OTL_EXCEPTION{
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       if(!pool_open_)return;
       if(pool_.size()<new_min_pool_size)
         // if the pool size is already smaller than the specified
@@ -32271,7 +33758,7 @@ inline void otl_write_row(S &s, const T1 &t1, const T2 &t2, const T3 &t3,
 
     // change max pool size
     void change_max_pool_size(const size_t new_max_pool_size) OTL_THROWS_OTL_EXCEPTION {
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       if(max_pool_size_<new_max_pool_size){
         max_pool_size_=new_max_pool_size;
       }else if(max_pool_size_>new_max_pool_size){
@@ -32285,7 +33772,7 @@ inline void otl_write_row(S &s, const T1 &t1, const T2 &t2, const T3 &t3,
 
     // Close the pool
     void close(const bool ignore_errors=false) OTL_THROWS_OTL_EXCEPTION{
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       if(!pool_open_)return;
       exception_ptr ret_exc;
       for(auto& i:pool_){
@@ -32319,49 +33806,73 @@ inline void otl_write_row(S &s, const T1 &t1, const T2 &t2, const T3 &t3,
     
     // Get the maximum pool size
     size_t max_pool_size() const OTL_NO_THROW{
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       return max_pool_size_;
     }
 
 
     // Get the minimum pool size
     size_t min_pool_size() const OTL_NO_THROW{
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       return min_pool_size_;
     }
 
     // Get the current / dynamic pool size
     size_t current_pool_size() const OTL_NO_THROW{
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       return pool_.size();
     }
 
     // Return "pool is open" flag
     bool is_open() const OTL_NO_THROW{
-      std::lock_guard<std::recursive_mutex> guard(mutex_);
+      otl_recursive_mutex_guard guard(&mutex_);
       return pool_open_;
     }
 
     // Get the underlying mutex when a sequence of more than one call
     // needs to be done under a single mutex lock for consistency.
     std::recursive_mutex& get_mutex() OTL_NO_THROW{
-      return mutex_;
+      return mutex_.get_mutex();
     }
-
-
 
   private:
 
     typedef std::unique_ptr<OTLException> exception_ptr;
 
-    bool pool_open_;
-    size_t min_pool_size_;
-    size_t max_pool_size_;
-    std::vector<connect_ptr> pool_;
-    mutable std::recursive_mutex mutex_;
+    bool pool_open_ OTL_GUARDED_BY(mutex_);
+    size_t min_pool_size_ OTL_GUARDED_BY(mutex_);
+    size_t max_pool_size_ OTL_GUARDED_BY(mutex_);
+    std::vector<connect_ptr> pool_ OTL_GUARDED_BY(mutex_);
+    mutable otl_recursive_mutex mutex_;
 
   };
 
+#endif
+
+#if defined(OTL_CPP_14_ON)
+// C++14 or higher
+template<OTL_TYPE_NAME TData, template <OTL_TYPE_NAME> class Optional, OTL_TYPE_NAME OTLStream>
+inline OTLStream &operator<<(OTLStream &s, const Optional<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+  if(var)
+    s<<(*var);
+  else
+    s<<otl_null();
+  return s;
+}
+
+template<OTL_TYPE_NAME TData, template <OTL_TYPE_NAME> class Optional, 
+         OTL_TYPE_NAME OTLStream>
+inline OTLStream &operator>>(OTLStream &s, Optional<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+  if(var){
+    s>>(*var);
+    if(s.is_null())var=Optional<TData>();
+  }else{
+    TData temp_var;
+    s>>temp_var;
+    if(!s.is_null())var.emplace(std::move(temp_var));
+  }
+  return s;
+}
 #endif
 
 #if defined(OTL_ORA_TEXT_ON) && defined(text)
