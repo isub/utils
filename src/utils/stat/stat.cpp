@@ -28,6 +28,7 @@ struct SStat {
 	timeval m_soTmMin;				/* минимальная продолжительность выполнения */
 	timeval m_soTmMax;				/* максимальная продолжительность выполнения */
 	timeval m_soTmTotal;			/* суммарная продожительность выполнения */
+	timeval m_soTmLast;				/* последнее значение времени выполнения */
   timeval m_soTmLastTotal;	/* суммарная продожительность выполнения с момента последнего отчета */
   pthread_mutex_t m_mutexStat;
 	bool m_bInitialized;
@@ -188,21 +189,18 @@ void stat_measure (SStat *p_psoStat, const char *p_pszObjName, CTimeMeasurer *p_
 
 	pthread_mutex_lock(&psoWanted->m_mutexStat);
 	psoWanted->m_ui64Count++;
-	if (psoWanted->m_bFirst) {
-    if (p_pcoTM) {
+  if (p_pcoTM) {
+    if (psoWanted->m_bFirst) {
       psoWanted->m_bFirst = false;
       psoWanted->m_soTmMin = tvDif;
       psoWanted->m_soTmMax = tvDif;
-    }
-	} else {
-    if (p_pcoTM) {
+    } else {
       p_pcoTM->GetMin(&psoWanted->m_soTmMin, &tvDif);
       p_pcoTM->GetMax(&psoWanted->m_soTmMax, &tvDif);
     }
-	}
-  if (p_pcoTM) {
     p_pcoTM->Add(&psoWanted->m_soTmTotal, &tvDif);
     p_pcoTM->Add(&psoWanted->m_soTmLastTotal, &tvDif);
+    psoWanted->m_soTmLast = tvDif;
   }
 	pthread_mutex_unlock(&psoWanted->m_mutexStat);
 }
@@ -217,6 +215,7 @@ SStat::SStat(const char *p_pszObjName)
 	memset (&m_soTmMin, 0, sizeof (m_soTmMin));
 	memset(&m_soTmMax, 0, sizeof(m_soTmMax));
 	memset(&m_soTmTotal, 0, sizeof(m_soTmTotal));
+	memset(&m_soTmLast, 0, sizeof(m_soTmLast));
 	memset(&m_soTmLastTotal, 0, sizeof(m_soTmLastTotal));
 	m_psoNext = NULL;
 	if (0 == pthread_mutex_init (&m_mutexStat, NULL))
@@ -230,7 +229,7 @@ SStat::~SStat()
 	pthread_mutex_destroy (&m_mutexStat);
 }
 
-static double stat_avg_duration(const timeval &p_soTimeVal, uint64_t p_uiCount)
+static inline double stat_avg_duration(const timeval &p_soTimeVal, uint64_t p_uiCount)
 {
   if (static_cast<uint64_t>(0) != p_uiCount) {
     double dfRetVal;
