@@ -77,6 +77,12 @@
 #define ATTR_CK         (unsigned short)0x0204
 #define ATTR_IK         (unsigned short)0x0205
 
+#define VLR_GATEWAY_COMMAND         (unsigned short)0x0500
+#define VLR_GATEWAY_IMSI            (unsigned short)0x0501
+#define VLR_GATEWAY_STATE           (unsigned short)0x0502
+#define VLR_GATEWAY_ONLINE_STATUS   (unsigned short)0x0503
+#define VLR_GATEWAY_VLR_ADDRESS     (unsigned short)0x0504
+
 #define	ATTR_REQUESTED_VECTORS  (unsigned short)0x0206
 #define	ATTR_RECEIVED_VECTORS   (unsigned short)0x0207
 
@@ -133,3 +139,5 @@ struct SPSPackHolder {
 
 
 #endif /*_COACOMMON_H_*/
+
+
