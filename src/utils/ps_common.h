@@ -89,6 +89,7 @@
 #define PCRF_CMD_REMOVE_SESSION 0x1001  /* remove session info from session cache */
 #define PCRF_CMD_INSERT_SESSRUL 0x1002  /* insert session rule in session rule cache */
 #define PCRF_CMD_REMOVE_SESSRUL 0x1003  /* remove session rule from session rule cache */
+#define PCRF_CMD_SESS_USAGE     0x1004  /* send session-usage request */
 
 /*	IRBiS-PS PCRF module attribute types
  *	0x10xx

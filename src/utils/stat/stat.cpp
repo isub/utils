@@ -230,7 +230,7 @@ SStat::~SStat()
 	pthread_mutex_destroy (&m_mutexStat);
 }
 
-static inline double stat_avg_duration(const timeval &p_soTimeVal, uint64_t p_uiCount)
+static double stat_avg_duration(const timeval &p_soTimeVal, uint64_t p_uiCount)
 {
   if (static_cast<uint64_t>(0) != p_uiCount) {
     double dfRetVal;
@@ -263,7 +263,7 @@ void * stat_output (void *p_pArg)
 		/**/
 		pthread_mutex_lock (g_pmutexStat);
 		strMsg.clear();
-    iFnRes = snprintf (mcBuf, sizeof (mcBuf), "\r\n             branch name             | total count |  diff  |  min. value  |    max. value    |  total duration  |  last duration  | tot. avg | last tot.avg |" );
+    iFnRes = snprintf (mcBuf, sizeof (mcBuf), "\r\n               branch name               | total count |  diff  |  min. value  |    max. value    |  total duration  |  last duration  | tot. avg | last tot.avg |" );
     if (0 < iFnRes) {
       if (sizeof(mcBuf) > static_cast<size_t>(iFnRes)) {
       } else {
@@ -282,7 +282,7 @@ void * stat_output (void *p_pArg)
 				coTM.ToString (&psoTmp->m_soTmMax, mcMax, sizeof(mcMax));
 				coTM.ToString (&psoTmp->m_soTmTotal, mcTotal, sizeof(mcTotal));
 				coTM.ToString (&psoTmp->m_soTmLastTotal, mcLast, sizeof(mcLast));
-				iFnRes = snprintf (mcBuf, sizeof (mcBuf), "%36s | %11lu | %6lu | %12s | %16s | %16s | %15s | %0.6f |     %0.6f |\r\n",
+				iFnRes = snprintf (mcBuf, sizeof (mcBuf), "%40s | %11llu | %6llu | %12s | %16s | %16s | %15s | %0.6f |     %0.6f |\r\n",
 					psoTmp->m_strObjName.c_str (),
 					psoTmp->m_ui64Count,
 					psoTmp->m_ui64Count - psoTmp->m_ui64CountPrec,

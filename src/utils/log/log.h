@@ -23,8 +23,6 @@
 		}
 #		define _LOG_STRIPPED_FILE__	(g_pszFileBaseName ? g_pszFileBaseName : FileBaseName(__FILE__))
 #	endif
-#endif
-
 #ifdef DEBUG
 #define UTL_LOG(logger,status, format,args...)	(logger).WriteLog(status ": %s@%s[%u]: " format, __FUNCTION__, _LOG_STRIPPED_FILE__, __LINE__, ## args)
 #else
@@ -42,6 +40,7 @@
 
 #define UTL_LOG_W(logger,format,args...)	UTL_LOG(logger,"warning",format,##args)
 #define UTL_LOG_F(logger,format,args...)	UTL_LOG(logger,"fatal",format,##args)
+#endif
 
 class LOG_SPEC CLog {
 public:

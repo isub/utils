@@ -144,13 +144,13 @@ void CTimeMeasurer::ToString (timeval *p_psoTv, char *p_pszString, size_t p_stMa
 	int iStrLen;
 
 	if (NULL != p_pszString) {
+    p_pszString[0] = '\0';
 	} else {
 		return;
 	}
 
   if (NULL != p_psoTv) {
   } else {
-    p_pszString[0] = '\0';
     return;
   }
 
