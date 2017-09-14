@@ -17,7 +17,7 @@
 
 #include "ipconnector.h"
 
-void CIPConnector::init (int p_iReqTimeout)
+void CIPConnector::init( unsigned int p_uiReqTimeout )
 {
 	m_iStatus = 0;
 	m_sockSock = INVALID_SOCKET;
@@ -29,17 +29,17 @@ void CIPConnector::init (int p_iReqTimeout)
 #else
 	m_iStatus = 1;
 #endif
-	m_iRequestTimeout = p_iReqTimeout;
+	m_uiRequestTimeout = p_uiReqTimeout * 1000;
 }
 
 CIPConnector::CIPConnector ()
 {
-	init (10);
+	init (5);
 }
 
-CIPConnector::CIPConnector (int p_iReqTimeout)
+CIPConnector::CIPConnector( unsigned int p_uiReqTimeout )
 {
-	init (p_iReqTimeout);
+	init( p_uiReqTimeout );
 }
 
 CIPConnector::~CIPConnector ()
@@ -126,7 +126,7 @@ int CIPConnector::Send (const char *p_mcBuf, int p_iLen)
 		pollfd soPollFD;
 		int iSent;
 
-		/* провер¤ем, было ли выполнено подключение */
+		/* проверяем, было ли выполнено подключение */
 		if (2 != m_iStatus) {
 			iRetVal = -1;
 			break;
@@ -136,9 +136,9 @@ int CIPConnector::Send (const char *p_mcBuf, int p_iLen)
 		soPollFD.fd = m_sockSock;
 		soPollFD.events = POLLOUT;
 #ifdef WIN32
-		iFnRes = WSAPoll (&soPollFD, 1, m_iRequestTimeout * 1000);
+		iFnRes = WSAPoll( &soPollFD, 1, m_uiRequestTimeout );
 #else
-		iFnRes = poll (&soPollFD, 1, m_iRequestTimeout * 1000);
+		iFnRes = poll (&soPollFD, 1, m_uiRequestTimeout );
 #endif
 
 		if (1 != iFnRes) {
@@ -190,9 +190,9 @@ int CIPConnector::Recv (char *p_mcBuf, int p_iBufSize)
 		soPollFD.fd = m_sockSock;
 		soPollFD.events = POLLIN;
 #ifdef WIN32
-		iFnRes = WSAPoll (&soPollFD, 1, m_iRequestTimeout * 1000);
+		iFnRes = WSAPoll( &soPollFD, 1, m_uiRequestTimeout );
 #else
-		iFnRes = poll (&soPollFD, 1, m_iRequestTimeout * 1000);
+		iFnRes = poll( &soPollFD, 1, m_uiRequestTimeout );
 #endif
 
 		if (1 != iFnRes) {

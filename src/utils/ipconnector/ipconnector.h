@@ -11,10 +11,12 @@
 
 class IPCONNECTOR_SPEC CIPConnector {
 public:
-	CIPConnector ();
-	CIPConnector (int p_iReqTimeout);
-	~CIPConnector ();
+	CIPConnector();
+	CIPConnector( unsigned int p_uiReqTimeout ); /* в конструкторе таймаут задается в секундах для обратной совместимости */
+	~CIPConnector();
 public:
+  /* функция SetTimeout задает таймаут в миллисекундах */
+  void SetTimeout( unsigned int p_uiMilliSec ) { m_uiRequestTimeout = p_uiMilliSec; }
 	int Connect (const char *p_pszHostName, unsigned short p_usPort, int p_iProtoType = IPPROTO_TCP);
 	int Send (const char *p_mcBuf, int p_iLen);
 	int Recv (char *p_mcBuf, int p_iBufSize);
@@ -26,9 +28,8 @@ public:
 private:
 	/* статус объекта */
 	int m_iStatus;
-	/* время максимально допустимого ожидания операций с сокетом в секундах.
-	   задается в конструкторе CIPConnector (int p_iReqTimeout). по умолчанию = 5 сек */
-	int m_iRequestTimeout;
+	/* время максимального ожидания операций с сокетом в миллисекундах */
+	unsigned int m_uiRequestTimeout;
 #ifdef WIN32
 	SOCKET
 #else
@@ -36,5 +37,5 @@ private:
 #endif
 	m_sockSock;
 private:
-	void init (int p_iReqTimeout);
+	void init( unsigned int p_uiReqTimeout );
 };
