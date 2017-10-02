@@ -219,6 +219,7 @@ int CIPConnector::Recv (char *p_mcBuf, int p_iBufSize)
 
 void CIPConnector::DisConnect () {
 	if (INVALID_SOCKET != m_sockSock) {
+    shutdown( m_sockSock, SHUT_RDWR );
 		m_iStatus = 1;
 #ifdef WIN32
 		closesocket (m_sockSock);

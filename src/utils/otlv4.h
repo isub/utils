@@ -1,5 +1,5 @@
 // =================================================================================
-// ORACLE, ODBC and DB2/CLI Template Library, Version 4.0.394,
+// ORACLE, ODBC and DB2/CLI Template Library, Version 4.0.409,
 // Copyright (C) 1996-2017, Sergei Kuchin (skuchin@gmail.com)
 //
 // This library is free software. Permission to use, copy, modify,
@@ -26,7 +26,15 @@
 #include "otl_include_0.h"
 #endif
 
-#define OTL_VERSION_NUMBER (0x04018AL)
+#define OTL_VERSION_NUMBER (0x040199L)
+
+#if defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS)
+#define OTL_STD_STRING_VIEW_CLASS OTL_THIRD_PARTY_STRING_VIEW_CLASS
+#endif
+
+#if defined(OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS)
+#define OTL_STD_UNICODE_STRING_VIEW_CLASS OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS
+#endif
 
 #if defined(OTL_CPP_14_ON)
 #define OTL_CPP_11_ON
@@ -53,6 +61,16 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
 
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=701)
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
+#if defined(__clang__) && (__clang_major__*100+__clang_minor__ >= 306)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
+
 // auto-detection of "std" compiler switches
 
 #if defined(_MSC_VER)
@@ -74,6 +92,12 @@
 #endif
 #if !defined(OTL_CPP_14_ON)
 #define OTL_CPP_14_ON
+#endif
+#if !defined(OTL_CPP_17_ON) && defined(_MSC_VER) && (_MSC_VER>=1910)
+#define OTL_CPP_17_ON
+#endif
+#if defined(_MSC_VER) && (_MSC_VER>=1910)
+#define OTL_COMPILER_HAS_STD_OPTIONAL
 #endif
 #endif
 
@@ -169,9 +193,6 @@
 
 #endif
 
-#if defined(OTL_CPP_17_ON)
-#endif
-
 #define OTL_ANSI_CPP_11_NOEXCEPT
 
 #if !defined(OTL_ANSI_CPP_11_NULLPTR_SUPPORT) && !defined(__cplusplus_cli)
@@ -191,6 +212,71 @@
 #define OTL_ANSI_CPP_11_NOEXCEPT noexcept(true)
 #define OTL_ANSI_CPP_11_NOEXCEPT_FALSE noexcept(false)
 #endif
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_TUPLE_ON) && defined(OTL_CPP_14_ON)
+#include <tuple>
+#include <utility>
+
+  template<typename streamType, typename Tuple, const size_t N>
+  struct otl_tuple_helper{
+    
+    static void write(streamType& s, const Tuple& t){
+      otl_tuple_helper<streamType,Tuple,N-1>::write(s,t);
+      s<<std::get<N-1>(t);
+    }
+
+    static void read(streamType& s, Tuple& t){
+      otl_tuple_helper<streamType,Tuple,N-1>::read(s,t);
+      s>>std::get<N-1>(t);
+    }
+    
+  };
+ 
+  template<typename streamType, typename Tuple>
+  struct otl_tuple_helper<streamType,Tuple,1>{
+
+    static void write(streamType& s, const Tuple& t) {
+      s<<std::get<0>(t);
+    }
+
+    static void read(streamType& s, Tuple& t) {
+      s>>std::get<0>(t);
+    }
+
+  };
+
+#endif
+
+// C++11/14/17 attributes
+#if defined(OTL_CPP_11_ON)
+#if defined(_MSC_VER) && (_MSC_VER>=1900)
+#define OTL_NORETURN [[noreturn]]
+#elif defined(_MSC_VER) && (_MSC_VER<1900)
+#define OTL_NORETURN
+#else
+#define OTL_NORETURN [[noreturn]]
+#endif
+#else
+#define OTL_NORETURN
+#endif
+
+#if defined(OTL_CPP_14_ON)
+#define OTL_DEPRECATED [[deprecated]]
+#define OTL_DEPRECATED_WITH_ARG(x) [[deprecated(x)]]
+#else
+#define OTL_DEPRECATED
+#define OTL_DEPRECATED_WITH_ARG(x)
+#endif
+
+#if defined(OTL_CPP_17_ON)
+#define OTL_NODISCARD [[nodiscard]]
+#define OTL_FALLTHROUGH [[fallthrough]];
+#define OTL_MAYBE_UNUSED [[maybe_unused]]
+#else
+#define OTL_NODISCARD
+#define OTL_FALLTHROUGH
+#define OTL_MAYBE_UNUSED
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
@@ -359,6 +445,12 @@ inline int otl_sprintf_s(char* dest, size_t /* dest_sz */, const char* fmt, ...)
 #endif
 #if defined(OTL_UNICODE)
 #define OTL_ORA_UNICODE_LONG_LENGTH_IN_BYTES
+#endif
+#endif
+
+#if defined(OTL_ORA12C_R2)
+#if !defined(OTL_ORA12C)
+#define OTL_ORA12C
 #endif
 #endif
 
@@ -1443,9 +1535,9 @@ public:
 
   ~otl_tmpl_vector() {}
 
-  int capacity(void) const { return this->max_size(); }
+  OTL_NODISCARD int capacity(void) const { return this->max_size(); }
 
-  int size(void) const { return length_; }
+  OTL_NODISCARD int size(void) const { return length_; }
 
   void clear(void) { length_ = 0; }
 
@@ -1497,12 +1589,12 @@ private:
 #if !defined(OTL_STLPORT)
 #if defined(OTL_CPP_17_ON)
 // C++17 and higher deprecated bool std::uncaught_exception()
-inline bool otl_uncaught_exception() { return std::uncaught_exceptions() > 0; }
+OTL_NODISCARD inline bool otl_uncaught_exception() { return std::uncaught_exceptions() > 0; }
 #else
-inline bool otl_uncaught_exception() { return std::uncaught_exception(); }
+OTL_NODISCARD inline bool otl_uncaught_exception() { return std::uncaught_exception(); }
 #endif
 #else
-inline bool otl_uncaught_exception() {
+OTL_NODISCARD inline bool otl_uncaught_exception() {
 #if defined(OTL_STLPORT_USES_STD_ALIAS_NAMESPACE)
   return __std_alias::uncaught_exception();
 #else
@@ -1511,7 +1603,7 @@ inline bool otl_uncaught_exception() {
 }
 #endif
 #else
-inline bool otl_uncaught_exception() { return false; }
+OTL_NODISCARD inline bool otl_uncaught_exception() { return false; }
 #endif
 
 #if defined(OTL_VALUE_TEMPLATE_ON) && !defined(OTL_STL) && !defined(OTL_ACE)
@@ -1779,6 +1871,12 @@ const int otl_error_code_43 = 32044;
 const int otl_error_code_44 = 32045;
 #define otl_error_msg_44 "Empty TNS name in connect string"
 
+const int otl_error_code_45 = 32046;
+#define otl_error_msg_45 "target std::array<char,...> container is too small"
+
+const int otl_error_code_46 = 32047;
+#define otl_error_msg_46 "target std::array<char16_t,...> container is too small"
+
 const int otl_oracle_date_size = 7;
 
 const int otl_explicit_select = 0;
@@ -1813,9 +1911,9 @@ public:
 
   virtual ~otl_auto_array_ptr() { delete[] ptr; }
 
-  T *get_ptr() { return ptr; }
+  OTL_NODISCARD T *get_ptr() { return ptr; }
 
-  int get_arr_size() const { return arr_size_; }
+  OTL_NODISCARD int get_arr_size() const { return arr_size_; }
 
 private:
   T *ptr;
@@ -1963,7 +2061,7 @@ public:
     master_stream_ptr_ = stream_ptr;
   }
 
-  void *get_master_stream_ptr() { return master_stream_ptr_; }
+  OTL_NODISCARD void *get_master_stream_ptr() { return master_stream_ptr_; }
 
   void reset(void) {
     len = 0;
@@ -2006,7 +2104,7 @@ public:
     col_size[len - 1] = asize;
   }
 
-  int find(const int ndx) const {
+  OTL_NODISCARD int find(const int ndx) const {
     int i;
     for (i = 0; i < len; ++i)
       if (ndx == col_ndx[i])
@@ -2016,17 +2114,17 @@ public:
 
   void set_all_column_types(const unsigned int amask = 0) { all_mask = amask; }
 
-  int getLen(void) const { return len; }
+  OTL_NODISCARD int getLen(void) const { return len; }
 
-  unsigned int get_all_mask() const { return all_mask; }
+  OTL_NODISCARD unsigned int get_all_mask() const { return all_mask; }
 
-  short int get_col_type(int ndx) const { return col_type[ndx]; }
+  OTL_NODISCARD short int get_col_type(int ndx) const { return col_type[ndx]; }
 
-  int get_col_size(int ndx) const { return col_size[ndx]; }
+  OTL_NODISCARD int get_col_size(int ndx) const { return col_size[ndx]; }
 
   void setLen(const int alen) { len = alen; }
 
-  bool get_lob_stream_mode() const { return lob_stream_mode; }
+  OTL_NODISCARD bool get_lob_stream_mode() const { return lob_stream_mode; }
 
   void set_lob_stream_mode(const bool alobs_tream_mode) {
     lob_stream_mode = alobs_tream_mode;
@@ -2077,7 +2175,7 @@ private:
 #endif
 };
 
-inline int otl_decimal_degree(unsigned int num) {
+OTL_NODISCARD inline int otl_decimal_degree(unsigned int num) {
   int n = 0;
   while (num != 0) {
     ++n;
@@ -2086,14 +2184,14 @@ inline int otl_decimal_degree(unsigned int num) {
   return n;
 }
 
-inline bool otl_isspace(char c) {
+OTL_NODISCARD inline bool otl_isspace(char c) {
   return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' ||
          c == '\v';
 }
 
-inline char otl_to_upper(char c) { return OTL_SCAST(char, toupper(c)); }
+OTL_NODISCARD inline char otl_to_upper(char c) { return OTL_SCAST(char, toupper(c)); }
 
-inline bool otl_str_case_insensitive_equal(const char *s1, const char *s2) {
+OTL_NODISCARD inline bool otl_str_case_insensitive_equal(const char *s1, const char *s2) {
   while (*s1 && *s2) {
     if (otl_to_upper(*s1) != otl_to_upper(*s2))
       return false;
@@ -2106,7 +2204,7 @@ inline bool otl_str_case_insensitive_equal(const char *s1, const char *s2) {
     return false;
 }
 
-inline unsigned int otl_to_fraction(unsigned int fraction, int frac_prec) {
+OTL_NODISCARD inline unsigned int otl_to_fraction(unsigned int fraction, int frac_prec) {
   if (fraction == 0 || frac_prec == 0)
     return fraction;
   int fraction_degree = otl_decimal_degree(fraction);
@@ -2123,7 +2221,7 @@ inline unsigned int otl_to_fraction(unsigned int fraction, int frac_prec) {
   return fraction;
 }
 
-inline unsigned int otl_from_fraction(unsigned int fraction, int frac_prec) {
+OTL_NODISCARD inline unsigned int otl_from_fraction(unsigned int fraction, int frac_prec) {
   if (fraction == 0 || frac_prec == 0)
     return fraction;
   int degree_diff = 9 - frac_prec;
@@ -2336,6 +2434,11 @@ public:
 #endif
   }
 
+#if defined(_MSC_VER) && (_MSC_VER>=1900)
+#pragma warning(push)
+#pragma warning(disable : 6387)
+#endif
+
   otl_column_desc &operator=(const otl_column_desc &desc) {
     if (name_len_ >= desc.name_len_)
       OTL_STRCPY_S(name, name_len_, desc.name);
@@ -2377,6 +2480,10 @@ public:
 #endif
     return *this;
   }
+
+#if defined(_MSC_VER) && (_MSC_VER>=1900)
+#pragma warning(pop)
+#endif
 
   otl_column_desc(const otl_column_desc &desc)
       : name(nullptr), dbtype(desc.dbtype), otl_var_dbtype(0),
@@ -2680,7 +2787,7 @@ public:
       length = input_length;
       buf_size = buffer_size;
       v = new unsigned char[OTL_SCAST(size_t,buffer_size + 1)];
-      memset(v, 0, OTL_SCAST(unsigned int, buffer_size));
+      memset(v, 0, OTL_SCAST(unsigned int, buffer_size+1));
     }
   }
 
@@ -2905,8 +3012,12 @@ public:
 };
 
 #endif
+const int const_STD_CHAR_ARRAY_code=200;
+const int const_STD_UNICODE_CHAR_ARRAY_code=201;
 
 inline const char *otl_var_type_name(const int ftype) {
+  const char *const_STD_CHAR_ARRAY = "std::array<char,...>";
+  const char *const_STD_UNICODE_CHAR_ARRAY = "std::array<char16_t,...>";
   const char *const_CHAR = "CHAR";
   const char *const_DOUBLE = "DOUBLE";
   const char *const_FLOAT = "FLOAT";
@@ -2993,6 +3104,10 @@ inline const char *otl_var_type_name(const int ftype) {
     return const_LOB_STREAM;
   case 108:
     return const_USER_DEFINED;
+  case const_STD_CHAR_ARRAY_code:
+    return const_STD_CHAR_ARRAY;
+  case const_STD_UNICODE_CHAR_ARRAY_code:
+    return const_STD_UNICODE_CHAR_ARRAY;
   default:
     return const_UNKNOWN;
   }
@@ -4096,7 +4211,7 @@ OTL_THROWS_OTL_EXCEPTION:
 
   void open(otl_stream_buffer_size_type arr_size, const char *sqlstm,
             OTLConnect &db,
-            const char *ref_cur_placeholder = 0) OTL_THROWS_OTL_EXCEPTION {
+            const char *ref_cur_placeholder = nullptr) OTL_THROWS_OTL_EXCEPTION {
     OTLStream::open(arr_size, sqlstm, db, ref_cur_placeholder);
     OTLStream::set_commit(0);
   }
@@ -5186,7 +5301,7 @@ public:
 
   void init(const bool select_stm_flag, const int aftype, const int aelem_size,
             const otl_stream_buffer_size_type aarray_size,
-            const void *connect_struct = 0, const int apl_tab_flag = 0
+            const void *connect_struct = nullptr, const int apl_tab_flag = 0
 #if defined(OTL_ORA_SDO_GEOMETRY)
             ,OCIType* colOCIType = nullptr
 #endif
@@ -6735,7 +6850,7 @@ public:
     OTL_TMPL_CURSOR::close();
   }
 
-  int first(void) {
+  OTL_NODISCARD int first(void) {
     if (!OTL_TMPL_CURSOR::connected)
       return 0;
     select_cursor_struct.set_prefetch_size(prefetch_array_size);
@@ -6756,7 +6871,7 @@ public:
     return cur_size != 0;
   }
 
-  int next_throw(void) {
+  OTL_NODISCARD int next_throw(void) {
     if (this->adb)
       this->adb->increment_throw_count();
     if (this->adb && this->adb->get_throw_count() > 1)
@@ -6769,7 +6884,7 @@ public:
                                                       : this->stm_text);
   }
 
-  int next(void) {
+  OTL_NODISCARD int next(void) {
     if (!this->connected)
       return 0;
     if (cur_row == -1)
@@ -6816,13 +6931,35 @@ private:
 
 #if defined(OTL_ORA8) || defined(OTL_ODBC)
 
-const int otl_lob_stream_read_mode = 1;
-const int otl_lob_stream_write_mode = 2;
-const int otl_lob_stream_zero_mode = 3;
+#if defined(OTL_ANSI_CPP_11_ENUM_IS_SUPPORTED)
+#define OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_mode_enum::
+enum class otl_lob_stream_mode_enum : unsigned char {
+  otl_lob_stream_read_mode = 1,
+  otl_lob_stream_write_mode = 2,
+  otl_lob_stream_zero_mode = 3
+};
+#else
+#define OTL_LOB_STREAM_MODE_ENUM
+typedef unsigned char otl_lob_stream_mode_enum;
+const otl_lob_stream_mode_enum otl_lob_stream_read_mode = 1;
+const otl_lob_stream_mode_enum otl_lob_stream_write_mode = 2;
+const otl_lob_stream_mode_enum otl_lob_stream_zero_mode = 3;
+#endif
 
-const int otl_lob_stream_first_piece = 1;
-const int otl_lob_stream_next_piece = 2;
-const int otl_lob_stream_last_piece = 3;
+#if defined(OTL_ANSI_CPP_11_ENUM_IS_SUPPORTED)
+#define OTL_LOB_STREAM_PIECE_ENUM otl_lob_stream_piece_enum::
+enum class otl_lob_stream_piece_enum : unsigned char {
+  otl_lob_stream_first_piece = 1,
+  otl_lob_stream_next_piece = 2,
+  otl_lob_stream_las_piece = 3
+};
+#else
+#define OTL_LOB_STREAM_MODE_ENUM
+typedef unsigned char otl_lob_stream_piece_enum;
+const otl_lob_stream_piece_enum otl_lob_stream_first_piece = 1;
+const otl_lob_stream_piece_enum otl_lob_stream_next_piece = 2;
+const otl_lob_stream_piece_enum otl_lob_stream_last_piece = 3;
+#endif
 
 class otl_lob_stream_generic {
 protected:
@@ -6837,7 +6974,7 @@ protected:
   bool ora_lob;
 
 public:
-  int get_ora_lob() const { return ora_lob; }
+  OTL_NODISCARD int get_ora_lob() const { return ora_lob; }
 
   otl_lob_stream_generic(const bool aora_lob = true)
       : mode(0), retcode(0), ndx(0), offset(0), lob_len(0), in_destructor(0),
@@ -6857,13 +6994,13 @@ public:
   virtual void setStringBuffer(const int chunk_size) = 0;
 #endif
 
-#if defined(OTL_STD_STRING_VIEW_CLASS) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_STRING_VIEW_CLASS) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS))
   virtual otl_lob_stream_generic &operator<<(OTL_STD_STRING_VIEW_CLASS s) = 0;
 #endif
 
-  virtual int eof(void) = 0;
-  virtual int len(void) = 0;
-  virtual bool is_initialized(void) = 0;
+  OTL_NODISCARD virtual int eof(void) = 0;
+  OTL_NODISCARD virtual int len(void) = 0;
+  OTL_NODISCARD virtual bool is_initialized(void) = 0;
   virtual void close(bool dont_throw_size_doesnt_match_exception = false) = 0;
 
 private:
@@ -6963,16 +7100,16 @@ protected:
   long _rfc;
 
 public:
-  int get_select_row_count() const {
+  OTL_NODISCARD int get_select_row_count() const {
     return this->cur_row == -1 ? 0 : this->cur_size - this->cur_row;
   }
 
-  int get_prefetched_row_count() const { return this->row_count; }
-  int get_row_count() const { return this->row_count; }
-  int get_sl_len() const { return sl_len; }
-  otl_tmpl_variable<TVariableStruct> *get_sl() { return sl; }
-  otl_column_desc *get_sl_desc() { return sl_desc; }
-  long get_rfc() const { return _rfc; }
+  OTL_NODISCARD int get_prefetched_row_count() const { return this->row_count; }
+  OTL_NODISCARD int get_row_count() const { return this->row_count; }
+  OTL_NODISCARD int get_sl_len() const { return sl_len; }
+  OTL_NODISCARD otl_tmpl_variable<TVariableStruct> *get_sl() { return sl; }
+  OTL_NODISCARD otl_column_desc *get_sl_desc() { return sl_desc; }
+  OTL_NODISCARD long get_rfc() const { return _rfc; }
 
   void cleanup(void) {
     int i;
@@ -7106,9 +7243,9 @@ public:
     }
   }
 
-  int is_null(void) { return null_fetched; }
+  OTL_NODISCARD int is_null(void) { return null_fetched; }
 
-  int eof(void) {
+  OTL_NODISCARD int eof(void) {
 #if defined(OTL_SELECT_STREAM_ALTERNATE_FETCH)
     if (cur_col == sl_len - 1) {
       get_next();
@@ -7129,7 +7266,7 @@ public:
 #endif
   }
 
-  int eof_intern(void) { return !eof_status; }
+  OTL_NODISCARD int eof_intern(void) { return !eof_status; }
 
   void skip_to_end_of_row() {
     check_if_executed();
@@ -7144,6 +7281,14 @@ public:
     if (!eof_intern())
       cur_col = -1;
     ++_rfc;
+  }
+
+  void skip_to_next_var() {
+    check_if_executed();
+    if (eof_intern())
+      return;
+    get_next();
+    look_ahead();
   }
 
   void bind_all(void) {
@@ -7242,7 +7387,7 @@ public:
     }
   }
 
-  int check_type_throw(int type_code, int actual_data_type) {
+  OTL_NODISCARD int check_type_throw(int type_code, int actual_data_type) {
     int out_type_code;
     if (actual_data_type != 0)
       out_type_code = actual_data_type;
@@ -7277,7 +7422,7 @@ public:
   }
 #endif
 
-  int check_type(int type_code, int actual_data_type = 0) {
+  OTL_NODISCARD int check_type(int type_code, int actual_data_type = 0) {
     switch (sl[cur_col].get_ftype()) {
     case otl_var_timestamp:
     case otl_var_tz_timestamp:
@@ -7434,7 +7579,7 @@ public:
       break;
 #endif
     default:
-      check_type(otl_var_char);
+      (void)check_type(otl_var_char);
     } // switch
     return *this;
   }
@@ -7452,6 +7597,28 @@ public:
       look_ahead();
     }
     return *this;
+  }
+
+  void getString(char *s, int max_size) {
+    check_if_executed();
+    if (eof_intern())
+      return;
+    get_next();
+    if (check_type(otl_var_char) && !eof_intern()) {
+      if(max_size<sl[cur_col].get_len(this->cur_row)){
+        otl_var_info_col(sl[cur_col].get_pos(), sl[cur_col].get_ftype(), const_STD_CHAR_ARRAY_code,
+                         var_info, sizeof(var_info));
+        throw otl_tmpl_exception<TExceptionStruct, TConnectStruct,
+          TCursorStruct>(otl_error_msg_45, 
+                         otl_error_code_45,
+                         this->stm_label ? this->stm_label : this->stm_text, 
+                         this->var_info);
+      }
+      otl_strcpy(
+          OTL_RCAST(unsigned char *, s),
+          OTL_RCAST(const unsigned char *, sl[cur_col].val(this->cur_row)));
+      look_ahead();
+    }
   }
 
 #if defined(OTL_UNICODE_STRING_TYPE)
@@ -7503,7 +7670,7 @@ public:
 
 #endif
 
-#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS))
   OTL_TMPL_SELECT_STREAM &operator<<(OTL_STD_UNICODE_STRING_VIEW_CLASS s) {
     check_in_var();
     if (check_in_type(otl_var_char, 1)) {
@@ -7610,7 +7777,7 @@ public:
       }
       break;
     default:
-      check_type(otl_var_char);
+      (void)check_type(otl_var_char);
     }
     return *this;
   }
@@ -7629,6 +7796,30 @@ public:
     }
     return *this;
   }
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON) && defined(OTL_UNICODE)
+  void getString(char16_t *s, int max_size) {
+    check_if_executed();
+    if (eof_intern())
+      return;
+    get_next();
+    if (check_type(otl_var_char) && !eof_intern()) {
+      if(max_size<sl[cur_col].get_len(this->cur_row)){
+        otl_var_info_col(sl[cur_col].get_pos(), sl[cur_col].get_ftype(), const_STD_UNICODE_CHAR_ARRAY_code,
+                         var_info, sizeof(var_info));
+        throw otl_tmpl_exception<TExceptionStruct, TConnectStruct,
+          TCursorStruct>(otl_error_msg_46, 
+                         otl_error_code_46,
+                         this->stm_label ? this->stm_label : this->stm_text, 
+                         this->var_info);
+      }
+      otl_strcpy2(OTL_RCAST(unsigned char *, s),
+                  OTL_RCAST(unsigned char *, sl[cur_col].val(this->cur_row)),
+                  sl[cur_col].get_len(this->cur_row));
+      look_ahead();
+    }
+  }
+#endif
 
 #if defined(OTL_STRICT_NUMERIC_TYPE_CHECK_ON_SELECT)
 #define OTL_D1(T, T_type)                                                      \
@@ -7654,7 +7845,7 @@ public:
       return *this;
     get_next();
     if(check_type(otl_var_sdo_geometry) && !eof_intern()){
-      sl[cur_col].get_var_struct().read_geometry(s, this->cur_row);
+      (void)sl[cur_col].get_var_struct().read_geometry(s, this->cur_row);
       look_ahead();
     }
     return *this;
@@ -7904,14 +8095,14 @@ public:
                             sl[cur_col].get_ftype() == otl_var_clob) &&
         !eof_intern()) {
       s.init(OTL_RCAST(void *, &sl[cur_col]), OTL_RCAST(void *, this->adb),
-             OTL_RCAST(void *, this), this->cur_row, otl_lob_stream_read_mode,
+             OTL_RCAST(void *, this), this->cur_row, OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode),
              this->is_null());
       delay_next = 1;
     } else if ((sl[cur_col].get_ftype() == otl_var_varchar_long ||
                 sl[cur_col].get_ftype() == otl_var_raw_long) &&
                !eof_intern()) {
       s.init(OTL_RCAST(void *, &sl[cur_col]), OTL_RCAST(void *, this->adb),
-             OTL_RCAST(void *, this), this->cur_row, otl_lob_stream_read_mode);
+             OTL_RCAST(void *, this), this->cur_row, OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode));
       delay_next = 1;
     } else {
       char tmp_var_info[256];
@@ -7945,14 +8136,16 @@ public:
                              var_info);
   }
 
-  int check_in_type(int type_code, int tsize) {
+  OTL_NODISCARD int check_in_type(int type_code, int tsize) {
     switch (this->vl[cur_in]->get_ftype()) {
     case otl_var_char:
       if (type_code == otl_var_char)
         return 1;
+      break;
     case otl_var_raw:
       if (type_code == otl_var_raw)
         return 1;
+      break;
     case otl_var_db2date:
     case otl_var_db2time:
     case otl_var_timestamp:
@@ -7960,10 +8153,12 @@ public:
     case otl_var_ltz_timestamp:
       if (type_code == otl_var_timestamp)
         return 1;
+      break;
     default:
       if (this->vl[cur_in]->get_ftype() == type_code &&
           this->vl[cur_in]->get_elem_size() == tsize)
         return 1;
+      break;
     }
     return check_in_type_throw(type_code);
   }
@@ -8062,6 +8257,23 @@ public:
     get_in_next();
     return *this;
   }
+
+#if defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+    template<const size_t N>
+    OTL_TMPL_SELECT_STREAM &operator<<(const std::array<char,N>& s){
+      (*this)<<s.data();
+      return *this;
+    }
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON) && defined(OTL_UNICODE)
+    template<const size_t N>
+    OTL_TMPL_SELECT_STREAM &operator<<(const std::array<char16_t,N>& s){
+      (*this)<<OTL_RCAST(unsigned char*,OTL_CCAST(char16_t*,s.data()));
+      return *this;
+    }
+#endif
+
 
   OTL_TMPL_SELECT_STREAM &operator<<(const otl_long_string &s) {
     check_in_var();
@@ -8234,7 +8446,7 @@ public:
 
 #endif
 
-#if defined(OTL_STD_STRING_VIEW_CLASS) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_STRING_VIEW_CLASS) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS))
   OTL_TMPL_SELECT_STREAM &operator<<(OTL_STD_STRING_VIEW_CLASS s) {
     check_in_var();
     if (this->vl[cur_in]->get_ftype() == otl_var_raw) {
@@ -8484,7 +8696,7 @@ protected:
   void *master_stream_ptr_;
 
 public:
-  int get_dirty_buf_len() const {
+  OTL_NODISCARD int get_dirty_buf_len() const {
     if (dirty)
       return cur_y + 1;
     else
@@ -8507,7 +8719,7 @@ public:
   otl_tmpl_out_stream(otl_stream_buffer_size_type arr_size, const char *sqlstm,
                       OTL_TMPL_CONNECT &db, void *master_stream_ptr,
                       const bool alob_stream_mode = false,
-                      const char *sqlstm_label = 0)
+                      const char *sqlstm_label = nullptr)
       : OTL_TMPL_CURSOR(db), auto_commit_flag(0), dirty(0), cur_x(0), cur_y(0),
         array_size(0), in_exception_flag(0), in_destruct_flag(0),
         should_delete_flag(0), var_info(), flush_flag(0), flush_flag2(0),
@@ -8818,7 +9030,7 @@ public:
     dirty = 1;
   }
 
-  int check_type_throw(int type_code) {
+  OTL_NODISCARD int check_type_throw(int type_code) {
     in_exception_flag = 1;
     otl_var_info_var(this->vl[cur_x]->get_name(), this->vl[cur_x]->get_ftype(),
                      type_code, var_info, sizeof(var_info));
@@ -8833,7 +9045,7 @@ public:
                              var_info);
   }
 
-  int check_type(int type_code, int tsize) {
+  OTL_NODISCARD int check_type(int type_code, int tsize) {
     switch (this->vl[cur_x]->get_ftype()) {
     case otl_var_char:
       if (type_code == otl_var_char)
@@ -9020,12 +9232,12 @@ public:
               this->stm_label ? this->stm_label : this->stm_text, var_info);
         }
         this->vl[cur_x]->set_not_null(cur_y);
-        this->vl[cur_x]->get_var_struct().save_blob(
-            OTL_RCAST(unsigned char *, OTL_CCAST(char *, s.c_str())), len, 0);
+        (void)this->vl[cur_x]->get_var_struct().save_blob
+          (OTL_RCAST(unsigned char *, OTL_CCAST(char *, s.c_str())), len, 0);
       } break;
 #endif
       default:
-        check_type(otl_var_char, 1);
+        (void)check_type(otl_var_char, 1);
       } // switch
       check_buf();
     }
@@ -9033,7 +9245,7 @@ public:
   }
 #endif
 
-#if defined(OTL_STD_STRING_VIEW_CLASS) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_STRING_VIEW_CLASS) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS))
   OTL_TMPL_OUT_STREAM &operator<<(OTL_STD_STRING_VIEW_CLASS s) {
     if (this->vl_len > 0) {
       get_next();
@@ -9147,11 +9359,11 @@ public:
               this->stm_label ? this->stm_label : this->stm_text, var_info);
         }
         this->vl[cur_x]->set_not_null(cur_y);
-        this->vl[cur_x]->get_var_struct().save_blob(
-            OTL_RCAST(unsigned char *, OTL_CCAST(char *, s.data())), len, 0);
+        (void)this->vl[cur_x]->get_var_struct().save_blob
+          (OTL_RCAST(unsigned char *, OTL_CCAST(char *, s.data())), len, 0);
       } break;
       default:
-        check_type(otl_var_char, 1);
+        (void)check_type(otl_var_char, 1);
       } // switch
       check_buf();
     }
@@ -9251,7 +9463,7 @@ public:
               this->stm_label ? this->stm_label : this->stm_text, var_info);
         }
         this->vl[cur_x]->set_not_null(cur_y);
-        this->vl[cur_x]->get_var_struct().save_blob
+        (void)this->vl[cur_x]->get_var_struct().save_blob
 #if defined(OTL_C_STR_FOR_UNICODE_STRING_TYPE)
             (OTL_RCAST(const unsigned char *,
                        s.OTL_C_STR_FOR_UNICODE_STRING_TYPE()),
@@ -9261,7 +9473,7 @@ public:
              len, 0);
       } break;
       default:
-        check_type(otl_var_char, 1);
+        (void)check_type(otl_var_char, 1);
       }
       check_buf();
     }
@@ -9269,7 +9481,7 @@ public:
   }
 #endif
 
-#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS))
   OTL_TMPL_OUT_STREAM &operator<<(OTL_STD_UNICODE_STRING_VIEW_CLASS s) {
     if (this->vl_len > 0) {
       get_next();
@@ -9347,12 +9559,12 @@ public:
               this->stm_label ? this->stm_label : this->stm_text, var_info);
         }
         this->vl[cur_x]->set_not_null(cur_y);
-        this->vl[cur_x]->get_var_struct().save_blob
+        (void)this->vl[cur_x]->get_var_struct().save_blob
             (OTL_RCAST(const unsigned char *, s.data()),
              len, 0);
       } break;
       default:
-        check_type(otl_var_char, 1);
+        (void)check_type(otl_var_char, 1);
       }
       check_buf();
     }
@@ -9396,6 +9608,23 @@ public:
     }
     return *this;
   }
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON) && defined(OTL_UNICODE)
+    template<const size_t N>
+    OTL_TMPL_OUT_STREAM &operator<<(const std::array<char16_t,N>& s){
+      (*this)<<OTL_RCAST(const unsigned char*,s.data());
+      return *this;
+    }
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+    template<const size_t N>
+    OTL_TMPL_OUT_STREAM &operator<<(const std::array<char,N>& s){
+      (*this)<<s.data();
+      return *this;
+    }
+#endif
+
 
   OTL_TMPL_OUT_STREAM &operator<<(const unsigned char *s) {
     if (this->vl_len > 0) {
@@ -9820,8 +10049,7 @@ public:
               this->stm_label ? this->stm_label : this->stm_text, var_info);
         }
         this->vl[cur_x]->set_not_null(cur_y);
-        this->vl[cur_x]->get_var_struct().save_blob(s.v, len,
-                                                    s.get_extern_buffer_flag());
+        (void)this->vl[cur_x]->get_var_struct().save_blob(s.v, len, s.get_extern_buffer_flag());
       } break;
       }
       check_buf();
@@ -9841,7 +10069,7 @@ public:
            this->vl[cur_x]->get_ftype() == otl_var_raw_long)) {
         s.init(this->vl[cur_x], this->adb,
                OTL_RCAST(OTL_TMPL_CUR_DUMMY *, this), 0,
-               otl_lob_stream_write_mode);
+               OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_write_mode));
         if (!s.get_ora_lob())
           this->vl[cur_x]->set_not_null(cur_y);
       }
@@ -9949,8 +10177,8 @@ public:
     OTL_TMPL_CURSOR::set_batch_error_mode(batch_error_mode);
   }
 
-  int get_iv_len() const { return iv_len; }
-  otl_tmpl_variable<TVariableStruct> **get_in_vl() { return in_vl; }
+  OTL_NODISCARD int get_iv_len() const { return iv_len; }
+  OTL_NODISCARD otl_tmpl_variable<TVariableStruct> **get_in_vl() { return in_vl; }
 
   void cleanup(void) {
     int i;
@@ -10158,7 +10386,7 @@ public:
     cleanup();
   }
 
-  int eof(void) {
+  OTL_NODISCARD int eof(void) {
     if (iv_len == 0)
       return 1;
     if (in_y_len == 0)
@@ -10203,7 +10431,7 @@ public:
     }
   }
 
-  int is_null(void) { return null_fetched; }
+  OTL_NODISCARD int is_null(void) { return null_fetched; }
 
   void skip_to_end_of_row() {
     if (eof())
@@ -10220,6 +10448,14 @@ public:
       cur_in_x = 0;
       in_y_len = 0;
     }
+  }
+
+  void skip_to_next_var() {
+    if(eof())return;
+    if(iv_len==0)return;
+    if(in_y_len==0)return;
+    if(cur_in_y<in_y_len-1)
+      ++cur_in_y;
   }
 
   void get_in_next(void) {
@@ -10241,7 +10477,7 @@ public:
     }
   }
 
-  int check_in_type_throw(int type_code) {
+  OTL_NODISCARD int check_in_type_throw(int type_code) {
     this->in_exception_flag = 1;
     otl_var_info_var(in_vl[cur_in_x]->get_name(), in_vl[cur_in_x]->get_ftype(),
                      type_code, var_info, sizeof(var_info));
@@ -10256,33 +10492,39 @@ public:
                              var_info);
   }
 
-  int check_in_type(int type_code, int tsize) {
+  OTL_NODISCARD int check_in_type(int type_code, int tsize) {
     switch (in_vl[cur_in_x]->get_ftype()) {
     case otl_var_refcur:
       if (type_code == otl_var_refcur)
         return 1;
+      break;
     case otl_var_db2time:
     case otl_var_db2date:
       if (type_code == otl_var_timestamp)
         return 1;
+      break;
     case otl_var_char:
       if (type_code == otl_var_char)
         return 1;
+      break;
     case otl_var_bdouble:
       if (type_code == otl_var_double)
         return 1;
+      break;
     case otl_var_bfloat:
       if (type_code == otl_var_float)
         return 1;
+      break;
     default:
       if (in_vl[cur_in_x]->get_ftype() == type_code &&
           in_vl[cur_in_x]->get_elem_size() == tsize)
         return 1;
+      break;
     }
     return check_in_type_throw(type_code);
   }
 
-  int is_null_intern(void) {
+  OTL_NODISCARD int is_null_intern(void) {
     if (iv_len == 0)
       return 0;
     if (in_y_len == 0)
@@ -10375,7 +10617,8 @@ public:
     } break;
 #endif
     default:
-      check_in_type(otl_var_char, 1);
+      (void)check_in_type(otl_var_char, 1);
+      break;
     } // switch
     get_in_next();
     return *this;
@@ -10393,6 +10636,27 @@ public:
     }
     get_in_next();
     return *this;
+  }
+
+  void getString(char *s, int max_size) {
+    if (eof())
+      return;
+    if (check_in_type(otl_var_char, 1)) {
+      otl_var_info_var(in_vl[cur_in_x]->get_name(), in_vl[cur_in_x]->get_ftype(),
+                       const_STD_CHAR_ARRAY_code, var_info, sizeof(var_info));
+      if(max_size<in_vl[cur_in_x]->get_len(cur_in_y)){
+        throw otl_tmpl_exception<TExceptionStruct, TConnectStruct,
+                                 TCursorStruct>(otl_error_msg_45, 
+                                                otl_error_code_45,
+                                                this->stm_label ? this->stm_label : this->stm_text, 
+                                                this->var_info);
+      }
+      otl_strcpy(
+          OTL_RCAST(unsigned char *, s),
+          OTL_RCAST(const unsigned char *, in_vl[cur_in_x]->val(cur_in_y)));
+      null_fetched = is_null_intern();
+    }
+    get_in_next();
   }
 
 #if defined(OTL_UNICODE_STRING_TYPE)
@@ -10433,6 +10697,26 @@ public:
     get_in_next();
     return *this;
   }
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON) && defined(OTL_UNICODE)
+  void getString(char16_t *s, int max_size) {
+    if (eof())
+      return;
+    if (check_in_type(otl_var_char, 1)) {
+      if(max_size<in_vl[cur_in_x]->get_len(cur_in_y))
+        throw otl_tmpl_exception<TExceptionStruct, TConnectStruct,
+                                 TCursorStruct>(otl_error_msg_46, 
+                                                otl_error_code_46,
+                                                this->stm_label ? this->stm_label : this->stm_text, 
+                                                this->var_info);
+      otl_strcpy2(OTL_RCAST(unsigned char *, s),
+                  OTL_RCAST(unsigned char *, in_vl[cur_in_x]->val(cur_in_y)),
+                  in_vl[cur_in_x]->get_len(cur_in_y));
+      null_fetched = is_null_intern();
+    }
+    get_in_next();
+  }
+#endif
 
 #define OTL_D4(T, T_type)                                                      \
   OTL_TMPL_INOUT_STREAM &operator>>(T &n) {                                    \
@@ -10740,12 +11024,12 @@ public:
         in_vl[cur_in_x]->get_ftype() == otl_var_blob) {
       null_fetched = is_null_intern();
       s.init(OTL_RCAST(void *, in_vl[cur_in_x]), OTL_RCAST(void *, this->adb),
-             OTL_RCAST(void *, this), 0, otl_lob_stream_read_mode,
+             OTL_RCAST(void *, this), 0, OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode),
              this->is_null());
     } else if (in_vl[cur_in_x]->get_ftype() == otl_var_varchar_long ||
                in_vl[cur_in_x]->get_ftype() == otl_var_raw_long) {
       s.init(OTL_RCAST(void *, in_vl[cur_in_x]), OTL_RCAST(void *, this->adb),
-             OTL_RCAST(void *, this), 0, otl_lob_stream_read_mode);
+             OTL_RCAST(void *, this), 0, OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode));
     } else {
       char tmp_var_info[256];
       otl_var_info_var(in_vl[cur_in_x]->get_name(),
@@ -10868,7 +11152,7 @@ OTL_ODBC_SQL_EXTENDED_FETCH_ON is defined
 
 #if !defined(OTL_DB2_CLI) && !defined(OTL_ODBC_zOS)
 
-// in case if it's ODBC for Windows (!OTL_ODBC_UNIX), and windows.h is
+// in case it's ODBC for Windows (!OTL_ODBC_UNIX), and windows.h is
 // not included yet (_WINDOWS_ not defined yet), then include the file
 // explicitly
 #if !defined(OTL_ODBC_UNIX) && !defined(_WINDOWS_)
@@ -11133,7 +11417,7 @@ inline void otl_convert_SQLWCHAR_to_char_2
 
 #endif
 
-inline size_t otl_strlen(const SQLWCHAR *s) {
+OTL_NODISCARD inline size_t otl_strlen(const SQLWCHAR *s) {
   size_t len = 0;
   while (*s) {
     ++s;
@@ -11608,12 +11892,12 @@ public:
 
   void cleanup(void) {}
 
-  OTL_HENV &get_henv() { return henv; }
-  OTL_HDBC &get_hdbc() { return hdbc; }
+  OTL_NODISCARD OTL_HENV &get_henv() { return henv; }
+  OTL_NODISCARD OTL_HDBC &get_hdbc() { return hdbc; }
 
-  int get_connection_type(void) { return connection_type; }
+  OTL_NODISCARD int get_connection_type(void) { return connection_type; }
 
-  static int initialize(const int /* threaded_mode */ = 0) { return 1; }
+  OTL_NODISCARD static int initialize(const int /* threaded_mode */ = 0) { return 1; }
 
   otl_conn()
       : henv(OTL_SQL_NULL_HANDLE_VAL), hdbc(OTL_SQL_NULL_HANDLE_VAL),
@@ -11632,7 +11916,7 @@ public:
   }
 
 #if defined(OTL_UNICODE_EXCEPTION_AND_RLOGON)
-  int rlogon(const SQLWCHAR *username, const SQLWCHAR *passwd,
+  OTL_NODISCARD int rlogon(const SQLWCHAR *username, const SQLWCHAR *passwd,
              const SQLWCHAR *tnsname, const int auto_commit) {
     if (extern_lda) {
       extern_lda = false;
@@ -11663,7 +11947,15 @@ public:
       if (status != SQL_SUCCESS && status != SQL_SUCCESS_WITH_INFO)
         return 0;
     } else {
+#if defined(__clang__) && (__clang_major__*100+__clang_minor__ >= 500)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
       SQLPOINTER temp = SQL_AUTOCOMMIT_OFF;
+#if defined(__clang__) && (__clang_major__*100+__clang_minor__ >= 500)
+#pragma clang diagnostic pop
+#endif
+
       status = SQLSetConnectAttr(hdbc, SQL_ATTR_AUTOCOMMIT,
                                  OTL_RCAST(SQLPOINTER, temp), SQL_IS_POINTER);
       if (status != SQL_SUCCESS && status != SQL_SUCCESS_WITH_INFO)
@@ -11707,7 +11999,7 @@ public:
 #endif
 
 #if defined(OTL_DB2_CLI)
-  int set_prog_name(const char *prog_name) {
+  OTL_NODISCARD int set_prog_name(const char *prog_name) {
     if (henv == OTL_SQL_NULL_HANDLE_VAL || hdbc == OTL_SQL_NULL_HANDLE_VAL) {
       status = SQLAllocHandle(SQL_HANDLE_ENV, OTL_SQL_NULL_HANDLE, &henv);
       if (status != SQL_SUCCESS && status != SQL_SUCCESS_WITH_INFO)
@@ -11735,7 +12027,7 @@ public:
   }
 #endif
 
-  int ext_logon(OTL_HENV ahenv, OTL_HDBC ahdbc, const int
+  OTL_NODISCARD int ext_logon(OTL_HENV ahenv, OTL_HDBC ahdbc, const int
 #ifndef OTL_ODBC_MYSQL
                                                     auto_commit
 #endif
@@ -11831,7 +12123,7 @@ public:
     cursor_type = acursor_type;
   }
 
-  int rlogon(const char *connect_str, const int
+  OTL_NODISCARD int rlogon(const char *connect_str, const int
 #ifndef OTL_ODBC_MYSQL
                                           auto_commit
 #endif
@@ -12128,7 +12420,7 @@ public:
       return 0;
   }
 
-  int set_transaction_isolation_level(const long int
+  OTL_NODISCARD int set_transaction_isolation_level(const long int
 #ifndef OTL_ODBC_MYSQL
                                           level
 #endif
@@ -12152,7 +12444,7 @@ public:
 #endif
   }
 
-  int auto_commit_on(void) {
+  OTL_NODISCARD int auto_commit_on(void) {
 #if defined(OTL_ODBC_MYSQL)
     return 1;
 #else
@@ -12170,7 +12462,7 @@ public:
 #endif
   }
 
-  int auto_commit_off(void) {
+  OTL_NODISCARD int auto_commit_off(void) {
 #if defined(OTL_ODBC_MYSQL)
     return 1;
 #else
@@ -12192,7 +12484,7 @@ public:
 #endif
   }
 
-  int logoff(void) {
+  OTL_NODISCARD int logoff(void) {
     if (extern_lda) {
       extern_lda = false;
       henv = OTL_SQL_NULL_HANDLE_VAL;
@@ -12201,9 +12493,9 @@ public:
     } else {
 #if defined(OTL_ODBC_zOS)
       if (logoff_commit)
-        commit();
+        (void)commit();
 #else
-      commit();
+      (void)commit();
 #endif
       status = SQLDisconnect(hdbc);
 #if defined(OTL_ODBC_LOGOFF_FREES_HANDLES)
@@ -12354,7 +12646,7 @@ public:
 #endif
   }
 
-  int commit(void) {
+  OTL_NODISCARD int commit(void) {
 #ifndef OTL_ODBC_MYSQL
 #if (ODBCVER >= 0x0300)
     status = SQLEndTran(SQL_HANDLE_DBC, hdbc, SQL_COMMIT);
@@ -12370,7 +12662,7 @@ public:
 #endif
   }
 
-  int rollback(void) {
+  OTL_NODISCARD int rollback(void) {
 #ifndef OTL_ODBC_MYSQL
 #if (ODBCVER >= 0x0300)
     status = SQLEndTran(SQL_HANDLE_DBC, hdbc, SQL_ROLLBACK);
@@ -12434,7 +12726,7 @@ public:
 
   virtual ~otl_cur0() {}
 
-  OTL_SQLHSTMT get_cda() { return cda; }
+  OTL_NODISCARD OTL_SQLHSTMT get_cda() { return cda; }
 
 private:
 #if defined(OTL_ANSI_CPP_11_DELETE_SPEC_SUPPORT)
@@ -12477,7 +12769,7 @@ public:
 
   void reset_lob_len() { lob_len = 0; }
 
-  otl_adapter_enum get_otl_adapter() const { return otl_adapter; }
+  OTL_NODISCARD otl_adapter_enum get_otl_adapter() const { return otl_adapter; }
 
   void set_lob_stream_mode(const bool alob_stream_mode) {
     lob_stream_mode = alob_stream_mode;
@@ -12498,25 +12790,25 @@ public:
     delete[] p_len;
   }
 
-  int write_dt(void *trg, const void *src, const int sz) {
+  OTL_NODISCARD int write_dt(void *trg, const void *src, const int sz) {
     memcpy(trg, src, OTL_SCAST(unsigned int, sz));
     return 1;
   }
 
-  int read_dt(void *trg, const void *src, const int sz) {
+  OTL_NODISCARD int read_dt(void *trg, const void *src, const int sz) {
     memcpy(trg, src, OTL_SCAST(unsigned int, sz));
     return 1;
   }
 
   void set_lob_stream_flag(const int flg = 1) { lob_stream_flag = flg; }
 
-  int get_pl_tab_len(void) { return 0; }
+  OTL_NODISCARD int get_pl_tab_len(void) { return 0; }
 
-  int get_max_pl_tab_len(void) { return 0; }
+  OTL_NODISCARD int get_max_pl_tab_len(void) { return 0; }
 
   void set_pl_tab_len(const int /* pl_tab_len */) {}
 
-  int write_blob(const otl_long_string &s, const int /* alob_len */,
+  OTL_NODISCARD int write_blob(const otl_long_string &s, const int /* alob_len */,
                  int &aoffset, otl_cur0 &cur) {
     SQLRETURN rc = 0;
     SQLINTEGER temp_len = 0;
@@ -12550,7 +12842,7 @@ public:
     }
   }
 
-  int clob_blob(otl_cur0 &cur) {
+  OTL_NODISCARD int clob_blob(otl_cur0 &cur) {
     SQLRETURN rc = 0;
     SQLPOINTER pToken = nullptr;
     int param_number = 0;
@@ -12571,7 +12863,7 @@ public:
     return 1;
   }
 
-  int read_blob(otl_cur0 &cur, otl_long_string &s, const int andx, int &aoffset,
+  OTL_NODISCARD int read_blob(otl_cur0 &cur, otl_long_string &s, const int andx, int &aoffset,
                 int &eof_flag) {
     SQLRETURN rc = 0;
     OTL_SQLLEN retLen = 0;
@@ -12625,24 +12917,24 @@ public:
       return 0;
   }
 
-  int get_blob_len(const int /* ndx */, int &alen) {
+  OTL_NODISCARD int get_blob_len(const int /* ndx */, int &alen) {
     alen = lob_len;
     return 1;
   }
 
-  int put_blob(void) { return 1; }
+  OTL_NODISCARD int put_blob(void) { return 1; }
 
-  int get_blob(const int /* ndx */, unsigned char * /* abuf */,
+  OTL_NODISCARD int get_blob(const int /* ndx */, unsigned char * /* abuf */,
                const int /* buf_size */, int & /* len */) {
     return 1;
   }
 
-  int save_blob(const unsigned char * /* abuf  */, const int /* len */,
-                const int /* extern_buffer_flag */) {
+  OTL_NODISCARD int save_blob(const unsigned char * /* abuf  */, const int /* len */,
+                              const int /* extern_buffer_flag */) {
     return 1;
   }
 
-  int actual_elem_size(void) { return act_elem_size; }
+  OTL_NODISCARD int actual_elem_size(void) { return act_elem_size; }
 
   void init(const bool, const int aftype, int &aelem_size,
             const otl_stream_buffer_size_type aarray_size,
@@ -12708,7 +13000,7 @@ public:
     }
   }
 
-  int get_len(int ndx) {
+  OTL_NODISCARD int get_len(int ndx) {
     if (p_len[ndx] == SQL_NULL_DATA)
       return 0;
     else
@@ -12722,9 +13014,9 @@ public:
 #endif
   }
 
-  int is_null(int ndx) { return p_len[ndx] == SQL_NULL_DATA; }
+  OTL_NODISCARD int is_null(int ndx) { return p_len[ndx] == SQL_NULL_DATA; }
 
-  void *val(int ndx, int pelem_size) {
+  OTL_NODISCARD void *val(int ndx, int pelem_size) {
 #if defined(OTL_UNICODE)
     switch (ftype) {
     case otl_var_char:
@@ -12750,7 +13042,7 @@ public:
 #define OTL_SQL_SS_TIME2 (-154)
 #define OTL_SQL_SS_TIMESTAMPOFFSET (-155)
 
-  static int int2ext(int int_type) {
+  OTL_NODISCARD static int int2ext(int int_type) {
     switch (int_type) {
 #if defined(OTL_UNICODE)
     case SQL_VARCHAR:
@@ -12919,7 +13211,7 @@ to function
     }
   }
 
-  static int datatype_size(int ftype, int maxsz, int int_type,
+  OTL_NODISCARD static int datatype_size(int ftype, int maxsz, int int_type,
                            int max_long_size) {
     switch (ftype) {
 #if defined(OTL_UNICODE)
@@ -13207,7 +13499,7 @@ private:
 public:
   void set_batch_error_mode(const bool) {}
 
-  int get_number_of_errors_in_batch(int &arc) {
+  OTL_NODISCARD int get_number_of_errors_in_batch(int &arc) {
     arc = 1;
     return 0;
   }
@@ -13233,7 +13525,7 @@ public:
 
   virtual ~otl_cur() {}
 
-  int cancel(void) {
+  OTL_NODISCARD int cancel(void) {
     status = SQLCancel(cda);
     canceled = true;
     if (status != SQL_SUCCESS && status != SQL_SUCCESS_WITH_INFO)
@@ -13242,13 +13534,13 @@ public:
       return 1;
   }
 
-  int open(otl_conn & /* connect */, otl_var * /* var */) { return 1; }
+  OTL_NODISCARD int open(otl_conn & /* connect */, otl_var * /* var */) { return 1; }
 
   void set_direct_exec(const int flag) { direct_exec_flag = flag; }
 
   void set_parse_only(const int /*flag*/) {}
 
-  int open(otl_conn &connect) {
+  OTL_NODISCARD int open(otl_conn &connect) {
     last_iters = 0;
     direct_exec_flag = 0;
     adb = &connect;
@@ -13286,7 +13578,7 @@ public:
     return 1;
   }
 
-  int close(const char = 'N') {
+  OTL_NODISCARD int close(const char = 'N') {
     last_iters = 0;
 #if (ODBCVER >= 0x0300)
     status = SQLFreeHandle(SQL_HANDLE_STMT, cda);
@@ -13301,7 +13593,7 @@ public:
       return 1;
   }
 
-  SQLRETURN sql_row_count(OTL_SQLLEN *total_rpc) {
+  OTL_NODISCARD SQLRETURN sql_row_count(OTL_SQLLEN *total_rpc) {
 #if defined(OTL_ODBC_ALTERNATE_RPC)
     OTL_SQLLEN rpc = 0;
     SQLRETURN rc;
@@ -13318,7 +13610,7 @@ public:
 #endif
   }
 
-  int parse(char *stm_text) {
+  OTL_NODISCARD int parse(char *stm_text) {
 #if !defined(OTL_ODBC_TIMESTEN)
     short in_str = 0;
 #endif
@@ -13793,7 +14085,7 @@ public:
       return 1;
   }
 
-  int exec(const int iters, const int /*rowoff*/,
+  OTL_NODISCARD int exec(const int iters, const int /*rowoff*/,
 #if defined(OTL_ODBC_ALTERNATE_RPC)
            const otl_sql_exec_from_enum otl_sql_exec_from_class)
 #else
@@ -13897,9 +14189,9 @@ public:
     }
   }
 
-  long get_rpc() OTL_NO_THROW { return _rpc; }
+  OTL_NODISCARD long get_rpc() OTL_NO_THROW { return _rpc; }
 
-  int tmpl_ftype2odbc_ftype(const int ftype) {
+  OTL_NODISCARD int tmpl_ftype2odbc_ftype(const int ftype) {
     switch (ftype) {
 #if defined(OTL_UNICODE)
     case otl_var_char:
@@ -13956,7 +14248,7 @@ public:
     }
   }
 
-  int otl_map_ext2int(int ftype) {
+  OTL_NODISCARD int otl_map_ext2int(int ftype) {
     switch (ftype) {
 #if defined(OTL_UNICODE)
     case SQL_WLONGVARCHAR:
@@ -14014,7 +14306,7 @@ public:
     }
   }
 
-  int bind(const char * /* name */, otl_var &v, const int aelem_size,
+  OTL_NODISCARD int bind(const char * /* name */, otl_var &v, const int aelem_size,
            const int aftype, const int aparam_type, const int name_pos,
            const int
 #if !defined(OTL_ODBC_TIMESTEN) && defined(OTL_ODBC_MULTI_MODE)
@@ -14210,8 +14502,8 @@ public:
       return 1;
   }
 
-  int bind(const int column_num, otl_var &v, const int elem_size,
-           const int aftype, const int param_type) {
+  OTL_NODISCARD int bind(const int column_num, otl_var &v, const int elem_size,
+                         const int aftype, const int param_type) {
     SWORD ftype = OTL_SCAST(SWORD, tmpl_ftype2odbc_ftype(aftype));
     v.vparam_type = param_type;
     SWORD ftype_save = ftype;
@@ -14251,8 +14543,8 @@ public:
     }
   }
 
-  int describe_column(otl_column_desc &col, const int column_num,
-                      int &eof_desc) {
+  OTL_NODISCARD int describe_column(otl_column_desc &col, const int column_num,
+                                    int &eof_desc) {
     OTL_SQLCHAR name[256];
     OTL_SQLSMALLINT nlen;
     OTL_SQLSMALLINT dbtype;
@@ -14441,7 +14733,7 @@ private:
 #endif
 
 public:
-  int get_implicit_cursor() const { return implicit_cursor; }
+  OTL_NODISCARD int get_implicit_cursor() const { return implicit_cursor; }
 
   void set_arr_size(const int input_arr_size, int &out_array_size,
                     int &out_prefetch_array_size) {
@@ -14454,7 +14746,7 @@ public:
 #endif
   }
 
-  int close_select(otl_cur &cur) {
+  OTL_NODISCARD int close_select(otl_cur &cur) {
     if (!in_sequence)
       return 1;
 #if defined(OTL_DB2_CLI)
@@ -14516,8 +14808,8 @@ public:
     prefetch_array_size = aprefetch_array_size;
   }
 
-  int first(otl_cur &cur, int &cur_row, int &cur_size, int &row_count,
-            int &eof_data, const int
+  OTL_NODISCARD int first(otl_cur &cur, int &cur_row, int &cur_size, int &row_count,
+                          int &eof_data, const int
 #if !defined(OTL_ODBC_XTG_IBASE6)
                                array_size
 #endif
@@ -14683,8 +14975,8 @@ public:
            int &eof_data, const int array_size) {
     alloc_row_status(array_size);
 #else
-  int next(otl_cur &cur, int &cur_row, int &cur_size, int &row_count,
-           int &eof_data,
+  OTL_NODISCARD int next(otl_cur &cur, int &cur_row, int &cur_size, int &row_count,
+                         int &eof_data,
 #if (ODBCVER >= 0x0300)
            const int /* array_size */)
 #else
@@ -14950,7 +15242,7 @@ OTL_THROWS_OTL_EXCEPTION:
     rlogon(ahenv, ahdbc, auto_commit);
   }
 
-  const char *getCmd(void) const { return cmd_; }
+  OTL_NODISCARD const char *getCmd(void) const { return cmd_; }
 
   otl_connect &operator<<(const char *cmd) {
     if (!connected) {
@@ -15345,7 +15637,7 @@ public:
     written_to_flag(false),
     closed_flag(false),
     last_read_lob_len(0) {
-    init(nullptr, nullptr, nullptr, 0, otl_lob_stream_zero_mode);
+    init(nullptr, nullptr, nullptr, 0, OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_zero_mode));
   }
 
   ~otl_tmpl_lob_stream()
@@ -15377,7 +15669,7 @@ public:
 #endif
   }
 
-#if defined(OTL_STD_STRING_VIEW_CLASS) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_STRING_VIEW_CLASS) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS))
   otl_lob_stream_generic &operator<<(OTL_STD_STRING_VIEW_CLASS s)
       OTL_THROWS_OTL_EXCEPTION {
     otl_long_string temp_s(s.data(), OTL_SCAST(int, s.length()),
@@ -15444,7 +15736,7 @@ public:
           otl_error_msg_37, otl_error_code_37,
           "otl_lob_stream_generic::operator<<(const otl_long_string&)");
     }
-    if (mode != otl_lob_stream_write_mode) {
+    if (mode != OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_write_mode)) {
       const char *stm = nullptr;
       char var_info[256];
       var_info[0] = 0;
@@ -15499,7 +15791,7 @@ public:
           otl_error_msg_37, otl_error_code_37,
           "otl_lob_stream_generic::operator>>(otl_long_string&)");
     }
-    if (mode != otl_lob_stream_read_mode) {
+    if (mode != OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode)) {
       const char *stm = nullptr;
       char var_info[256];
       var_info[0] = 0;
@@ -15530,7 +15822,7 @@ public:
       retcode = bind_var->get_var_struct().read_blob(
           cursor->get_cursor_struct(), s, ndx, offset, eof_flag);
     if (retcode)
-      len();
+      (void)len();
     if (retcode) {
       if (eof())
         close();
@@ -15547,15 +15839,15 @@ public:
                                                      : cursor->get_stm_text());
   }
 
-  int eof(void) OTL_NO_THROW {
-    if (mode != otl_lob_stream_read_mode)
+  OTL_NODISCARD int eof(void) OTL_NO_THROW {
+    if (mode != OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode))
       return 1;
     if (lob_is_null)
       return 1;
     return eof_flag;
   }
 
-  int len(void) OTL_THROWS_OTL_EXCEPTION {
+  OTL_NODISCARD int len(void) OTL_THROWS_OTL_EXCEPTION {
     if (last_read_lob_len > 0)
       return last_read_lob_len;
     if (cursor == nullptr || connect == nullptr || bind_var == nullptr ||
@@ -15578,7 +15870,7 @@ public:
                                                      : cursor->get_stm_text());
   }
 
-  bool is_initialized(void) OTL_THROWS_OTL_EXCEPTION {
+  OTL_NODISCARD bool is_initialized(void) OTL_THROWS_OTL_EXCEPTION {
     if (cursor == nullptr || connect == nullptr || bind_var == nullptr ||
         lob_is_null)
       return false;
@@ -15588,11 +15880,11 @@ public:
 
   void close(bool = false) OTL_THROWS_OTL_EXCEPTION {
     if (in_destructor) {
-      if (mode == otl_lob_stream_read_mode) {
+      if (mode == OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode)) {
         bind_var->get_var_struct().set_lob_stream_flag(0);
         bind_var->set_not_null(0);
       }
-      if (mode == otl_lob_stream_write_mode) {
+      if (mode == OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_write_mode)) {
         retcode =
             bind_var->get_var_struct().clob_blob(cursor->get_cursor_struct());
         closed_flag = true;
@@ -15612,15 +15904,15 @@ public:
       }
       return;
     }
-    if (mode == otl_lob_stream_zero_mode)
+    if (mode == OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_zero_mode))
       return;
-    if (mode == otl_lob_stream_read_mode) {
+    if (mode == OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode)) {
       bind_var->get_var_struct().set_lob_stream_flag(0);
       bind_var->set_not_null(0);
-      init(nullptr, nullptr, nullptr, 0, otl_lob_stream_zero_mode);
+      init(nullptr, nullptr, nullptr, 0, OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_zero_mode));
     } else {
       // write mode
-      if (mode == otl_lob_stream_write_mode) {
+      if (mode == OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_write_mode)) {
         retcode =
             bind_var->get_var_struct().clob_blob(cursor->get_cursor_struct());
         written_to_flag = false;
@@ -15691,9 +15983,16 @@ public:
 };
 #endif
 
-#if defined(OTL_STREAM_WITH_STD_TUPLE_ON) && defined(OTL_CPP_14_ON)
-#include <tuple>
-#include <utility>
+#if defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+#include <array>
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+#include <array>
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_OPTIONAL_ON) && defined(OTL_COMPILER_HAS_STD_OPTIONAL)
+#include <optional>
 #endif
 
 class otl_stream {
@@ -15723,41 +16022,18 @@ private:
   bool last_oper_was_read_op;
 
 #if defined(OTL_STREAM_WITH_STD_TUPLE_ON) && defined(OTL_CPP_14_ON)
-  template<const size_t I=0, OTL_TYPE_NAME ...T>
-  OTL_TYPE_NAME std::enable_if<I==sizeof...(T), void>::type
-  __otl_write_tuple_value(const std::tuple<T...>&){
-  }
-
-  template<const size_t I=0, OTL_TYPE_NAME ...T>
-  OTL_TYPE_NAME std::enable_if<I<sizeof...(T),void>::type
-  __otl_write_tuple_value(const std::tuple<T...>& tup){
-    (*this)<<std::get<I>(tup);
-    __otl_write_tuple_value<I+1,T...>(tup);
-  }
-
-  template<const size_t I=0, OTL_TYPE_NAME ...T>
-  OTL_TYPE_NAME std::enable_if<I==sizeof...(T), void>::type
-  __otl_read_tuple_value(std::tuple<T...>&){
-  }
-
-  template<const size_t I=0, OTL_TYPE_NAME ...T>
-  OTL_TYPE_NAME std::enable_if<I<sizeof...(T),void>::type
-  __otl_read_tuple_value(std::tuple<T...>& tup){
-    (*this)>>std::get<I>(tup);
-    __otl_read_tuple_value<I+1,T...>(tup);
-  }
 
 public:
-
-  template<OTL_TYPE_NAME ...T>
-  otl_stream& operator<<(const std::tuple<T...>& tup){
-    __otl_write_tuple_value<0,T...>(tup);
+ 
+  template<typename...T>
+  otl_stream& operator<<(const std::tuple<T...>& t){
+    otl_tuple_helper<otl_stream,decltype(t),sizeof...(T)>::write(*this,t);
     return (*this);
   }
   
-  template<OTL_TYPE_NAME ...T>
-  otl_stream& operator>>(std::tuple<T...>& tup){
-    __otl_read_tuple_value<0,T...>(tup);
+  template<typename...T>
+  otl_stream& operator>>(std::tuple<T...>& t){
+    otl_tuple_helper<otl_stream,decltype(t),sizeof...(T)>::read(*this,t);
     return (*this);
   }
 
@@ -15766,7 +16042,29 @@ public:
 public:
 
 #if defined(OTL_STREAM_WITH_STD_OPTIONAL_ON) && defined(OTL_CPP_14_ON)
-// C++14 or higher
+#if defined(OTL_COMPILER_HAS_STD_OPTIONAL)
+  template<OTL_TYPE_NAME TData>
+  otl_stream& operator<<(const std::optional<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+    if(var)
+      (*this)<<(*var);
+    else
+      (*this)<<otl_null();
+    return *this;
+  }
+
+  template<OTL_TYPE_NAME TData>
+  otl_stream& operator>>(std::optional<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+    if(var){
+      (*this)>>(*var);
+      if(this->is_null())var=std::optional<TData>();
+    }else{
+      TData temp_var;
+      (*this)>>temp_var;
+      if(!this->is_null())var.emplace(std::move(temp_var));
+    }
+    return *this;
+  }
+#else
   template<OTL_TYPE_NAME TData, template <OTL_TYPE_NAME> class Optional>
   otl_stream& operator<<(const Optional<TData> &var) OTL_THROWS_OTL_EXCEPTION {
     if(var)
@@ -15789,9 +16087,10 @@ public:
     return *this;
   }
 #endif
+#endif
 
 #if defined(OTL_ANSI_CPP_11_RVAL_REF_SUPPORT)
-  otl_for_range_loop_odbc_stream_adapter begin(){
+  OTL_NODISCARD otl_for_range_loop_odbc_stream_adapter begin(){
     if(!eof())
       return otl_for_range_loop_odbc_stream_adapter(*this);
     else
@@ -15802,7 +16101,7 @@ public:
     return otl_for_range_loop_odbc_stream_adapter();
   }
   
-  int get_auto_commit_flag() const {
+  OTL_NODISCARD int get_auto_commit_flag() const {
     if (!auto_commit_flag)
       return 0;
     else
@@ -15812,7 +16111,7 @@ public:
 
 #if defined(OTL_ODBC_SQL_STATEMENT_WITH_DIAG_REC_OUTPUT)
 
-  OTL_SQLHSTMT get_stm_handle() { return (*io)->get_cursor_struct().get_cda(); }
+  OTL_NODISCARD OTL_SQLHSTMT get_stm_handle() { return (*io)->get_cursor_struct().get_cda(); }
 
 #if defined(_UNICODE) || defined(UNICODE)
   typedef SQLWCHAR sqlchar_type;
@@ -15820,9 +16119,9 @@ public:
   typedef SQLCHAR sqlchar_type;
 #endif
 
-  bool get_next_diag_rec(short int &rec_ndx, sqlchar_type *sqlstate_buf,
-                         sqlchar_type *msg_buf, short int msg_buf_size,
-                         int &native_err) {
+  OTL_NODISCARD bool get_next_diag_rec(short int &rec_ndx, sqlchar_type *sqlstate_buf,
+                                       sqlchar_type *msg_buf, short int msg_buf_size,
+                                       int &native_err) {
     OTL_SQLINTEGER rc;
     SQLSMALLINT msg_len;
     rc = SQLGetDiagRec(SQL_HANDLE_STMT, get_stm_handle(),
@@ -15848,7 +16147,7 @@ protected:
     oper_int_called = 0;
   }
 
-  void throw_end_of_row()
+  OTL_NORETURN void throw_end_of_row()
 #if defined(__GNUC__) && (__GNUC__ >= 4)
       __attribute__((noreturn))
 #endif
@@ -15876,7 +16175,7 @@ protected:
   }
 
 public:
-  int get_prefetched_row_count() const {
+  OTL_NODISCARD int get_prefetched_row_count() const {
     if (*ss) {
       (*adb)->reset_throw_count();
       return (*ss)->get_prefetched_row_count();
@@ -15884,14 +16183,14 @@ public:
     return 0;
   }
 
-  bool get_lob_stream_flag() const {
+  OTL_NODISCARD bool get_lob_stream_flag() const {
     if (!shell)
       return false;
     else
       return shell->lob_stream_flag;
   }
 
-  int get_adb_max_long_size() const {
+  OTL_NODISCARD int get_adb_max_long_size() const {
     return this->shell->adb->get_max_long_size();
   }
 
@@ -15902,10 +16201,10 @@ public:
       throw_end_of_row();
   }
 
-  otl_stream_shell *get_shell() { return shell; }
-  int get_connected() const { return connected; }
+  OTL_NODISCARD otl_stream_shell *get_shell() { return shell; }
+  OTL_NODISCARD int get_connected() const { return connected; }
 
-  int get_dirty_buf_len() const {
+  OTL_NODISCARD int get_dirty_buf_len() const {
     switch (shell->stream_type) {
     case otl_odbc_no_stream:
       return 0;
@@ -15918,7 +16217,7 @@ public:
     }
   }
 
-  const char *get_stm_text(void) {
+  OTL_NODISCARD const char *get_stm_text(void) {
     const char *no_stm_text = OTL_NO_STM_TEXT;
     switch (shell->stream_type) {
     case otl_odbc_no_stream:
@@ -15936,9 +16235,9 @@ public:
 
   void setBufSize(int buf_size) { buf_size_ = buf_size; }
 
-  int getBufSize(void) const { return buf_size_; }
+  OTL_NODISCARD int getBufSize(void) const { return buf_size_; }
 
-  long get_rpc() OTL_NO_THROW {
+  OTL_NODISCARD long get_rpc() OTL_NO_THROW {
     if ((*io)) {
       (*adb)->reset_throw_count();
       return (*io)->get_rpc();
@@ -15968,6 +16267,26 @@ public:
       break;
     }
     *next_ov_ndx = 0;
+  }
+
+  void skip_to_next_var() {
+    if(next_ov_ndx==nullptr)return;
+    if((*ov_len)==0)return;
+    last_oper_was_read_op = true;
+    switch (shell->stream_type) {
+    case otl_odbc_no_stream:
+      break;
+    case otl_odbc_io_stream:
+      last_eof_rc = (*io)->eof();
+      (*io)->skip_to_next_var();
+      break;
+    case otl_odbc_select_stream:
+      last_eof_rc = (*ss)->eof();
+      (*ss)->skip_to_next_var();
+      break;
+    }
+    if((*next_ov_ndx)<(*ov_len)-1)
+      ++(*next_ov_ndx);
   }
 
   operator int(void) OTL_THROWS_OTL_EXCEPTION {
@@ -16116,7 +16435,7 @@ public:
     shell->lob_stream_flag = lob_stream_flag;
   }
 
-  otl_var_desc *describe_in_vars(int &desc_len) OTL_NO_THROW {
+  OTL_NODISCARD otl_var_desc *describe_in_vars(int &desc_len) OTL_NO_THROW {
     desc_len = 0;
     if (shell == nullptr)
       return nullptr;
@@ -16126,7 +16445,7 @@ public:
     return shell->iov;
   }
 
-  otl_var_desc *describe_out_vars(int &desc_len) OTL_NO_THROW {
+  OTL_NODISCARD otl_var_desc *describe_out_vars(int &desc_len) OTL_NO_THROW {
     desc_len = 0;
     if (shell == nullptr)
       return nullptr;
@@ -16136,7 +16455,7 @@ public:
     return shell->ov;
   }
 
-  otl_var_desc *describe_next_in_var(void) OTL_NO_THROW {
+  OTL_NODISCARD otl_var_desc *describe_next_in_var(void) OTL_NO_THROW {
     if (shell == nullptr)
       return nullptr;
     if (shell->iov == nullptr)
@@ -16144,7 +16463,7 @@ public:
     return &(shell->iov[shell->next_iov_ndx]);
   }
 
-  otl_var_desc *describe_next_out_var(void) OTL_NO_THROW {
+  OTL_NODISCARD otl_var_desc *describe_next_out_var(void) OTL_NO_THROW {
     if (shell == nullptr)
       return nullptr;
     if (shell->ov == nullptr)
@@ -16189,7 +16508,7 @@ public:
 OTL_THROWS_OTL_EXCEPTION:
   shell(nullptr), shell_pt(), connected(0), ss(nullptr), io(nullptr),
       adb(nullptr), auto_commit_flag(nullptr), iov(nullptr), iov_len(nullptr),
-      next_iov_ndx(nullptr), ov(nullptr), ov_len(nullptr), next_ov_ndx(nullptr),
+    next_iov_ndx(nullptr), ov(nullptr), ov_len(nullptr), next_ov_ndx(nullptr),
       override_(nullptr), end_marker(0), oper_int_called(0), last_eof_rc(0),
       last_oper_was_read_op(false), buf_size_(0) {
     init_stream();
@@ -16285,13 +16604,7 @@ OTL_THROWS_OTL_EXCEPTION:
 #endif
   }
 
-  int eof(void)
-#if defined(OTL_SELECT_STREAM_ALTERNATE_FETCH)
-      OTL_THROWS_OTL_EXCEPTION
-#else
-      OTL_THROWS_OTL_EXCEPTION
-#endif
-  {
+  OTL_NODISCARD int eof(void)OTL_THROWS_OTL_EXCEPTION {
     if ((*io)) {
       (*adb)->reset_throw_count();
       return (*io)->eof();
@@ -16316,7 +16629,7 @@ OTL_THROWS_OTL_EXCEPTION:
     }
   }
 
-  bool get_error_state(void) const {
+  OTL_NODISCARD bool get_error_state(void) const {
     if ((*adb)->get_throw_count() > 0)
       return true;
     else if ((*io))
@@ -16347,7 +16660,7 @@ OTL_THROWS_OTL_EXCEPTION:
     }
   }
 
-  int is_null(void) OTL_NO_THROW {
+  OTL_NODISCARD int is_null(void) OTL_NO_THROW {
     if ((*io))
       return (*io)->is_null();
     else if ((*ss))
@@ -16364,7 +16677,7 @@ OTL_THROWS_OTL_EXCEPTION:
     }
   }
 
-  const char *assign_stream_type(const char *stm_text, const char *stm_label) {
+  OTL_NODISCARD const char *assign_stream_type(const char *stm_text, const char *stm_label) {
     const char *temp_stm_text = nullptr;
     temp_stm_text = stm_label ? stm_label : stm_text;
     return temp_stm_text;
@@ -16733,7 +17046,7 @@ OTL_THROWS_OTL_EXCEPTION:
 #endif
   }
 
-  otl_column_desc *describe_select(int &desc_len) OTL_NO_THROW {
+  OTL_NODISCARD otl_column_desc *describe_select(int &desc_len) OTL_NO_THROW {
     desc_len = 0;
     if ((*ss)) {
       (*adb)->reset_throw_count();
@@ -16743,7 +17056,7 @@ OTL_THROWS_OTL_EXCEPTION:
     return nullptr;
   }
 
-  int good(void) OTL_NO_THROW {
+  OTL_NODISCARD int good(void) OTL_NO_THROW {
     if (!connected)
       return 0;
     if ((*io) || (*ss)) {
@@ -17160,6 +17473,71 @@ OTL_THROWS_OTL_EXCEPTION:
     return *this;
   }
 #endif
+
+#if !defined(OTL_UNICODE) && defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+  template<const size_t N>
+  otl_stream &operator>>(std::array<char,N>& s) OTL_THROWS_OTL_EXCEPTION {
+    last_oper_was_read_op = true;
+    switch (shell->stream_type) {
+    case otl_odbc_no_stream:
+      break;
+    case otl_odbc_io_stream:
+      last_eof_rc = (*io)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char,...>&");
+#endif
+      (*io)->getString(s.data(),OTL_SCAST(int,N));
+      break;
+    case otl_odbc_select_stream:
+      last_eof_rc = (*ss)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char,...>&");
+#endif
+      (*ss)->getString(s.data(),OTL_SCAST(int,N));
+      break;
+    }
+#if defined(OTL_DEFAULT_STRING_NULL_TO_VAL)
+    if ((*this).is_null())
+      otl_strcpy(OTL_RCAST(unsigned char *, s.data()),OTL_RCAST(const unsigned char *, OTL_DEFAULT_STRING_NULL_TO_VAL));
+#endif
+    OTL_TRACE_WRITE(s, "operator >>", "std::array<char,...>&")
+    inc_next_ov();
+    return *this;
+  }
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON) && defined(OTL_UNICODE)
+  template<const size_t N>
+  otl_stream &operator>>(std::array<char16_t,N>& s) OTL_THROWS_OTL_EXCEPTION {
+    last_oper_was_read_op = true;
+    switch (shell->stream_type) {
+    case otl_odbc_no_stream:
+      break;
+    case otl_odbc_io_stream:
+      last_eof_rc = (*io)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char16_t,...>&");
+#endif
+      (*io)->getString(s.data(),OTL_SCAST(int,N));
+      break;
+    case otl_odbc_select_stream:
+      last_eof_rc = (*ss)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char16_t,...>&");
+#endif
+      (*ss)->getString(s.data(),OTL_SCAST(int,N));
+      break;
+    }
+#if defined(OTL_DEFAULT_STRING_NULL_TO_VAL)
+    if ((*this).is_null())
+      otl_strcpy(OTL_RCAST(unsigned char *, s.data()),OTL_RCAST(const unsigned char *, OTL_DEFAULT_STRING_NULL_TO_VAL));
+#endif
+    OTL_TRACE_WRITE(s, "operator >>", "std::array<char16_t,...>&")
+    inc_next_ov();
+    return *this;
+  }
+#endif
+
 
 #if defined(OTL_UNICODE_STRING_TYPE)
   otl_stream &operator>>(OTL_UNICODE_STRING_TYPE &s) OTL_THROWS_OTL_EXCEPTION {
@@ -18173,12 +18551,16 @@ OTL_THROWS_OTL_EXCEPTION:
 
 #endif
 
-#if defined(OTL_STD_STRING_VIEW_CLASS) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_STRING_VIEW_CLASS) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS))
   otl_stream &operator<<(OTL_STD_STRING_VIEW_CLASS s)
       OTL_THROWS_OTL_EXCEPTION {
     last_oper_was_read_op = false;
     reset_end_marker();
+#if defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS)
+    OTL_TRACE_READ("\"" << s << "\"", "operator <<", "OTL_THIRD_PARTY_STRING_VIEW_CLASS");
+#else
     OTL_TRACE_READ("\"" << s << "\"", "operator <<", "OTL_STD_STRING_VIEW_CLASS");
+#endif
     switch (shell->stream_type) {
     case otl_odbc_no_stream:
       break;
@@ -18243,13 +18625,18 @@ OTL_THROWS_OTL_EXCEPTION:
   }
 #endif
 
-#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS))
   otl_stream &operator<<(OTL_STD_UNICODE_STRING_VIEW_CLASS s)
       OTL_THROWS_OTL_EXCEPTION {
     last_oper_was_read_op = false;
     reset_end_marker();
+#if defined(OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS)
+    OTL_TRACE_READ("\"" << s.data() << "\"", "operator <<",
+                   "OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS");
+#else
     OTL_TRACE_READ("\"" << s.data() << "\"", "operator <<",
                    "OTL_STD_UNICODE_STRING_VIEW_CLASS");
+#endif
     switch (shell->stream_type) {
     case otl_odbc_no_stream:
       break;
@@ -18273,6 +18660,52 @@ OTL_THROWS_OTL_EXCEPTION:
     last_oper_was_read_op = false;
     reset_end_marker();
     OTL_TRACE_READ("\"" << s << "\"", "operator <<", "char*");
+    switch (shell->stream_type) {
+    case otl_odbc_no_stream:
+      break;
+    case otl_odbc_io_stream:
+      (*io)->operator<<(s);
+      break;
+    case otl_odbc_select_stream:
+      (*ss)->operator<<(s);
+      if (!(*ov) && (*ss)->get_sl())
+        create_var_desc();
+      break;
+    }
+    inc_next_iov();
+    return *this;
+  }
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+  template<const size_t N>
+  otl_stream &operator<<(const std::array<char,N>& s) OTL_THROWS_OTL_EXCEPTION {
+    last_oper_was_read_op = false;
+    reset_end_marker();
+    OTL_TRACE_READ("\"" << s << "\"", "operator <<", "std::array<char,...>&");
+    switch (shell->stream_type) {
+    case otl_odbc_no_stream:
+      break;
+    case otl_odbc_io_stream:
+      (*io)->operator<<(s);
+      break;
+    case otl_odbc_select_stream:
+      (*ss)->operator<<(s);
+      if (!(*ov) && (*ss)->get_sl())
+        create_var_desc();
+      break;
+    }
+    inc_next_iov();
+    return *this;
+  }
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON) && defined(OTL_UNICODE)
+  template<const size_t N>
+  otl_stream &operator<<(const std::array<char16_t,N>& s) OTL_THROWS_OTL_EXCEPTION {
+    last_oper_was_read_op = false;
+    reset_end_marker();
+    OTL_TRACE_READ("\"" << s << "\"", "operator <<", "std::array<char16_t,...>&");
     switch (shell->stream_type) {
     case otl_odbc_no_stream:
       break;
@@ -19294,7 +19727,7 @@ public:
 #endif
 
 #if defined(OTL_ORA11G_R2) || defined(OTL_ORA12C)
-  int set_lob_prefetch_size(const int prefetch_size = 0) {
+  OTL_NODISCARD int set_lob_prefetch_size(const int prefetch_size = 0) {
     lob_prefetch_size = prefetch_size;
     ub4 temp_size = OTL_SCAST(ub4, prefetch_size);
     int status = 0;
@@ -19308,38 +19741,38 @@ public:
       return 1;
   }
 
-  int get_lob_prefetch_size() const { return lob_prefetch_size; }
+  OTL_NODISCARD int get_lob_prefetch_size() const { return lob_prefetch_size; }
 #endif
 
   void cleanup(void) {
-    session_end();
-    server_detach();
+    (void)session_end();
+    (void)server_detach();
   }
 
-  int get_session_begin_count() const { return session_begin_count; }
+  OTL_NODISCARD int get_session_begin_count() const { return session_begin_count; }
 
-  int get_extern_lda() const { return extern_lda; }
+  OTL_NODISCARD int get_extern_lda() const { return extern_lda; }
 
-  int get_last_status() const { return last_status; }
+  OTL_NODISCARD int get_last_status() const { return last_status; }
 
-  int get_auto_commit() const { return auto_commit; }
+  OTL_NODISCARD int get_auto_commit() const { return auto_commit; }
 
-  OCIEnv *get_envhp() { return envhp; }
+  OTL_NODISCARD OCIEnv *get_envhp() { return envhp; }
 
-  OCIError *get_errhp() { return errhp; }
+  OTL_NODISCARD OCIError *get_errhp() { return errhp; }
 
-  OCISvcCtx *get_svchp() { return svchp; }
+  OTL_NODISCARD OCISvcCtx *get_svchp() { return svchp; }
 
-  OCIServer *get_srvhp() { return srvhp; }
+  OTL_NODISCARD OCIServer *get_srvhp() { return srvhp; }
 
-  OCISession *get_authp() { return authp; }
+  OTL_NODISCARD OCISession *get_authp() { return authp; }
 
-  int get_char_set() const { return char_set_; }
+  OTL_NODISCARD int get_char_set() const { return char_set_; }
 
-  int get_connection_type(void) { return 0; }
+  OTL_NODISCARD int get_connection_type(void) { return 0; }
 
 #if !defined(OTL_ORA_OCI_ENV_CREATE)
-  static int initialize(const int threaded_mode = 0) {
+  OTL_NODISCARD static int initialize(const int threaded_mode = 0) {
     int status;
     int mode;
     if (threaded_mode)
@@ -19358,12 +19791,12 @@ public:
     else
       return 1;
 #else
-  static int initialize(const int /*threaded_mode*/) {
+  OTL_NODISCARD static int initialize(const int /*threaded_mode*/) {
     return 1;
 #endif
   }
 #if defined(OTL_ORA_SDO_GEOMETRY)
-  OCIType* getGeometryTDO(){
+  OTL_NODISCARD OCIType* getGeometryTDO(){
     return geometryTDO;
   }
 #endif
@@ -19430,7 +19863,7 @@ public:
   void set_timeout(const int /*atimeout*/ = 0) {}
   void set_cursor_type(const int /*acursor_type*/ = 0) {}
 
-  int cancel(void) {
+  OTL_NODISCARD int cancel(void) {
     int status;
     status = OCIBreak(srvhp, errhp);
     if (status)
@@ -19439,7 +19872,7 @@ public:
       return 1;
   }
 
-  int server_attach(const char *tnsname) {
+  OTL_NODISCARD int server_attach(const char *tnsname) {
     int &status = last_status;
 
     envhp = nullptr;
@@ -19553,7 +19986,7 @@ public:
     return 1;
   }
 
-  int session_begin(const int aauto_commit) {
+  OTL_NODISCARD int session_begin(const int aauto_commit) {
     int &status = last_status;
     int cred_type;
 
@@ -19578,9 +20011,9 @@ public:
     return 1;
   }
 
-  int session_begin(const char *userid, const char *password,
-                    const int aauto_commit,
-                    const int session_mode = OCI_DEFAULT) {
+  OTL_NODISCARD int session_begin(const char *userid, const char *password,
+                                  const int aauto_commit,
+                                  const int session_mode = OCI_DEFAULT) {
     int &status = last_status;
     int cred_type;
 
@@ -19686,8 +20119,8 @@ public:
   }
 
 #if defined(OTL_ORA8I) || defined(OTL_ORA9I)
-  int change_password(const char *user_name, const char *password,
-                      const char *new_password) {
+  OTL_NODISCARD int change_password(const char *user_name, const char *password,
+                                    const char *new_password) {
     int &status = last_status;
 
     OCIAttrSet(OTL_RCAST(dvoid *, svchp), OTL_SCAST(ub4, OCI_HTYPE_SVCCTX),
@@ -19708,7 +20141,7 @@ public:
   }
 #endif
 
-  int server_detach(void) {
+  OTL_NODISCARD int server_detach(void) {
     int rc = 0;
     if (attached) {
       OCIServerDetach(srvhp, errhp, OTL_SCAST(ub4, OCI_DEFAULT));
@@ -19739,7 +20172,7 @@ public:
     return rc;
   }
 
-  int session_end(void) {
+  OTL_NODISCARD int session_end(void) {
     int &status = last_status;
     if (!in_session)
       return 0;
@@ -19752,17 +20185,17 @@ public:
     return 1;
   }
 
-  int auto_commit_on(void) {
+  OTL_NODISCARD int auto_commit_on(void) {
     auto_commit = 1;
     return 1;
   }
 
-  int auto_commit_off(void) {
+  OTL_NODISCARD int auto_commit_off(void) {
     auto_commit = 0;
     return 1;
   }
 
-  int rlogon(const char *connect_str, const int aauto_commit) {
+  OTL_NODISCARD int rlogon(const char *connect_str, const int aauto_commit) {
     int status;
     char username[256];
     char passwd[256];
@@ -19835,8 +20268,8 @@ public:
     return 1;
   }
 
-  int ext_logon(OCIEnv *a_envhp, OCISvcCtx *a_svchp,
-                const int aauto_commit = 0) {
+  OTL_NODISCARD int ext_logon(OCIEnv *a_envhp, OCISvcCtx *a_svchp,
+                              const int aauto_commit = 0) {
     int &status = last_status;
 
     envhp = a_envhp;
@@ -19863,7 +20296,7 @@ public:
     return 1;
   }
 
-  int logoff(void) {
+  OTL_NODISCARD int logoff(void) {
     int rc;
     if (extern_lda) {
       OCIHandleFree(OTL_RCAST(dvoid *, errhp), OTL_SCAST(ub4, OCI_HTYPE_ERROR));
@@ -19894,14 +20327,14 @@ public:
     exception_struct.msg[len] = 0;
   }
 
-  int commit(void) {
+  OTL_NODISCARD int commit(void) {
     last_status = OCITransCommit(svchp, errhp, OTL_SCAST(ub4, OCI_DEFAULT));
     return !last_status;
   }
 
 #if defined(OTL_ORA10G_R2)
 
-  int commit_nowait(void) {
+  OTL_NODISCARD int commit_nowait(void) {
 #if defined(OCI_TRANS_WRITENOWAIT)
     last_status =
         OCITransCommit(svchp, errhp, OTL_SCAST(ub4, OCI_TRANS_WRITENOWAIT));
@@ -19913,7 +20346,7 @@ public:
 
 #endif
 
-  int rollback(void) {
+  OTL_NODISCARD int rollback(void) {
     last_status = OCITransRollback(svchp, errhp, OTL_SCAST(ub4, OCI_DEFAULT));
     return !last_status;
   }
@@ -20077,9 +20510,9 @@ public:
     total_read_blob_amt = OTL_SCAST(ub4, new_total_read_blob_amt);
   }
 
-  otl_adapter_enum get_otl_adapter() const { return otl_adapter; }
-  OCIStmt *get_cda() { return cda; }
-  OCIStmt **get_cda_ptr() { return &cda; }
+  OTL_NODISCARD otl_adapter_enum get_otl_adapter() const { return otl_adapter; }
+  OTL_NODISCARD OCIStmt *get_cda() { return cda; }
+  OTL_NODISCARD OCIStmt **get_cda_ptr() { return &cda; }
   void set_nls_flag(const bool anls_flag) { nls_flag = anls_flag; }
 
   void set_lob_stream_mode(const bool alob_stream_mode) {
@@ -20201,7 +20634,7 @@ public:
 #pragma GCC diagnostic pop
 #endif
 
-  int write_dt(void *trg, const void *src, const int
+  OTL_NODISCARD int write_dt(void *trg, const void *src, const int
 #if (defined(OTL_ORA8I) || defined(OTL_ORA9I)) && defined(OTL_ORA_TIMESTAMP)
 #else
                                                sz
@@ -20249,10 +20682,10 @@ public:
 #endif
   }
 
-  int read_dt(void *trg, const void *src, const int
+  OTL_NODISCARD int read_dt(void *trg, const void *src, const int
 #if (defined(OTL_ORA8I) || defined(OTL_ORA9I)) && defined(OTL_ORA_TIMESTAMP)
 #else
-                                              sz
+                            sz
 #endif
               ) {
 #if (defined(OTL_ORA8I) || defined(OTL_ORA9I)) && defined(OTL_ORA_TIMESTAMP)
@@ -20295,7 +20728,7 @@ public:
 #endif
   }
 
-  int actual_elem_size(void) { return act_elem_size; }
+  OTL_NODISCARD int actual_elem_size(void) { return act_elem_size; }
 
   void init(const bool aselect_stm_flag, const int aftype, int &aelem_size,
             const otl_stream_buffer_size_type aarray_size,
@@ -20411,7 +20844,7 @@ public:
                              OTL_RCAST(dvoid **, &timestamp[i]), dtype, 0,
                              nullptr);
 #endif
-          write_dt(timestamp[i], &dt, 1);
+          (void)write_dt(timestamp[i], &dt, 1);
         }
       } else
         timestamp = nullptr;
@@ -20560,11 +20993,11 @@ public:
     cur_tab_len = OTL_SCAST(ub4, apl_tab_len);
   }
 
-  int get_pl_tab_len(void) { return OTL_SCAST(int, cur_tab_len); }
+  OTL_NODISCARD int get_pl_tab_len(void) { return OTL_SCAST(int, cur_tab_len); }
 
-  int get_max_pl_tab_len(void) { return OTL_SCAST(int, max_tab_len); }
+  OTL_NODISCARD int get_max_pl_tab_len(void) { return OTL_SCAST(int, max_tab_len); }
 
-  int get_blob_len(const int ndx, int &alen) {
+  OTL_NODISCARD int get_blob_len(const int ndx, int &alen) {
     ub4 blen = 0;
     int rc;
     alen = 0;
@@ -20576,7 +21009,7 @@ public:
     return 1;
   }
 
-  int is_blob_initialized(const int ndx, int &is_init) {
+  OTL_NODISCARD int is_blob_initialized(const int ndx, int &is_init) {
     int rc;
     is_init = 0;
     rc = OCILobLocatorIsInit(connect->get_envhp(), connect->get_errhp(),
@@ -20587,8 +21020,8 @@ public:
       return 1;
   }
 
-  int get_blob(const int ndx, unsigned char *abuf, const int buf_size,
-               int &len) {
+  OTL_NODISCARD int get_blob(const int ndx, unsigned char *abuf, const int buf_size,
+                             int &len) {
     int byte_buf_size = buf_size;
 #if defined(OTL_UNICODE)
     if (ftype == otl_var_clob)
@@ -20637,7 +21070,7 @@ public:
 
   void set_lob_stream_flag(const int flg = 1) { lob_stream_flag = flg; }
 
-  int close_lob(void) {
+  OTL_NODISCARD int close_lob(void) {
 #if defined(OTL_ORA8I) || defined(OTL_ORA9I)
     int rc;
     boolean flag = 0;
@@ -20660,7 +21093,7 @@ public:
 #endif
   }
 
-  int put_blob(void) {
+  OTL_NODISCARD int put_blob(void) {
     if ((ftype != otl_var_clob && ftype != otl_var_blob) || lob_stream_flag ||
         buf == nullptr || buf_len == 0)
       return 1;
@@ -20690,8 +21123,8 @@ public:
     return 1;
   }
 
-  int read_blob(otl_long_string &s, const int andx, int &aoffset,
-                int alob_len) {
+  OTL_NODISCARD int read_blob(otl_long_string &s, const int andx, int &aoffset,
+                              int alob_len) {
     ub4 byte_buf_size = OTL_SCAST(ub4, s.get_buf_size());
 
 #if defined(OTL_UNICODE)
@@ -20793,8 +21226,8 @@ public:
 #endif
   }
 
-  int write_blob(const otl_long_string &s, const int alob_len, int &aoffset,
-                 otl_cur0 & /* cur */) {
+  OTL_NODISCARD int write_blob(const otl_long_string &s, const int alob_len, int &aoffset,
+                               otl_cur0 & /* cur */) {
     if (!lob_stream_flag)
       return 1;
     int rc;
@@ -20844,8 +21277,8 @@ public:
     return 0;
   }
 
-  int save_blob(const unsigned char *abuf, const int len,
-                const int extern_buffer_flag) {
+  OTL_NODISCARD int save_blob(const unsigned char *abuf, const int len,
+                              const int extern_buffer_flag) {
     if (extern_buffer_flag) {
       if (buf != nullptr && !ext_buf_flag) {
         delete[] buf;
@@ -20885,19 +21318,19 @@ public:
   }
 
 #if defined(OTL_ORA_SDO_GEOMETRY)
-  bool getValue(OCINumber *num, unsigned int &value){
-	  int status = OCINumberToInt(connect->get_errhp(), 
-                                      num, 
-                                      sizeof(unsigned int), 
-                                      OCI_NUMBER_UNSIGNED,
-                                      OTL_RCAST(dvoid*, &value));
-	  if(status)
-            return false;
-          else
-            return true;
+  OTL_NODISCARD bool getValue(OCINumber *num, unsigned int &value){
+    int status = OCINumberToInt(connect->get_errhp(), 
+                                num, 
+                                sizeof(unsigned int), 
+                                OCI_NUMBER_UNSIGNED,
+                                OTL_RCAST(dvoid*, &value));
+    if(status)
+      return false;
+    else
+      return true;
   }
 
-  bool getValue(OCINumber *num, int &value){
+  OTL_NODISCARD bool getValue(OCINumber *num, int &value){
     int status = OCINumberToInt(connect->get_errhp(), 
                                 num, sizeof(int), 
                                 OCI_NUMBER_SIGNED,
@@ -20908,7 +21341,7 @@ public:
       return true;
   }
 
-  bool getValue(OCINumber *num, double &value){
+  OTL_NODISCARD bool getValue(OCINumber *num, double &value){
     int status = OCINumberToReal(connect->get_errhp(), 
                                  num, sizeof(double),
                                  OTL_RCAST(dvoid*, &value));
@@ -20918,7 +21351,7 @@ public:
       return true;
   }
 
-  bool getArraySize(OCIColl *coll, int &nSize){
+  OTL_NODISCARD bool getArraySize(OCIColl *coll, int &nSize){
     int status = OCICollSize(connect->get_envhp(), 
                              connect->get_errhp(), 
                              coll,
@@ -20929,7 +21362,7 @@ public:
       return true;
   }
 
-  int read_geometry(oci_spatial_geometry& geometry, int ndx){
+  OTL_NODISCARD int read_geometry(oci_spatial_geometry& geometry, int ndx){
     if(!sdoobj || !sdoind || !sdoobj[ndx] || !sdoind[ndx]){
       geometry.isNull = true;
       return 0;
@@ -21165,7 +21598,7 @@ public:
     return 1;
   }
 
-  int write_geometry(const oci_spatial_geometry& g, int ndx){
+  OTL_NODISCARD int write_geometry(const oci_spatial_geometry& g, int ndx){
     sb4 n;
     int status = OCICollSize(connect->get_envhp(), 
                              connect->get_errhp(), 
@@ -21431,9 +21864,9 @@ public:
       return p_rlen[ndx];
   }
 
-  int is_null(int ndx) { return p_ind[ndx] == -1; }
+  OTL_NODISCARD int is_null(int ndx) { return p_ind[ndx] == -1; }
 
-  void *val(int ndx, int pelem_size) {
+  OTL_NODISCARD void *val(int ndx, int pelem_size) {
     switch (ftype) {
 #if defined(OTL_UNICODE)
     case otl_var_char:
@@ -21470,7 +21903,7 @@ public:
     }
   }
 
-  static int int2ext(int int_type) {
+  OTL_NODISCARD static int int2ext(int int_type) {
     switch (int_type) {
     case inVarChar2:
       return extCChar;
@@ -21525,8 +21958,8 @@ public:
     }
   }
 
-  static int datatype_size(int aftype, int maxsz, int int_type,
-                           int max_long_size) {
+  OTL_NODISCARD static int datatype_size(int aftype, int maxsz, int int_type,
+                                         int max_long_size) {
     switch (aftype) {
     case extCChar:
       switch (int_type) {
@@ -21826,7 +22259,7 @@ private:
   OCIError *errhp2_;
 
 public:
-  int get_number_of_errors_in_batch(int &rc) {
+  OTL_NODISCARD int get_number_of_errors_in_batch(int &rc) {
     rc = 1;
     ub4 num_errs = 0;
     sword oci_rc = OCIAttrGet(cda, OCI_HTYPE_STMT, &num_errs, nullptr,
@@ -21838,7 +22271,7 @@ public:
       return OTL_SCAST(int, num_errs);
   }
 
-  int get_error(const int ndx, int &dml_row_offset, otl_exc &exception_struct) {
+  OTL_NODISCARD int get_error(const int ndx, int &dml_row_offset, otl_exc &exception_struct) {
     sword rc = OCI_SUCCESS;
     dml_row_offset = -1;
     exception_struct.code = 0;
@@ -21939,7 +22372,7 @@ public:
     return OTL_SCAST(ub4, arpc);
   }
 
-  int open(otl_conn &connect, otl_var *var = nullptr) {
+  OTL_NODISCARD int open(otl_conn &connect, otl_var *var = nullptr) {
     db = &connect;
     commit_on_success = db->get_auto_commit();
     if (var != nullptr) {
@@ -21977,11 +22410,11 @@ public:
     pos_nbr = 0;
     return 1;
   }
-  int close(const char
+  OTL_NODISCARD int close(const char
 #if defined(OTL_ORA11G_R2) || defined(OTL_ORA12C)
-                force_handle_free
+                          force_handle_free
 #endif
-            = 'N') {
+                          = 'N') {
     if (!extern_cda) {
 #if defined(OTL_ORA11G_R2) || defined(OTL_ORA12C)
       if (force_handle_free == 'Y')
@@ -22007,7 +22440,7 @@ public:
     return 1;
   }
 
-  int parse(const char *stm_text) {
+  OTL_NODISCARD int parse(const char *stm_text) {
 #if defined(OTL_ORA11G_R2) || defined(OTL_ORA12C)
     if (cda != nullptr) {
       status = OCIHandleFree(OTL_RCAST(dvoid *, cda), OCI_HTYPE_STMT);
@@ -22060,8 +22493,8 @@ public:
     return 1;
   }
 
-  int exec(const int iters, const int rowoff,
-           const otl_sql_exec_from_enum /*otl_sql_exec_from_class*/) {
+  OTL_NODISCARD int exec(const int iters, const int rowoff,
+                         const otl_sql_exec_from_enum /*otl_sql_exec_from_class*/) {
     if (parse_only_flag) {
       parse_only_flag = 0;
       return 1;
@@ -22084,12 +22517,11 @@ public:
     return 1;
   }
 
-  long get_rpc() OTL_NO_THROW 
-  { 
+  OTL_NODISCARD long get_rpc() OTL_NO_THROW { 
     return OTL_SCAST(long,rpc());
   }
 
-  int fetch(const otl_stream_buffer_size_type iters, int &eof_data) {
+  OTL_NODISCARD int fetch(const otl_stream_buffer_size_type iters, int &eof_data) {
     eof_data = 0;
 #if defined(OTL_ORA9I) || defined(OTL_ORA10G) || defined(OTL_ORA10G_R2) ||     \
     defined(OTL_ORA11G) || defined(OTL_ORA11G_R2) || defined(OTL_ORA12C)
@@ -22112,7 +22544,7 @@ public:
     return 1;
   }
 
-  int tmpl_ftype2ora_ftype(const int ftype) {
+  OTL_NODISCARD int tmpl_ftype2ora_ftype(const int ftype) {
     switch (ftype) {
     case otl_var_char:
       return extCChar;
@@ -22180,9 +22612,9 @@ public:
     }
   }
 
-  int bind(const char *name, otl_var &v, const int elem_size, const int ftype,
-           const int /*param_type*/, const int /*name_pos*/,
-           const int /*connection_type*/, const int apl_tab_flag) {
+  OTL_NODISCARD int bind(const char *name, otl_var &v, const int elem_size, const int ftype,
+                         const int /*param_type*/, const int /*name_pos*/,
+                         const int /*connection_type*/, const int apl_tab_flag) {
     OCIBind *bindpp;
 
     int db_ftype = 0;
@@ -22388,8 +22820,8 @@ public:
     return 1;
   }
 
-  int bind(const int column_num, otl_var &v, const int elem_size,
-           const int ftype, const int /*param_type*/) {
+  OTL_NODISCARD int bind(const int column_num, otl_var &v, const int elem_size,
+                         const int ftype, const int /*param_type*/) {
     OCIDefine *defnp;
     int db_ftype = 0;
 #if defined(OTL_ORA_SDO_GEOMETRY)
@@ -22527,8 +22959,8 @@ public:
 
   void set_select_type(const int select_type) { straight_select = select_type; }
 
-  int describe_column(otl_column_desc &col, const int column_num,
-                      int &eof_desc) {
+  OTL_NODISCARD int describe_column(otl_column_desc &col, const int column_num,
+                                    int &eof_desc) {
     OCIParam *pard;
     ub2 dtype;
     ub2 dbsize;
@@ -22788,7 +23220,7 @@ private:
   int implicit_cursor;
 
 public:
-  int get_implicit_cursor() const { return implicit_cursor; }
+  OTL_NODISCARD int get_implicit_cursor() const { return implicit_cursor; }
 
   void set_arr_size(const int input_arr_size, int &out_array_size,
                     int &out_prefetch_array_size) {
@@ -22798,9 +23230,8 @@ public:
 
   void set_prefetch_size(const int /*aprefetch_array_size*/) {}
 
-  int close_select(otl_cur & /*cur*/) {
-    int i = 1;
-    return i;
+  OTL_NODISCARD int close_select(otl_cur & /*cur*/) {
+    return 1;
   }
 
   otl_sel() : implicit_cursor(0) {}
@@ -22811,8 +23242,8 @@ public:
 
   void init(const int /*array_size*/) {}
 
-  int first(otl_cur &cur, int &cur_row, int &cur_size, int &row_count,
-            int &eof_data, const int array_size) {
+  OTL_NODISCARD int first(otl_cur &cur, int &cur_row, int &cur_size, int &row_count,
+                          int &eof_data, const int array_size) {
     int rc;
     eof_data = 0;
     cur_row = -1;
@@ -22831,8 +23262,8 @@ public:
     return 1;
   }
 
-  int next(otl_cur &cur, int &cur_row, int &cur_size, int &row_count,
-           int &eof_data, const int array_size) {
+  OTL_NODISCARD int next(otl_cur &cur, int &cur_row, int &cur_size, int &row_count,
+                         int &eof_data, const int array_size) {
     int rc;
     if (cur_row < cur_size - 1) {
       ++cur_row;
@@ -22928,7 +23359,7 @@ public:
     lob_is_null = alob_is_null;
     ndx = andx;
     offset = 0;
-    if (amode == otl_lob_stream_write_mode)
+    if (amode == OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_write_mode))
       lob_len = 2147483647;
     else
       lob_len = 0;
@@ -22946,7 +23377,7 @@ public:
                                        cursor(nullptr),
                                        temp_buf(nullptr),
                                        temp_char_buf(nullptr) {
-    init(nullptr, nullptr, nullptr, 0, otl_lob_stream_zero_mode);
+    init(nullptr, nullptr, nullptr, 0, OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_zero_mode));
   }
 
   virtual ~otl_tmpl_lob_stream()
@@ -22976,7 +23407,7 @@ public:
 #endif
   }
 
-#if defined(OTL_STD_STRING_VIEW_CLASS) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_STRING_VIEW_CLASS) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS))
   otl_lob_stream_generic &operator<<(OTL_STD_STRING_VIEW_CLASS s)
       OTL_THROWS_OTL_EXCEPTION {
     otl_long_string temp_s(s.data(), OTL_SCAST(int, s.length()),
@@ -23051,7 +23482,7 @@ public:
           otl_error_msg_37, otl_error_code_37,
           "otl_lob_stream_generic::operator<<(const otl_long_string&)");
     }
-    if (mode != otl_lob_stream_write_mode) {
+    if (mode != OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_write_mode)) {
       const char *stm = nullptr;
       char var_info[256];
       var_info[0] = 0;
@@ -23132,10 +23563,13 @@ public:
       return *this;
     if (otl_uncaught_exception())
       return *this;
-    throw otl_tmpl_exception<TExceptionStruct, TConnectStruct, TCursorStruct>(
-        connect->get_connect_struct(), cursor->get_stm_label()
-                                           ? cursor->get_stm_label()
-                                           : cursor->get_stm_text());
+    if(connect)
+      throw otl_tmpl_exception<TExceptionStruct, TConnectStruct, TCursorStruct>
+        (connect->get_connect_struct(), cursor->get_stm_label()
+         ? cursor->get_stm_label()
+         : cursor->get_stm_text());
+    else
+      return *this;
   }
 
   otl_lob_stream_generic &
@@ -23148,7 +23582,7 @@ public:
           otl_error_msg_37, otl_error_code_37,
           "otl_lob_stream_generic::operator>>(otl_long_string&)");
     }
-    if (mode != otl_lob_stream_read_mode) {
+    if (mode != OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode)) {
       const char *stm = nullptr;
       char var_info[256];
       var_info[0] = 0;
@@ -23200,19 +23634,22 @@ public:
       return *this;
     if (otl_uncaught_exception())
       return *this;
-    throw otl_tmpl_exception<TExceptionStruct, TConnectStruct, TCursorStruct>(
-        connect->get_connect_struct(), cursor->get_stm_label()
-                                           ? cursor->get_stm_label()
-                                           : cursor->get_stm_text());
+    if(connect)
+      throw otl_tmpl_exception<TExceptionStruct, TConnectStruct, TCursorStruct>
+        (connect->get_connect_struct(), cursor->get_stm_label()
+          ? cursor->get_stm_label()
+          : cursor->get_stm_text());
+    else
+      return *this;
   }
 
-  int eof(void) OTL_NO_THROW {
+  OTL_NODISCARD int eof(void) OTL_NO_THROW {
     if (lob_is_null)
       return 1;
     return eof_flag;
   }
 
-  bool is_initialized(void) OTL_THROWS_OTL_EXCEPTION {
+  OTL_NODISCARD bool is_initialized(void) OTL_THROWS_OTL_EXCEPTION {
     if (cursor == nullptr || connect == nullptr || bind_var == nullptr ||
         lob_is_null)
       return false;
@@ -23231,7 +23668,7 @@ public:
                                                      : cursor->get_stm_text());
   }
 
-  int len(void) OTL_THROWS_OTL_EXCEPTION {
+  OTL_NODISCARD int len(void) OTL_THROWS_OTL_EXCEPTION {
     if (cursor == nullptr || connect == nullptr || bind_var == nullptr ||
         lob_is_null)
       return 0;
@@ -23254,26 +23691,30 @@ public:
   void close(bool dont_throw_size_doesnt_match_exception =
                  false) OTL_THROWS_OTL_EXCEPTION {
     if (in_destructor) {
-      if (mode == otl_lob_stream_read_mode) {
-        bind_var->get_var_struct().set_lob_stream_flag(0);
-        bind_var->set_not_null(0);
+      if (mode == OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode)) {
+        if(bind_var){
+          bind_var->get_var_struct().set_lob_stream_flag(0);
+          bind_var->set_not_null(0);
+        }
       }
       return;
     }
-    if (mode == otl_lob_stream_zero_mode)
+    if (mode == OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_zero_mode))
       return;
-    if (mode == otl_lob_stream_read_mode) {
-      if (offset < lob_len - 1)
-        bind_var->get_var_struct().close_lob();
-      bind_var->get_var_struct().close_temporary_lob();
-      bind_var->get_var_struct().set_lob_stream_flag(0);
-      bind_var->set_not_null(0);
-      init(nullptr, nullptr, nullptr, 0, otl_lob_stream_zero_mode);
+    if (mode == OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode)) {
+      if(bind_var){
+        if (offset < lob_len - 1)
+          (void)bind_var->get_var_struct().close_lob();
+        bind_var->get_var_struct().close_temporary_lob();
+        bind_var->get_var_struct().set_lob_stream_flag(0);
+        bind_var->set_not_null(0);
+        init(nullptr, nullptr, nullptr, 0, OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_zero_mode));
+      }
     } else {
       // write mode
       if (!(offset == 0 && lob_len == 0) && (offset - 1) != lob_len &&
           !dont_throw_size_doesnt_match_exception) {
-        bind_var->get_var_struct().close_lob();
+        (void)bind_var->get_var_struct().close_lob();
         char var_info[256];
         char msg_buf[1024];
         OTL_STRCPY_S(msg_buf, sizeof(msg_buf), otl_error_msg_8);
@@ -23393,7 +23834,7 @@ public:
 
   void stream_pool_disable() { pool_enabled_ = false; }
 
-  bool get_stream_pool_enabled_flag() const { return pool_enabled_; }
+  OTL_NODISCARD bool get_stream_pool_enabled_flag() const { return pool_enabled_; }
 
 #endif
 
@@ -23472,7 +23913,7 @@ OTL_THROWS_OTL_EXCEPTION:
 #endif
   }
 
-  const char *getCmd(void) const { return cmd_; }
+  OTL_NODISCARD const char *getCmd(void) const { return cmd_; }
 
   otl_connect &operator<<(const char *cmd) {
     if (!connected) {
@@ -23494,7 +23935,7 @@ OTL_THROWS_OTL_EXCEPTION:
     return *this;
   }
 
-  static int otl_terminate(void) OTL_THROWS_OTL_EXCEPTION {
+  OTL_NODISCARD static int otl_terminate(void) OTL_THROWS_OTL_EXCEPTION {
 #if defined(OTL_ORA8) && !defined(OTL_ORA8I) && !defined(OTL_ORA9I)
     return 1;
 #else
@@ -23635,15 +24076,15 @@ OTL_THROWS_OTL_EXCEPTION:
       sc.init(sc.get_max_size());
 #endif
     if (!connected) {
-      connect_struct.session_end();
-      connect_struct.server_detach();
+      (void)connect_struct.session_end();
+      (void)connect_struct.server_detach();
     } else {
 #if defined(OTL_ROLLS_BACK_BEFORE_LOGOFF)
       otl_ora8_connect::rollback();
 #endif
       OTL_TRACE_FUNC(0x1, "otl_connect", "logoff", "")
       if (connect_struct.get_extern_lda())
-        connect_struct.logoff();
+        (void)connect_struct.logoff();
       else {
         session_end();
         server_detach();
@@ -23882,7 +24323,7 @@ public:
     otl_tmpl_cursor<otl_exc, otl_conn, otl_cur, otl_var>::close();
   }
 
-  int first(void) {
+  OTL_NODISCARD int first(void) {
     int rc;
 
     cur_row = -1;
@@ -23904,7 +24345,7 @@ public:
     return cur_size != 0;
   }
 
-  int next(void) {
+  OTL_NODISCARD int next(void) {
     int rc;
     if (cur_row < 0)
       return first();
@@ -23941,7 +24382,7 @@ public:
     otl_refcur_base_cursor::bind(column_num, v);
   }
 
-  int describe_select(otl_column_desc *desc, int &desc_len) {
+  OTL_NODISCARD int describe_select(otl_column_desc *desc, int &desc_len) {
     int i;
     desc_len = 0;
     cursor_struct.straight_select = 0;
@@ -23988,13 +24429,14 @@ class otl_read_stream_interface {
 public:
   virtual ~otl_read_stream_interface() OTL_THROWS_OTL_EXCEPTION {}
 
-  virtual int is_null(void) OTL_NO_THROW = 0;
+  OTL_NODISCARD virtual int is_null(void) OTL_NO_THROW = 0;
   virtual void rewind(void) OTL_THROWS_OTL_EXCEPTION = 0;
-  virtual int eof(void) OTL_THROWS_OTL_EXCEPTION = 0;
+  OTL_NODISCARD virtual int eof(void) OTL_THROWS_OTL_EXCEPTION = 0;
   virtual void skip_to_end_of_row(void) OTL_THROWS_OTL_EXCEPTION = 0;
+  virtual void skip_to_next_var(void) OTL_THROWS_OTL_EXCEPTION = 0;
 
-  virtual otl_var_desc *describe_out_vars(int &desc_len) OTL_NO_THROW = 0;
-  virtual otl_var_desc *describe_next_out_var(void) OTL_NO_THROW = 0;
+  OTL_NODISCARD virtual otl_var_desc *describe_out_vars(int &desc_len) OTL_NO_THROW = 0;
+  OTL_NODISCARD virtual otl_var_desc *describe_next_out_var(void) OTL_NO_THROW = 0;
 
   virtual otl_read_stream_interface &
   operator>>(otl_datetime &s) OTL_THROWS_OTL_EXCEPTION = 0;
@@ -24140,11 +24582,19 @@ public:
       cur_col = -1;
   }
 
-  bool good() const { return get_connected() == 1; }
+  void skip_to_next_var() {
+    check_if_executed();
+    if (eof_intern())
+      return;
+    get_next();
+    look_ahead();
+  }
 
-  bool get_lob_stream_flag() const { return true; }
+  OTL_NODISCARD bool good() const { return get_connected() == 1; }
 
-  int get_adb_max_long_size() const { return this->adb->get_max_long_size(); }
+  OTL_NODISCARD bool get_lob_stream_flag() const { return true; }
+
+  OTL_NODISCARD int get_adb_max_long_size() const { return this->adb->get_max_long_size(); }
 
   void set_column_type(const int column_ndx, const int col_type,
                        const int col_size = 0) OTL_NO_THROW {
@@ -24210,9 +24660,9 @@ OTL_THROWS_OTL_EXCEPTION:
     close();
   }
 
-  int is_null(void) OTL_NO_THROW { return null_fetched; }
+  OTL_NODISCARD int is_null(void) OTL_NO_THROW { return null_fetched; }
 
-  int eof(void)
+  OTL_NODISCARD int eof(void)
 #if defined(OTL_SELECT_STREAM_ALTERNATE_FETCH)
       OTL_THROWS_OTL_EXCEPTION
 #else
@@ -24239,7 +24689,7 @@ OTL_THROWS_OTL_EXCEPTION:
 #endif
   }
 
-  int eof_intern(void) { return !ret_code; }
+  OTL_NODISCARD int eof_intern(void) { return !ret_code; }
 
   void check_if_executed(void) {}
 
@@ -24442,7 +24892,7 @@ OTL_THROWS_OTL_EXCEPTION:
       break;
 #endif
     default:
-      check_type(otl_var_char);
+      (void)check_type(otl_var_char);
     } // switch
     inc_next_ov();
     return *this;
@@ -24469,6 +24919,35 @@ OTL_THROWS_OTL_EXCEPTION:
     inc_next_ov();
     return *this;
   }
+
+#if defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+    template<const size_t N>
+    OTL_ORA_REFCUR_COMMON_READ_STREAM &
+    operator>>(std::array<char,N>& s) OTL_THROWS_OTL_EXCEPTION {
+      check_if_executed();
+      if (eof_intern())
+        return *this;
+      get_next();
+      if (check_type(otl_var_char) && !eof_intern()) {
+        if(N<sl[cur_col].get_len(cur_row))
+          throw otl_exception(otl_error_msg_45, 
+                              otl_error_code_45,
+                              this->get_stm_text(),
+                              this->describe_next_out_var()->name);
+        otl_strcpy(OTL_RCAST(unsigned char *, s),
+                   OTL_RCAST(const unsigned char *, sl[cur_col].val(cur_row)));
+#if defined(OTL_DEFAULT_STRING_NULL_TO_VAL)
+        if ((*this).is_null())
+          otl_strcpy(
+                     OTL_RCAST(unsigned char *, s.data()),
+                     OTL_RCAST(const unsigned char *, OTL_DEFAULT_STRING_NULL_TO_VAL));
+#endif
+        look_ahead();
+      }
+      inc_next_ov();
+      return *this;
+    }
+#endif
 
 #if defined(OTL_UNICODE_STRING_TYPE)
 
@@ -24526,6 +25005,36 @@ OTL_THROWS_OTL_EXCEPTION:
     inc_next_ov();
     return *this;
   }
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+    template<const size_t N>
+    OTL_ORA_REFCUR_COMMON_READ_STREAM &
+    operator>>(std::array<char16_t,N>& s) OTL_THROWS_OTL_EXCEPTION {
+      check_if_executed();
+      if (eof_intern())
+        return *this;
+      get_next();
+      if (check_type(otl_var_char) && !eof_intern()) {
+        if(N<sl[cur_col].get_len(cur_row))
+          throw otl_exception(otl_error_msg_46,
+                              otl_error_code_46,
+                              this->get_stm_text(),
+                              this->describe_next_out_var()->name);
+        otl_strcpy2(OTL_RCAST(unsigned char *, s),
+                    OTL_RCAST(unsigned char *, sl[cur_col].val(cur_row)),
+                    sl[cur_col].get_len(cur_row));
+#if defined(OTL_DEFAULT_STRING_NULL_TO_VAL)
+        if ((*this).is_null())
+          otl_strcpy(
+                     OTL_RCAST(unsigned char *, s.data()),
+                     OTL_RCAST(const unsigned char *, OTL_DEFAULT_STRING_NULL_TO_VAL));
+#endif
+        look_ahead();
+      }
+      inc_next_ov();
+      return *this;
+    }
+#endif
 
 #endif
 
@@ -25002,7 +25511,7 @@ OTL_THROWS_OTL_EXCEPTION:
          sl[cur_col].get_ftype() == otl_var_clob) &&
         !eof_intern()) {
       s.init(&sl[cur_col], adb, OTL_SCAST(otl_refcur_base_cursor *, this),
-             cur_row, otl_lob_stream_read_mode, this->is_null());
+             cur_row, OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode), this->is_null());
       delay_next = 1;
     }
     inc_next_ov();
@@ -25075,7 +25584,7 @@ protected:
     }
   }
 
-  int check_type_throw(int type_code, int actual_data_type) {
+  OTL_NODISCARD int check_type_throw(int type_code, int actual_data_type) {
     int out_type_code;
     if (actual_data_type != 0)
       out_type_code = actual_data_type;
@@ -25093,7 +25602,7 @@ protected:
                         stm_label ? stm_label : stm_text, var_info);
   }
 
-  int check_type(int type_code, int actual_data_type = 0) {
+  OTL_NODISCARD int check_type(int type_code, int actual_data_type = 0) {
     switch (sl[cur_col].get_ftype()) {
     case otl_var_timestamp:
     case otl_var_tz_timestamp:
@@ -25242,7 +25751,7 @@ public:
     return *this;
   }
 
-#if defined(OTL_STD_STRING_VIEW_CLASS) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_STRING_VIEW_CLASS) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS))
   otl_inout_stream &operator<<(OTL_STD_STRING_VIEW_CLASS s) {
     otl_ora8_inout_stream::operator<<(s);
     return *this;
@@ -25329,7 +25838,7 @@ public:
   }
 #endif
 
-#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS))
   otl_inout_stream &operator<<(OTL_STD_UNICODE_STRING_VIEW_CLASS s) {
     otl_ora8_inout_stream::operator<<(s);
     return *this;
@@ -25351,6 +25860,34 @@ public:
     otl_ora8_inout_stream::operator<<(s);
     return *this;
   }
+
+#if defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+  template<const size_t N>
+  otl_inout_stream &operator>>(std::array<char,N>& s) {
+    otl_ora8_inout_stream::getString(s.data(),OTL_SCAST(int,s.size()));
+    return *this;
+  }
+
+  template<const size_t N>
+  otl_inout_stream &operator<<(const std::array<char,N>& s) {
+    otl_ora8_inout_stream::operator<<(s);
+    return *this;
+  }
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON) && defined(OTL_UNICODE)
+  template<const size_t N>
+  otl_inout_stream &operator>>(std::array<char16_t,N>& s) {
+    otl_ora8_inout_stream::getString(s.data(),OTL_SCAST(int,s.size()));
+    return *this;
+  }
+
+  template<const size_t N>
+  otl_inout_stream &operator<<(const std::array<char16_t,N>& s) {
+    otl_ora8_inout_stream::operator<<(s);
+    return *this;
+  }
+#endif
 
   otl_inout_stream &operator>>(unsigned char *s) {
     otl_ora8_inout_stream::operator>>(s);
@@ -25687,7 +26224,7 @@ public:
     otl_tmpl_cursor<otl_exc, otl_conn, otl_cur, otl_var>::close();
   }
 
-  int first(void) {
+  OTL_NODISCARD int first(void) {
     int i, rc;
     OCIBind *bindpp;
 
@@ -25741,7 +26278,7 @@ public:
     return cur_size != 0;
   }
 
-  int next(void) {
+  OTL_NODISCARD int next(void) {
     int rc;
     if (cur_row < 0)
       return first();
@@ -25806,7 +26343,7 @@ public:
     otl_tmpl_cursor<otl_exc, otl_conn, otl_cur, otl_var>::bind(name, v);
   }
 
-  int describe_select(otl_column_desc *desc, int &desc_len) {
+  OTL_NODISCARD int describe_select(otl_column_desc *desc, int &desc_len) {
     int i, rc;
     OCIBind *bindpp;
 
@@ -25904,13 +26441,21 @@ public:
     ++_rfc;
   }
 
-  int get_select_row_count() const {
+  void skip_to_next_var() {
+    check_if_executed();
+    if (eof_intern())
+      return;
+    get_next();
+    look_ahead();
+  }
+
+  OTL_NODISCARD int get_select_row_count() const {
     return this->cur_row == -1 ? 0 : this->cur_size - this->cur_row;
   }
 
-  int get_prefetched_row_count() const { return this->row_count; }
+  OTL_NODISCARD int get_prefetched_row_count() const { return this->row_count; }
 
-  long get_rfc() const { return _rfc; }
+  OTL_NODISCARD long get_rfc() const { return _rfc; }
 
   void cleanup(void) {
     int i;
@@ -25997,9 +26542,9 @@ public:
     delay_next = 0;
   }
 
-  int is_null(void) { return null_fetched; }
+  OTL_NODISCARD int is_null(void) { return null_fetched; }
 
-  int eof(void) {
+  OTL_NODISCARD int eof(void) {
 #if defined(OTL_SELECT_STREAM_ALTERNATE_FETCH)
     if (cur_col == sl_len - 1) {
       get_next();
@@ -26020,7 +26565,7 @@ public:
 #endif
   }
 
-  int eof_intern(void) { return !ret_code; }
+  OTL_NODISCARD int eof_intern(void) { return !ret_code; }
 
   otl_ref_select_stream &operator>>(otl_time0 &t) {
     check_if_executed();
@@ -26218,7 +26763,7 @@ public:
       break;
 #endif
     default:
-      check_type(otl_var_char);
+      (void)check_type(otl_var_char);
     } // switch
     return *this;
   }
@@ -26236,6 +26781,37 @@ public:
     }
     return *this;
   }
+
+#if defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+  template<const size_t N>
+  otl_ref_select_stream &operator>>(std::array<char,N>& s) {
+    check_if_executed();
+    if (eof_intern())
+      return *this;
+    get_next();
+    if (check_type(otl_var_char) && !eof_intern()) {
+      if(OTL_SCAST(int,N)<sl[cur_col].get_len(cur_row)){
+        otl_var_info_col(sl[cur_col].get_pos(), sl[cur_col].get_ftype(),
+                         const_STD_CHAR_ARRAY_code, var_info, sizeof(var_info));
+        throw otl_exception(otl_error_msg_45, 
+                            otl_error_code_45,
+                            this->stm_label ? this->stm_label : this->stm_text,
+                            var_info);
+      }
+
+      otl_strcpy(OTL_RCAST(unsigned char*, s.data()),
+                 OTL_RCAST(const unsigned char *, sl[cur_col].val(cur_row)));
+      look_ahead();
+    }
+    return *this;
+  }
+
+  template<const size_t N>
+  otl_ref_select_stream &operator<<(const std::array<char,N>& s){
+    (*this)<<s.data();
+    return *this;
+  }
+#endif
 
 #if defined(OTL_UNICODE_STRING_TYPE)
   otl_ref_select_stream &operator>>(OTL_UNICODE_STRING_TYPE &s) {
@@ -26292,7 +26868,7 @@ public:
       }
       break;
     default:
-      check_type(otl_var_char);
+      (void)check_type(otl_var_char);
     }
     return *this;
   }
@@ -26311,6 +26887,31 @@ public:
     }
     return *this;
   }
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON) && defined(OTL_UNICODE)
+  template<const size_t N>
+  otl_ref_select_stream &operator>>(std::array<char16_t,N>& s) {
+    check_if_executed();
+    if (eof_intern())
+      return *this;
+    get_next();
+    if (check_type(otl_var_char) && !eof_intern()) {
+      if(OTL_SCAST(int,N)<sl[cur_col].get_len(cur_row)){
+        otl_var_info_col(sl[cur_col].get_pos(), sl[cur_col].get_ftype(),
+                         const_STD_UNICODE_CHAR_ARRAY_code, var_info, sizeof(var_info));
+        throw otl_exception(otl_error_msg_46, 
+                            otl_error_code_46,
+                            this->stm_label ? this->stm_label : this->stm_text,
+                            var_info);
+      }
+      otl_strcpy2(OTL_RCAST(unsigned char *, s.data()),
+                  OTL_RCAST(unsigned char *, sl[cur_col].val(cur_row)),
+                  sl[cur_col].get_len(cur_row));
+      look_ahead();
+    }
+    return *this;
+  }
+#endif
 
 #if defined(OTL_STRICT_NUMERIC_TYPE_CHECK_ON_SELECT)
 #define OTL_D7(T, T_type)                                                      \
@@ -26471,7 +27072,7 @@ public:
          sl[cur_col].get_ftype() == otl_var_clob) &&
         !eof_intern()) {
       s.init(&sl[cur_col], adb, OTL_RCAST(otl_ref_cursor *, this), cur_row,
-             otl_lob_stream_read_mode, this->is_null());
+             OTL_SCAST(int,OTL_LOB_STREAM_MODE_ENUM otl_lob_stream_read_mode), this->is_null());
       delay_next = 1;
     }
     return *this;
@@ -26483,7 +27084,7 @@ public:
       return *this;
     get_next();
     if(check_type(otl_var_sdo_geometry) && !eof_intern()){
-      sl[cur_col].get_var_struct().read_geometry(s, cur_row);
+      (void)sl[cur_col].get_var_struct().read_geometry(s, cur_row);
       look_ahead();
     }
     return *this;
@@ -26521,7 +27122,7 @@ public:
     return *this;
   }
 
-#if defined(OTL_STD_STRING_VIEW_CLASS) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_STRING_VIEW_CLASS) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS))
   otl_ref_select_stream &operator<<(OTL_STD_STRING_VIEW_CLASS s) {
     check_in_var();
     if (this->vl[cur_in]->get_ftype() == otl_var_raw) {
@@ -26576,7 +27177,7 @@ public:
       }
 
     } else
-      check_in_type_throw(otl_var_char);
+      (void)check_in_type_throw(otl_var_char);
     this->vl[cur_in]->set_not_null(0);
     get_in_next();
     return *this;
@@ -26638,7 +27239,7 @@ public:
       }
 
     } else
-      check_in_type_throw(otl_var_char);
+      (void)check_in_type_throw(otl_var_char);
     this->vl[cur_in]->set_not_null(0);
     get_in_next();
     return *this;
@@ -26690,7 +27291,7 @@ public:
   }
 #endif
 
-#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS))
   otl_ref_select_stream &operator<<(OTL_STD_UNICODE_STRING_VIEW_CLASS s) {
     check_in_var();
     if (check_in_type(otl_var_char, 1)) {
@@ -26796,6 +27397,15 @@ public:
     return *this;
   }
 
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON) && defined(OTL_UNICODE)
+  template<const size_t N>
+  otl_ref_select_stream &operator<<(const std::array<char16_t,N>& s){
+    (*this)<<OTL_RCAST(unsigned char*,OTL_CCAST(char16_t*,s.data()));
+    return *this;
+  }
+#endif
+
+
 #if defined(OTL_ORA_SDO_GEOMETRY)
   otl_ref_select_stream &operator << (const oci_spatial_geometry &s){
     check_in_var();
@@ -26870,15 +27480,15 @@ public:
   OTL_D8(T, T_type)
 #endif
 
-  int select_list_len(void) const { return sl_len; }
+  OTL_NODISCARD int select_list_len(void) const { return sl_len; }
 
-  int column_ftype(int ndx = 0) const { return sl[ndx].get_ftype(); }
+  OTL_NODISCARD int column_ftype(int ndx = 0) const { return sl[ndx].get_ftype(); }
 
-  int column_size(int ndx = 0) const { return sl[ndx].get_elem_size(); }
+  OTL_NODISCARD int column_size(int ndx = 0) const { return sl[ndx].get_elem_size(); }
 
-  int get_sl_len() const { return sl_len; }
-  otl_generic_variable *get_sl() const { return sl; }
-  otl_column_desc *get_sl_desc() const { return sl_desc; }
+  OTL_NODISCARD int get_sl_len() const { return sl_len; }
+  OTL_NODISCARD otl_generic_variable *get_sl() const { return sl; }
+  OTL_NODISCARD otl_column_desc *get_sl_desc() const { return sl_desc; }
 
 protected:
   otl_column_desc *sl_desc;
@@ -26914,7 +27524,7 @@ protected:
     }
   }
 
-  int check_type_throw(int type_code, int actual_data_type) {
+  OTL_NODISCARD int check_type_throw(int type_code, int actual_data_type) {
     int out_type_code;
     if (actual_data_type != 0)
       out_type_code = actual_data_type;
@@ -26933,7 +27543,7 @@ protected:
                         stm_label ? stm_label : stm_text, var_info);
   }
 
-  int check_type(int type_code, int actual_data_type = 0) {
+  OTL_NODISCARD int check_type(int type_code, int actual_data_type = 0) {
     switch (sl[cur_col].get_ftype()) {
     case otl_var_timestamp:
     case otl_var_tz_timestamp:
@@ -27061,7 +27671,7 @@ protected:
     }
   }
 
-  int check_in_type_throw(int type_code) {
+  OTL_NODISCARD int check_in_type_throw(int type_code) {
     otl_var_info_var(vl[cur_in]->get_name(), vl[cur_in]->get_ftype(), type_code,
                      var_info, sizeof(var_info));
     if (this->adb)
@@ -27075,7 +27685,7 @@ protected:
                         stm_label ? stm_label : stm_text, var_info);
   }
 
-  int check_in_type(int type_code, int tsize) {
+  OTL_NODISCARD int check_in_type(int type_code, int tsize) {
     switch (vl[cur_in]->get_ftype()) {
     case otl_var_char:
       if (type_code == otl_var_char)
@@ -27364,9 +27974,16 @@ public:
 };
 #endif
 
-#if defined(OTL_STREAM_WITH_STD_TUPLE_ON) && defined(OTL_CPP_14_ON)
-#include <tuple>
-#include <utility>
+#if defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+#include <array>
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+#include <array>
+#endif
+
+#if defined(OTL_STREAM_WITH_STD_OPTIONAL_ON) && defined(OTL_COMPILER_HAS_STD_OPTIONAL)
+#include <optional>
 #endif
 
 class otl_stream
@@ -27550,7 +28167,7 @@ public:
       (*io)->set_batch_error_mode(batch_error_mode);
   }
 
-  int get_number_of_errors_in_batch() {
+  OTL_NODISCARD int get_number_of_errors_in_batch() {
     if (shell && shell->stream_type == otl_inout_stream_type)
       return (*io)->get_number_of_errors_in_batch();
     else
@@ -27563,21 +28180,21 @@ public:
       (*io)->get_error(error_ndx, dml_row_offset, exception);
   }
 
-  int get_auto_commit_flag() const {
+  OTL_NODISCARD int get_auto_commit_flag() const {
     if (!auto_commit_flag)
       return 0;
     else
       return *auto_commit_flag;
   }
 
-  bool get_lob_stream_flag() const {
+  OTL_NODISCARD bool get_lob_stream_flag() const {
     if (!shell)
       return false;
     else
       return shell->lob_stream_flag;
   }
 
-  int get_adb_max_long_size() const {
+  OTL_NODISCARD int get_adb_max_long_size() const {
     return this->shell->adb->get_max_long_size();
   }
 
@@ -27588,7 +28205,7 @@ public:
       throw_end_of_row();
   }
 
-  int get_prefetched_row_count() const {
+  OTL_NODISCARD int get_prefetched_row_count() const {
     (*adb)->reset_throw_count();
     switch (shell->stream_type) {
     case otl_no_stream_type:
@@ -27603,7 +28220,7 @@ public:
     }
   }
 
-  int get_dirty_buf_len() const {
+  OTL_NODISCARD int get_dirty_buf_len() const {
     switch (shell->stream_type) {
     case otl_no_stream_type:
       return 0;
@@ -27623,13 +28240,13 @@ public:
     }
   }
 
-  otl_stream_shell *get_shell() { return shell; }
+  OTL_NODISCARD otl_stream_shell *get_shell() { return shell; }
 
-  int get_connected() const { return connected; }
+  OTL_NODISCARD int get_connected() const { return connected; }
 
   void setBufSize(int buf_size) { buf_size_ = buf_size; }
 
-  int getBufSize(void) const { return buf_size_; }
+  OTL_NODISCARD int getBufSize(void) const { return buf_size_; }
 
   operator int(void) OTL_THROWS_OTL_EXCEPTION {
     if (shell && shell->lob_stream_flag) {
@@ -28375,7 +28992,7 @@ public:
   }
 #endif
 
-  int get_stream_type(void) OTL_NO_THROW {
+  OTL_NODISCARD int get_stream_type(void) OTL_NO_THROW {
     if (shell == nullptr)
       return otl_no_stream_type;
     else
@@ -28411,7 +29028,7 @@ public:
     shell->lob_stream_flag = lob_stream_flag;
   }
 
-  otl_var_desc *describe_in_vars(int &desc_len) OTL_NO_THROW {
+  OTL_NODISCARD otl_var_desc *describe_in_vars(int &desc_len) OTL_NO_THROW {
     desc_len = 0;
     if (shell == nullptr)
       return nullptr;
@@ -28421,7 +29038,7 @@ public:
     return shell->iov;
   }
 
-  otl_var_desc *describe_out_vars(int &desc_len) OTL_NO_THROW {
+  OTL_NODISCARD otl_var_desc *describe_out_vars(int &desc_len) OTL_NO_THROW {
     desc_len = 0;
     if (shell == nullptr)
       return nullptr;
@@ -28431,7 +29048,7 @@ public:
     return shell->ov;
   }
 
-  otl_var_desc *describe_next_in_var(void) OTL_NO_THROW {
+  OTL_NODISCARD otl_var_desc *describe_next_in_var(void) OTL_NO_THROW {
     if (shell == nullptr)
       return nullptr;
     if (shell->iov == nullptr)
@@ -28439,7 +29056,7 @@ public:
     return &(shell->iov[shell->next_iov_ndx]);
   }
 
-  otl_var_desc *describe_next_out_var(void) OTL_NO_THROW {
+  OTL_NODISCARD otl_var_desc *describe_next_out_var(void) OTL_NO_THROW {
     if (shell == nullptr)
       return nullptr;
     if (shell->ov == nullptr)
@@ -28447,7 +29064,7 @@ public:
     return &(shell->ov[shell->next_ov_ndx]);
   }
 
-  const char *get_stm_text(void) {
+  OTL_NODISCARD const char *get_stm_text(void) {
     const char *no_stm_text = OTL_NO_STM_TEXT;
     switch (shell->stream_type) {
     case otl_no_stream_type:
@@ -28466,7 +29083,7 @@ public:
     }
   }
 
-  long get_rpc() OTL_NO_THROW {
+  OTL_NODISCARD long get_rpc() OTL_NO_THROW {
     switch (shell->stream_type) {
     case otl_no_stream_type:
       return 0;
@@ -28683,13 +29300,7 @@ OTL_THROWS_OTL_EXCEPTION:
 #endif
   }
 
-  int eof(void)
-#if defined(OTL_SELECT_STREAM_ALTERNATE_FETCH)
-    OTL_THROWS_OTL_EXCEPTION
-#else
-    OTL_THROWS_OTL_EXCEPTION
-#endif
-  {
+  OTL_NODISCARD int eof(void) OTL_THROWS_OTL_EXCEPTION{
     if ((*io)) {
       (*adb)->reset_throw_count();
       return (*io)->eof();
@@ -28728,6 +29339,32 @@ OTL_THROWS_OTL_EXCEPTION:
     *next_ov_ndx = 0;
   }
 
+  void skip_to_next_var() OTL_NO_THROW {
+    if (next_ov_ndx == nullptr)
+      return;
+    if ((*ov_len) == 0)
+      return;
+    last_oper_was_read_op = true;
+    switch (shell->stream_type) {
+    case otl_no_stream_type:
+      break;
+    case otl_inout_stream_type:
+      last_eof_rc = (*io)->eof();
+      (*io)->skip_to_next_var();
+      break;
+    case otl_select_stream_type:
+      last_eof_rc = (*ss)->eof();
+      (*ss)->skip_to_next_var();
+      break;
+    case otl_refcur_stream_type:
+      last_eof_rc = (*ref_ss)->eof();
+      (*ref_ss)->skip_to_next_var();
+      break;
+    }
+    if((*next_ov_ndx)<(*ov_len)-1)
+      ++(*next_ov_ndx);
+  }
+
   void reset_to_last_valid_row() {
     if ((*io)) {
       (*adb)->reset_throw_count();
@@ -28743,7 +29380,7 @@ OTL_THROWS_OTL_EXCEPTION:
     }
   }
 
-  bool get_error_state(void) const {
+  OTL_NODISCARD bool get_error_state(void) const {
     if ((*adb)->get_throw_count() > 0)
       return true;
     else if ((*io))
@@ -28780,7 +29417,7 @@ OTL_THROWS_OTL_EXCEPTION:
     }
   }
 
-  int is_null(void) OTL_NO_THROW {
+  OTL_NODISCARD int is_null(void) OTL_NO_THROW {
     if ((*io))
       return (*io)->is_null();
     else if ((*ss))
@@ -29124,7 +29761,7 @@ OTL_THROWS_OTL_EXCEPTION:
 #endif
   }
 
-  otl_column_desc *describe_select(int &desc_len) OTL_NO_THROW {
+  OTL_NODISCARD otl_column_desc *describe_select(int &desc_len) OTL_NO_THROW {
     desc_len = 0;
     switch (shell->stream_type) {
     case otl_no_stream_type:
@@ -29144,7 +29781,7 @@ OTL_THROWS_OTL_EXCEPTION:
     }
   }
 
-  int good(void) OTL_NO_THROW {
+  OTL_NODISCARD int good(void) OTL_NO_THROW {
     if (!connected)
       return 0;
     if ((*io) || (*ss) || (*ref_ss)) {
@@ -29165,48 +29802,47 @@ OTL_THROWS_OTL_EXCEPTION:
   }
 
 #if defined(OTL_STREAM_WITH_STD_TUPLE_ON) && defined(OTL_CPP_14_ON)
-  template<const size_t I=0, OTL_TYPE_NAME ...T>
-  OTL_TYPE_NAME std::enable_if<I==sizeof...(T), void>::type
-  __otl_write_tuple_value(const std::tuple<T...>&){
-  }
-
-  template<const size_t I=0, OTL_TYPE_NAME ...T>
-  OTL_TYPE_NAME std::enable_if<I<sizeof...(T),void>::type
-  __otl_write_tuple_value(const std::tuple<T...>& tup){
-    (*this)<<std::get<I>(tup);
-    __otl_write_tuple_value<I+1,T...>(tup);
-  }
-
-  template<const size_t I=0, OTL_TYPE_NAME ...T>
-  OTL_TYPE_NAME std::enable_if<I==sizeof...(T), void>::type
-  __otl_read_tuple_value(std::tuple<T...>&){
-  }
-
-  template<const size_t I=0, OTL_TYPE_NAME ...T>
-  OTL_TYPE_NAME std::enable_if<I<sizeof...(T),void>::type
-  __otl_read_tuple_value(std::tuple<T...>& tup){
-    (*this)>>std::get<I>(tup);
-    __otl_read_tuple_value<I+1,T...>(tup);
-  }
 
 public:
-
-  template<OTL_TYPE_NAME ...T>
-  otl_stream& operator<<(const std::tuple<T...>& tup){
-    __otl_write_tuple_value<0,T...>(tup);
+ 
+  template<typename...T>
+  otl_stream& operator<<(const std::tuple<T...>& t){
+    otl_tuple_helper<otl_stream,decltype(t),sizeof...(T)>::write(*this,t);
     return (*this);
   }
   
-  template<OTL_TYPE_NAME ...T>
-  otl_stream& operator>>(std::tuple<T...>& tup){
-    __otl_read_tuple_value<0,T...>(tup);
+  template<typename...T>
+  otl_stream& operator>>(std::tuple<T...>& t){
+    otl_tuple_helper<otl_stream,decltype(t),sizeof...(T)>::read(*this,t);
     return (*this);
   }
 
 #endif
 
 #if defined(OTL_STREAM_WITH_STD_OPTIONAL_ON) && defined(OTL_CPP_14_ON)
-// C++14 or higher
+#if defined(OTL_COMPILER_HAS_STD_OPTIONAL)
+  template<OTL_TYPE_NAME TData>
+  otl_stream& operator<<(const std::optional<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+    if(var)
+      (*this)<<(*var);
+    else
+      (*this)<<otl_null();
+    return *this;
+  }
+
+  template<OTL_TYPE_NAME TData>
+  otl_stream& operator>>(std::optional<TData> &var) OTL_THROWS_OTL_EXCEPTION {
+    if(var){
+      (*this)>>(*var);
+      if(this->is_null())var=std::optional<TData>();
+    }else{
+      TData temp_var;
+      (*this)>>temp_var;
+      if(!this->is_null())var.emplace(std::move(temp_var));
+    }
+    return *this;
+  }
+#else
   template<OTL_TYPE_NAME TData, template <OTL_TYPE_NAME> class Optional>
   otl_stream& operator<<(const Optional<TData> &var) OTL_THROWS_OTL_EXCEPTION {
     if(var)
@@ -29228,6 +29864,7 @@ public:
     }
     return *this;
   }
+#endif
 #endif
 
 #if defined(OTL_PARANOID_EOF)
@@ -29723,6 +30360,138 @@ public:
   }
 #endif
 
+#if !defined(OTL_UNICODE) && defined(OTL_STREAM_WITH_STD_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+  template<const size_t N>
+  OTL_ORA_COMMON_READ_STREAM &operator>>(std::array<char,N>& s) OTL_THROWS_OTL_EXCEPTION {
+    last_oper_was_read_op = true;
+    switch (shell->stream_type) {
+    case otl_no_stream_type:
+      break;
+    case otl_inout_stream_type:
+      last_eof_rc = (*io)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char,...>&");
+#endif
+      (*io)->operator>>(s);
+      break;
+    case otl_select_stream_type:
+      last_eof_rc = (*ss)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char,...>&");
+#endif
+      (*ss)->getString(s.data(),OTL_SCAST(int,s.size()));
+      break;
+    case otl_refcur_stream_type:
+      last_eof_rc = (*ref_ss)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char,...>&");
+#endif
+      (*ref_ss)->operator>>(s);
+      break;
+    }
+#if defined(OTL_DEFAULT_STRING_NULL_TO_VAL)
+    if ((*this).is_null())
+      otl_strcpy(
+          OTL_RCAST(unsigned char *, s),
+          OTL_RCAST(const unsigned char *, OTL_DEFAULT_STRING_NULL_TO_VAL));
+#endif
+    OTL_TRACE_WRITE("\"" << s << "\"", "operator >>", "std::array<char,...>&")
+    inc_next_ov();
+    return *this;
+  }
+
+  template<const size_t N>
+  otl_stream &operator<<(const std::array<char,N>& s) OTL_THROWS_OTL_EXCEPTION {
+    last_oper_was_read_op = false;
+    reset_end_marker();
+    OTL_TRACE_READ("\"" << s << "\"", "operator <<", "std::array<char,...>&");
+    switch (shell->stream_type) {
+    case otl_no_stream_type:
+      break;
+    case otl_inout_stream_type:
+      (*io)->operator<<(s);
+      break;
+    case otl_select_stream_type:
+      (*ss)->operator<<(s);
+      break;
+    case otl_refcur_stream_type:
+      (*ref_ss)->operator<<(s);
+      if (!(*ov) && (*ref_ss)->get_sl())
+        create_var_desc();
+      break;
+    }
+    inc_next_iov();
+    return *this;
+  }
+
+#endif
+
+#if defined(OTL_UNICODE) && defined(OTL_STREAM_WITH_STD_UNICODE_CHAR_ARRAY_ON) && defined(OTL_CPP_14_ON)
+  template<const size_t N>
+  OTL_ORA_COMMON_READ_STREAM &operator>>(std::array<char16_t,N>& s) OTL_THROWS_OTL_EXCEPTION {
+    last_oper_was_read_op = true;
+    switch (shell->stream_type) {
+    case otl_no_stream_type:
+      break;
+    case otl_inout_stream_type:
+      last_eof_rc = (*io)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char16_t,...>&");
+#endif
+      (*io)->operator>>(s);
+      break;
+    case otl_select_stream_type:
+      last_eof_rc = (*ss)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char16_t,...>&");
+#endif
+      (*ss)->getString(s.data(),OTL_SCAST(int,s.size()));
+      break;
+    case otl_refcur_stream_type:
+      last_eof_rc = (*ref_ss)->eof();
+#if defined(OTL_PARANOID_EOF)
+      throw_if_eof_was_already_reached(last_eof_rc, "std::array<char16_t,...>&");
+#endif
+      (*ref_ss)->operator>>(s);
+      break;
+    }
+#if defined(OTL_DEFAULT_STRING_NULL_TO_VAL)
+    if ((*this).is_null())
+      otl_strcpy(
+          OTL_RCAST(unsigned char *, s),
+          OTL_RCAST(const unsigned char *, OTL_DEFAULT_STRING_NULL_TO_VAL));
+#endif
+    OTL_TRACE_WRITE("\"" << s << "\"", "operator >>", "std::array<char16_t,...>&")
+    inc_next_ov();
+    return *this;
+  }
+
+  template<const size_t N>
+  otl_stream &operator<<(const std::array<char16_t,N>& s) OTL_THROWS_OTL_EXCEPTION {
+    last_oper_was_read_op = false;
+    reset_end_marker();
+    OTL_TRACE_READ("\"" << s << "\"", "operator <<", "std::array<char16_t,...>&");
+    switch (shell->stream_type) {
+    case otl_no_stream_type:
+      break;
+    case otl_inout_stream_type:
+      (*io)->operator<<(s);
+      break;
+    case otl_select_stream_type:
+      (*ss)->operator<<(s);
+      break;
+    case otl_refcur_stream_type:
+      (*ref_ss)->operator<<(s);
+      if (!(*ov) && (*ref_ss)->get_sl())
+        create_var_desc();
+      break;
+    }
+    inc_next_iov();
+    return *this;
+  }
+
+#endif
+
 #if defined(OTL_UNICODE_STRING_TYPE)
   OTL_ORA_COMMON_READ_STREAM &
   operator>>(OTL_UNICODE_STRING_TYPE &s) OTL_THROWS_OTL_EXCEPTION {
@@ -29795,13 +30564,18 @@ public:
 
 #endif
 
-#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_UNICODE_STRING_VIEW_CLASS) && defined(OTL_UNICODE_CHAR_TYPE) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS))
   otl_stream &operator<<(OTL_STD_UNICODE_STRING_VIEW_CLASS s)
       OTL_THROWS_OTL_EXCEPTION {
     last_oper_was_read_op = false;
     reset_end_marker();
+#if defined(OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS)
+    OTL_TRACE_READ("\"" << s.data() << "\"", "operator <<",
+                   "OTL_THIRD_PARTY_UNICODE_STRING_VIEW_CLASS");
+#else
     OTL_TRACE_READ("\"" << s.data() << "\"", "operator <<",
                    "OTL_STD_UNICODE_STRING_VIEW_CLASS");
+#endif
     switch (shell->stream_type) {
     case otl_no_stream_type:
       break;
@@ -30692,12 +31466,16 @@ public:
     return *this;
   }
 
-#if defined(OTL_STD_STRING_VIEW_CLASS) && defined(OTL_CPP_14_ON)
+#if defined(OTL_STD_STRING_VIEW_CLASS) && (defined(OTL_CPP_14_ON) || defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS))
   otl_stream &operator<<(OTL_STD_STRING_VIEW_CLASS s)
       OTL_THROWS_OTL_EXCEPTION {
     last_oper_was_read_op = false;
     reset_end_marker();
+#if defined(OTL_THIRD_PARTY_STRING_VIEW_CLASS)
+    OTL_TRACE_READ("\"" << s << "\"", "operator <<", "OTL_THIRD_PARTY_STRING_VIEW_CLASS");
+#else
     OTL_TRACE_READ("\"" << s << "\"", "operator <<", "OTL_STD_STRING_VIEW_CLASS");
+#endif
     switch (shell->stream_type) {
     case otl_no_stream_type:
       break;
@@ -31401,6 +32179,7 @@ private:
     dvoid ***temp_row_descp = &row_descp;
     text *row_id;
     ub4 rowid_size;
+    ub4 row_op;
     unsigned int j;
     try {
       OCIEnv *envhp = db->get_connect_struct().get_envhp();
@@ -31508,11 +32287,16 @@ private:
           check(OCIAttrGet(row_desc, OCI_DTYPE_ROW_CHDES,
                            OTL_RCAST(dvoid *, &row_id), &rowid_size,
                            OCI_ATTR_CHDES_ROW_ROWID, errhp));
-          if (table_op & OCI_OPCODE_INSERT)
+
+          check(OCIAttrGet(row_desc, OCI_DTYPE_ROW_CHDES,
+                           OTL_RCAST(dvoid *, &row_op), nullptr,
+                           OCI_ATTR_CHDES_ROW_OPFLAGS, errhp));
+
+          if (row_op == OCI_OPCODE_INSERT)
             OnRowInsert(table_name, row_id);
-          if (table_op & OCI_OPCODE_DELETE)
+          else if (row_op == OCI_OPCODE_DELETE)
             OnRowDelete(table_name, row_id);
-          if (table_op & OCI_OPCODE_UPDATE)
+          else if (row_op == OCI_OPCODE_UPDATE)
             OnRowUpdate(table_name, row_id);
         }
       }
@@ -31533,7 +32317,7 @@ private:
   }
 
 public:
-  bool is_online(void) { return subscrhp != nullptr; }
+  OTL_NODISCARD bool is_online(void) { return subscrhp != nullptr; }
 
 private:
 #if defined(OTL_ANSI_CPP_11_DELETE_SPEC_SUPPORT)
@@ -31674,7 +32458,12 @@ OTL_ORA8_NAMESPACE_END
     public _STD OTL_VC_TR1_NAMESPACE true_type {};                             \
   _STD_END
 
-#define STL_OUTPUT_ITERATOR_TO_DERIVE_FROM : public _STD _Outit
+#if defined(_MSC_VER) && (_MSC_VER >= 1911)
+// Visual Studio 2017 Update 3 or higher
+#define STL_OUTPUT_ITERATOR_TO_DERIVE_FROM
+#else
+#define STL_OUTPUT_ITERATOR_TO_DERIVE_FROM : public _STD  _Outit
+#endif
 
 #else
 #define STL_OUTPUT_ITERATOR_TO_DERIVE_FROM
@@ -31908,7 +32697,7 @@ public:
     return *iter_;
   }
   otl_for_range_loop_adapter& operator++(){
-    iter_->next_row();
+    (void)iter_->next_row();
     return *this;
   }
 
@@ -31927,15 +32716,15 @@ public:
 #if defined(OTL_ANSI_CPP_11_RVAL_REF_SUPPORT)
   typedef otl_for_range_loop_adapter<OTLStream,OTLException,OTLLobStream> FRL_type;
 
-  FRL_type begin(){
-    next_row();
+  OTL_NODISCARD FRL_type begin(){
+    (void)next_row();
     if(!last_eof_)
       return FRL_type(*this);
     else
       return FRL_type();
   }
   
-  FRL_type end(){
+  OTL_NODISCARD FRL_type end(){
     return FRL_type();
   }
 #endif
@@ -32009,12 +32798,12 @@ public:
 
   void detach(void) { reset(); }
 
-  const otl_var_desc *describe(int &var_desc_len) {
+  OTL_NODISCARD const otl_var_desc *describe(int &var_desc_len) {
     var_desc_len = out_vars_len_;
     return out_vars_;
   }
 
-  bool next_row(void) {
+  OTL_NODISCARD bool next_row(void) {
     if (str_->eof()){
       last_eof_=true;
       return false;
@@ -32660,13 +33449,13 @@ public:
 
 #endif
 
-  bool is_null(const int pos) {
+  OTL_NODISCARD bool is_null(const int pos) {
     check_pos(pos);
     return out_vars_null_arr_[pos - 1];
   }
 
 #if defined(OTL_STL)
-  bool is_null(const char *var_name) {
+  OTL_NODISCARD bool is_null(const char *var_name) {
     var_name2pos_map_type::iterator it = var_name2pos_map_.find(var_name);
     check_name(it, var_name);
     return is_null((*it).second + 1);
@@ -32674,7 +33463,7 @@ public:
 #endif
 
 #if defined(OTL_ACE)
-  bool is_null(const char *var_name) {
+  OTL_NODISCARD bool is_null(const char *var_name) {
     var_name2pos_map_type::ENTRY *it = nullptr;
     var_name2pos_map_.find(var_name, it);
     check_name(it, var_name);
@@ -32803,7 +33592,7 @@ public:
   }
 #endif
 
-  bool get_last_eof(){
+  OTL_NODISCARD bool get_last_eof(){
     return last_eof_;
   }
 
@@ -32985,7 +33774,7 @@ protected:
     set();
   }
 
-  int calculate_buffer_size(const otl_var_desc *var, const int vars_len) {
+  OTL_NODISCARD int calculate_buffer_size(const otl_var_desc *var, const int vars_len) {
     for (int i = 0; i < vars_len; ++i) {
       const otl_var_desc &curr_var = var[i];
       if (curr_var.ftype == otl_var_refcur || curr_var.pl_tab_flag)
@@ -33193,6 +33982,23 @@ inline void otl_write_to_stream(InputIterator first, InputIterator last,
 }
 
 #if defined(OTL_ANSI_CPP_11_VARIADIC_TEMPLATES)
+#if defined(OTL_CPP_17_ON) && \
+  (defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__*100+__GNUC_MINOR__>=700))
+  // using c++17 binary left fold expressions
+  template<typename OTLStreamType, typename Arg1, typename...Args>
+  inline void otl_read_row(OTLStreamType &s, Arg1& arg1, Args&...args) OTL_THROWS_OTL_EXCEPTION {
+    s>>arg1;
+    if constexpr(sizeof...(args)>0) (s>>...>>args);
+    s.check_end_of_row();
+  }
+
+  template<typename OTLStreamType, typename Arg1, typename... Args>
+  inline void otl_write_row(OTLStreamType &s, Arg1&& arg1, Args&&...args) OTL_THROWS_OTL_EXCEPTION {
+    s<<std::forward<Arg1>(arg1);
+    if constexpr(sizeof...(args)>0) (s<<...<<std::forward<Args>(args));
+    s.check_end_of_row();
+  }
+#else
 template <typename OTLStreamType>
 inline void __otl_read_row(OTLStreamType &s) OTL_THROWS_OTL_EXCEPTION {
   s.check_end_of_row();
@@ -33230,6 +34036,7 @@ inline void otl_write_row(OTLStreamType &s, Arg1 &&arg1,
   s << std::forward<Arg1>(arg1);
   __otl_write_row(s, std::forward<Args>(args)...);
 }
+#endif
 
 #else
 
@@ -34491,3 +35298,4 @@ inline void otl_write_row(S &s, const T1 &t1, const T2 &t2, const T3 &t3,
 #endif
 
 #endif
+ 

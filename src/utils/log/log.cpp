@@ -231,6 +231,31 @@ void CLog::Dump (const char *p_pszMessage)
 	}
 }
 
+void CLog::Dump2 (const char *p_pszTitle, const char *p_pszMessage)
+{
+	size_t stStrLen;
+	char mcBuf[0x2000];
+
+	stStrLen = GetTimeStamp (mcBuf, sizeof(mcBuf));
+#ifdef WIN32
+	stStrLen += _snprintf_s (mcBuf + stStrLen, sizeof(mcBuf) - stStrLen, sizeof(mcBuf) - stStrLen, "%s%s", p_pszTitle, p_pszMessage);
+#else
+	stStrLen += snprintf (mcBuf + stStrLen, sizeof(mcBuf) - stStrLen, "%s%s", p_pszTitle, p_pszMessage);
+#endif
+	stStrLen += snprintf_ (mcBuf + stStrLen, sizeof(mcBuf) - stStrLen, "%s", m_pszEndOfLine);
+
+	if (INVALID_HANDLE_VALUE != m_iLogFileFD) {
+#ifdef WIN32
+		DWORD dwWritten;
+		WriteFile (m_iLogFileFD, mcBuf, stStrLen, &dwWritten, NULL);
+#else
+		write (m_iLogFileFD, mcBuf, stStrLen);
+#endif
+	} else {
+		puts (mcBuf);
+	}
+}
+
 int CLog::GetLogFileName (char *p_pszLogFileName, size_t p_stMaxSize)
 {
 	int iRetVal = 0;

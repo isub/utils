@@ -107,12 +107,13 @@
 #define PCRF_ATTR_AVP       0x1000
 #define PCRF_ATTR_CGI       0x1001
 #define PCRF_ATTR_ECGI      0x1002
-#define PCRF_ATTR_IMEI      0x1003
-#define PCRF_ATTR_IMSI      0x1004
-#define PCRF_ATTR_PSES      0x1005
-#define PCRF_ATTR_IPCANTYPE 0x1006
-#define PCRF_ATTR_RULNM     0x1007
-#define PCRF_ATTR_RATTYPE   0x1008
+#define PCRF_ATTR_TAI       0x1003
+#define PCRF_ATTR_IMEI      0x1004
+#define PCRF_ATTR_IMSI      0x1005
+#define PCRF_ATTR_PSES      0x1006
+#define PCRF_ATTR_IPCANTYPE 0x1007
+#define PCRF_ATTR_RULNM     0x1008
+#define PCRF_ATTR_RATTYPE   0x1009
 
 /*  EIR request types
  *  0x11xx

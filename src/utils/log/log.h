@@ -54,6 +54,7 @@ public:
 	void WriteLog (const char *p_pszMsg, ...);
 	void Dump (const char *p_pszTitle, const char *p_pszMessage);
 	void Dump (const char *p_pszMessage);
+	void Dump2 (const char *p_pszTitle, const char *p_pszMessage);
 public:
 	CLog ();
 	~CLog ();
