@@ -1,6 +1,8 @@
 #ifndef _DBPOOL_H_
 #define _DBPOOL_H_
 
+#include <string>
+
 #define OTL_ORA11G_R2
 #define OTL_STL
 #define OTL_ADD_NULL_TERMINATOR_TO_STRING_SIZE
@@ -8,10 +10,9 @@
 #include "utils/otlv4.h"
 
 #include "utils/log/log.h"
-#include "utils/config/config.h"
 
 /* инициализация основных параметров */
-int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf);
+int db_pool_init (CLog *p_pcoLog, std::string &p_strDBUsr, std::string &p_strDBPwd, std::string &p_strDBDscr, int p_iPoolSize);
 /* деинициализация пула */
 void db_pool_deinit ();
 

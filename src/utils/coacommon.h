@@ -17,6 +17,8 @@
 #define CMD_OPTION_FORCE	"Force"
 #define CMD_ERX_ACTIVATE	"ERX-Service-Activate"
 #define CMD_ERX_DEACTIVATE	"ERX-Service-Deactivate"
+#define CMD_BNG_ACTIVATE	"BNG-Service-Activate"
+#define CMD_BNG_DEACTIVATE	"BNG-Service-Deactivate"
 
 #define	CMD_VAL_SEP			"="
 #define	CMD_PARAM_SEP		"\n"

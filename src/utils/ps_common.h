@@ -91,11 +91,12 @@
 /*	IRBiS-PS PCRF module request types
  *	0x10xx
  */
-#define PCRF_CMD_INSERT_SESSION 0x1000  /* insert/update session info in session cache */
-#define PCRF_CMD_REMOVE_SESSION 0x1001  /* remove session info from session cache */
-#define PCRF_CMD_INSERT_SESSRUL 0x1002  /* insert session rule in session rule cache */
-#define PCRF_CMD_REMOVE_SESSRUL 0x1003  /* remove session rule from session rule cache */
-#define PCRF_CMD_SESS_USAGE     0x1004  /* send session-usage request */
+#define PCRF_CMD_INSERT_SESSION  0x1000  /* insert/update session info in session cache */
+#define PCRF_CMD_REMOVE_SESSION  0x1001  /* remove session info from session cache */
+#define PCRF_CMD_INSERT_SESSRUL  0x1002  /* insert session rule in session rule cache */
+#define PCRF_CMD_REMOVE_SESSRUL  0x1003  /* remove session rule from session rule cache */
+#define PCRF_CMD_SESS_USAGE      0x1004  /* send session-usage request */
+#define PCRF_GET_INFO_FROM_CACHE 0x1005  /* retrive data from session cache */
 
 /*	IRBiS-PS PCRF module attribute types
  *	0x10xx
@@ -105,6 +106,7 @@
 /* 0-15      | 15-31  | 32-47   | 48-63      | 64-*        */
 /* vendor id | avp id | padding | avp length | avp payload */
 #define PCRF_ATTR_AVP       0x1000
+/* AVP Codes */
 #define PCRF_ATTR_CGI       0x1001
 #define PCRF_ATTR_ECGI      0x1002
 #define PCRF_ATTR_TAI       0x1003
@@ -114,6 +116,7 @@
 #define PCRF_ATTR_IPCANTYPE 0x1007
 #define PCRF_ATTR_RULNM     0x1008
 #define PCRF_ATTR_RATTYPE   0x1009
+#define PCRF_ATTR_E164      0x100A
 
 /*  EIR request types
  *  0x11xx

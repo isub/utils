@@ -6,43 +6,45 @@
 #include <pthread.h>
 #include <errno.h>
 
-#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
-#define LOG_ERR_DESCR(str) 		iFnRes = errno; \
+#if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE)
+#define LOG_ERR_DESCR(str) 		{ int __errcode__ = errno; \
 		char mcErrDescr[1024]; \
 		if (g_pcoLog) { \
-			if (0 != strerror_r (iFnRes, mcErrDescr, sizeof (mcErrDescr))) { \
+			if (0 != strerror_r (__errcode__, mcErrDescr, sizeof (mcErrDescr))) { \
 				mcErrDescr[0] = '\0'; \
 			} \
-			g_pcoLog->WriteLog ("dbpool: %s: error: %s: code: '%d'; description: '%s'", __func__, str, iFnRes, mcErrDescr); \
-		}
+			g_pcoLog->WriteLog ("dbpool: %s: error: %s: code: '%d'; description: '%s'", __func__, str, __errcode__, mcErrDescr); \
+    } \
+  }
 #else
-#define LOG_ERR_DESCR(str) 		iFnRes = errno; \
+#define LOG_ERR_DESCR(str) 	{	int __errcode__ = errno; \
 		char mcErrDescr[1024]; \
 		if (g_pcoLog) { \
-			if (NULL == strerror_r (iFnRes, mcErrDescr, sizeof (mcErrDescr))) { \
+			if (NULL == strerror_r (__errcode__, mcErrDescr, sizeof (mcErrDescr))) { \
 				mcErrDescr[0] = '\0'; \
 			} \
-			g_pcoLog->WriteLog ("dbpool: %s: error: %s: code: '%d'; description: '%s'", __func__, str, iFnRes, mcErrDescr); \
-		}
+			g_pcoLog->WriteLog ("dbpool: %s: error: %s: code: '%d'; description: '%s'", __func__, str, __errcode__, mcErrDescr); \
+		} \
+  }
 #endif
 
 /* шаблон строки подключения к БД */
 static char g_mcRadDBConnTempl[] = "%s/%s@%s";
 /* указатель на объект логгера */
 static CLog *g_pcoLog = NULL;
-/* указатель на объект конфигурации */
-static CConfig *g_pcoConf = NULL;
+/* параметры подключения к БД */
+static std::string g_strDBUser;
+static std::string g_strDBPswd;
+static std::string g_strDBDscr;
+/* размер пула */
+static int g_iPoolSize;
 
 /* семафор для ожидания свободного указателя на объект класса для взаимодействия с БД */
 sem_t g_tSem;
-/* размер пула */
-static int g_iPoolSize;
 /* элемент пула */
 struct SPoolElem {
 	otl_connect m_coDBConn;
-	bool m_bIsBusy;
-	SPoolElem () { m_bIsBusy = false; }
-	~SPoolElem () { m_bIsBusy = true; }
+  pthread_mutex_t m_mutexLock;
 };
 /* массив пула */
 static SPoolElem *g_pmsoPool = NULL;
@@ -57,64 +59,20 @@ void DisconnectDB (otl_connect &p_coDBConn)
 	}
 }
 
-int ConnectDB (otl_connect &p_coDBConn)
+int ConnectDB (otl_connect &p_coDBConn, std::string &p_strDBUsr, std::string &p_strDBPwd, std::string &p_strDBDescr)
 {
-	/* проверка параметров */
-	if (NULL == g_pcoConf) {
-		if (g_pcoLog) {
-			g_pcoLog->WriteLog ("%s: dbpool: error: configuration not defined", __func__);
-		}
-		return -1;
-	}
-
 	int iRetVal = 0;
 	int iFnRes = 0;
 	char mcConnStr[1024];
-
-	std::string
-		strDBUser,
-		strDBPswd,
-		strDBDescr;
-	const char *pcszConfParam = NULL;
-
-	/* запрашиваем имя пользователя БД из конфигурации */
-	pcszConfParam = "db_user";
-	iFnRes = g_pcoConf->GetParamValue (pcszConfParam, strDBUser);
-	if (iFnRes || 0 == strDBUser.length ()) {
-		if (g_pcoLog) {
-			g_pcoLog->WriteLog ("dbpool: %s: error: configuration parameter '%s' not defined", __func__, pcszConfParam);
-      return -1;
-		}
-	}
-
-	/* запрашиваем пароль пользователя БД из конфигурации */
-	pcszConfParam = "db_pswd";
-	iFnRes = g_pcoConf->GetParamValue (pcszConfParam, strDBPswd);
-	if (iFnRes || 0 == strDBPswd.length ()) {
-		if (g_pcoLog) {
-			g_pcoLog->WriteLog ("dbpool: %s: error: configuration parameter '%s' not defined", __func__, pcszConfParam);
-      return -1;
-		}
-	}
-
-	/* запрашиваем дескриптор БД из конфигурации */
-	pcszConfParam = "db_descr";
-	iFnRes = g_pcoConf->GetParamValue (pcszConfParam, strDBDescr);
-	if (iFnRes || 0 == strDBDescr.length ()) {
-		if (g_pcoLog) {
-			g_pcoLog->WriteLog ("dbpool: %s: error: configuration parameter '%s' not defined", __func__, pcszConfParam);
-      return -1;
-		}
-	}
 
 	/* формируем строку подключения */
 	snprintf (
 		mcConnStr,
 		sizeof(mcConnStr),
 		g_mcRadDBConnTempl,
-		strDBUser.c_str(),
-		strDBPswd.c_str(),
-		strDBDescr.c_str());
+		p_strDBUsr.c_str(),
+		p_strDBPwd.c_str(),
+		p_strDBDescr.c_str());
 	try {
 		p_coDBConn.rlogon (mcConnStr);
 		p_coDBConn.auto_commit_off ();
@@ -123,7 +81,7 @@ int ConnectDB (otl_connect &p_coDBConn)
 		}
 	} catch (otl_exception &coOtlExc) {
 		if (g_pcoLog) {
-			g_pcoLog->WriteLog ("dbpool: %s: error: code: '%d'; description: '%s'", __func__, coOtlExc.code, coOtlExc.msg);
+      g_pcoLog->WriteLog( "dbpool: %s: error: code: '%d'; description: '%s'; user name: %s; description: %s", __func__, coOtlExc.code, coOtlExc.msg, p_strDBUsr.c_str(), p_strDBDescr.c_str() );
 		}
 		iRetVal = coOtlExc.code;
 	}
@@ -143,7 +101,8 @@ int db_pool_reconnect (otl_connect &p_coDBConn)
 		if (g_pcoLog) {
 			g_pcoLog->WriteLog ("dbpool: %s: info: trying to reconnect to DB", __func__);
 		}
-		iFnRes = ConnectDB (p_coDBConn);
+
+    iFnRes = ConnectDB( p_coDBConn, g_strDBUser, g_strDBPswd, g_strDBDscr );
 		if (iFnRes) {
 			/* подключиться к БД не удалось */
 			if (g_pcoLog) {
@@ -167,17 +126,7 @@ int db_pool_check (otl_connect &p_coDBConn)
 		return -2;
 	}
 
-	std::string strDBDummyReq;
-
-	/* запрашиваем текст проверочного запроса из конфигурации */
-	if (g_pcoConf) {
-		iFnRes = g_pcoConf->GetParamValue ("db_dummy_req", strDBDummyReq);
-	} else {
-		iFnRes = -1;
-	}
-	if (iFnRes || 0 == strDBDummyReq.length ()) {
-		strDBDummyReq = "select to_char(sysdate, 'yyyy') from dual";
-	}
+  std::string strDBDummyReq = "select to_char(sysdate, 'yyyy') from dual";
 
 	/* проверяем работоспособность подключения на простейшем запросе */
 	try {
@@ -187,7 +136,7 @@ int db_pool_check (otl_connect &p_coDBConn)
 	} catch (otl_exception &coExc) {
 		/* если запрос выполнился с ошибкой */
 		if (g_pcoLog) {
-			g_pcoLog->WriteLog ("dbpool: %s: error: connection test failed: error: code: '%s'; description: '%s'", __func__, coExc.code, coExc.msg);
+			g_pcoLog->WriteLog ("dbpool: %s: error: connection test failed: error: code: '%d'; description: '%s'", __FUNCTION__, coExc.code, coExc.msg );
 		}
 		iRetVal = -3;
 	}
@@ -195,7 +144,7 @@ int db_pool_check (otl_connect &p_coDBConn)
 	return iRetVal;
 }
 
-int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf)
+int db_pool_init ( CLog *p_pcoLog, std::string &p_strDBUsr, std::string &p_strDBPwd, std::string &p_strDBDscr, int p_iPoolSize )
 {
 	/* копируем указатель на объект класса логгера */
 	if (p_pcoLog) {
@@ -203,57 +152,47 @@ int db_pool_init (CLog *p_pcoLog, CConfig *p_pcoConf)
 	} else {
 		return -1;
 	}
-	/* копируем указатель на объект класса конфигурации */
-	if (p_pcoConf) {
-		g_pcoConf = p_pcoConf;
-	} else {
-		return -1;
-	}
+  /* копируем параметры подключения к БД */
+  g_strDBUser = p_strDBUsr;
+  g_strDBPswd = p_strDBPwd;
+  g_strDBDscr = p_strDBDscr;
+  g_iPoolSize = p_iPoolSize;
 
 	int iRetVal = 0;
 	int iFnRes;
 
-	/* запрашиваем в кофигурации размер пула */
-	std::string strDBPoolSize;
-	const char *pcszConfParam = "db_pool_size";
-	iFnRes = g_pcoConf->GetParamValue (pcszConfParam, strDBPoolSize);
-	if (iFnRes || 0 == strDBPoolSize.length ()) {
+	if (0 == g_iPoolSize) {
 		g_iPoolSize = 1;
-		g_pcoLog->WriteLog ("dbpool: %s: info: configuration parameter '%s' not defined, set pool size value to '%d'", __func__, pcszConfParam, g_iPoolSize);
-	} else {
-		g_iPoolSize = atoi (strDBPoolSize.c_str ());
 	}
 
 	/* выделяем память для пула */
 	g_pmsoPool = new SPoolElem [g_iPoolSize];
 	for (int iInd = 0; iInd < g_iPoolSize; ++ iInd) {
-		iFnRes = ConnectDB (g_pmsoPool[iInd].m_coDBConn);
+    iFnRes = ConnectDB( g_pmsoPool[ iInd ].m_coDBConn, g_strDBUser, g_strDBPswd, g_strDBDscr );
+    /* инициализация мьютекса */
+    iFnRes = pthread_mutex_init( &g_pmsoPool[iInd].m_mutexLock, NULL );
 		if (iFnRes) {
 			break;
 		}
 	}
 
+  if (iFnRes) {
+		db_pool_deinit ();
+		return -2;
+  }
+
 	/* проверяем результат инициализации массива */
 	if (iFnRes) {
 		db_pool_deinit ();
-		return -2;
+		return -3;
 	}
 
 	/* инициализируем семафор */
 	iFnRes = sem_init (&g_tSem, 0, g_iPoolSize);
 	if (iFnRes) {
 		db_pool_deinit ();
-		return -3;
-	}
-
-	/* инициализация мьютекса */
-	iFnRes = pthread_mutex_init (&g_tMutex, NULL);
-	if (iFnRes) {
-		db_pool_deinit ();
 		return -4;
 	}
-	/* на всякий случай освобождаем мьютекс, при первом использовании он нам нужен свободным */
-	pthread_mutex_unlock (&g_tMutex);
 
 	return iRetVal;
 }
@@ -263,13 +202,12 @@ void db_pool_deinit ()
 	/* освобождаем ресурсы, занятые семафором */
 	sem_destroy (&g_tSem);
 
-	/* освобождаем ресурсы, занятые мьютексом */
-	pthread_mutex_destroy (&g_tMutex);
-
 	/* освобождаем массив пула */
 	if (g_pmsoPool) {
 		for (int iInd = 0; iInd < g_iPoolSize; ++ iInd) {
 			DisconnectDB (g_pmsoPool[iInd].m_coDBConn);
+      pthread_mutex_unlock( &g_pmsoPool[iInd].m_mutexLock );
+      pthread_mutex_destroy( &g_pmsoPool[iInd].m_mutexLock );
 		}
 		delete [] g_pmsoPool;
 		g_pmsoPool = NULL;
@@ -291,14 +229,14 @@ otl_connect * db_pool_get ()
 	}
 
 	/* вычисляем время до которого мы будем ждать освобождения семафора */
-	soTimeSpec.tv_sec = soTimeVal.tv_sec + 1;
+	soTimeSpec.tv_sec = soTimeVal.tv_sec + 5;
 	soTimeSpec.tv_nsec = soTimeVal.tv_usec * 1000;
 
 	/* ждем освобождения объекта для взаимодействия с БД */
 	iFnRes = sem_timedwait (&g_tSem, &soTimeSpec);
 	/* если во время ожидания возникла ошибка */
 	if (iFnRes) {
-		LOG_ERR_DESCR ("sem_timedwait error accurred");
+		LOG_ERR_DESCR( "sem_timedwait error accurred" );
 		return NULL;
 	}
 
@@ -308,26 +246,12 @@ otl_connect * db_pool_get ()
 		return NULL;
 	}
 
-	/* вычисляем время до которого мы будем ждать освобождения мьютекса */
-	soTimeSpec.tv_sec = soTimeVal.tv_sec + 1;
-	soTimeSpec.tv_nsec = soTimeVal.tv_usec * 1000;
-
-	/* входим в критическую секцию */
-	iFnRes = pthread_mutex_timedlock (&g_tMutex, &soTimeSpec);
-	/* если во время ожидания возникла ошибка */
-	if (iFnRes) {
-		LOG_ERR_DESCR ("pthread_mutex_timedlock error accurred");
-		/* возвращаем семафор */
-		sem_post (&g_tSem);
-		return NULL;
-	}
-
 	/* ищем свободный элемент */
 	for (int iInd = 0; iInd < g_iPoolSize; ++ iInd) {
 		/* если наши незанятый элемент */
-		if (! g_pmsoPool[iInd].m_bIsBusy) {
-			g_pmsoPool[iInd].m_bIsBusy = true;
+		if (0 == pthread_mutex_trylock( &g_pmsoPool[iInd].m_mutexLock ) ) {
 			pcoRetVal = & (g_pmsoPool[iInd].m_coDBConn);
+      break;
 		}
 	}
 	/* на всякий случай проверим значение указателя */
@@ -337,9 +261,6 @@ otl_connect * db_pool_get ()
 		}
 	}
 
-	/* освобождаем мьютекс */
-	pthread_mutex_unlock (&g_tMutex);
-
 	return pcoRetVal;
 }
 
@@ -347,34 +268,13 @@ int db_pool_release (otl_connect *p_pcoDBConn)
 {
 	int iRetVal = 0;
 	int iFnRes;
-	timespec soTimeSpec;
-	timeval soTimeVal;
-
-	/* запрашиваем текущее время */
-	iFnRes = gettimeofday (&soTimeVal, NULL);
-	if (iFnRes) {
-    /* в случае ошибки выполнения функции gettimeofday будет нулевое ожидание */
-    soTimeSpec.tv_sec = 0;
-    soTimeSpec.tv_nsec = 0;
-	} else {
-    /* вычисляем время до которого мы будем ждать освобождения мьютекса */
-    soTimeSpec.tv_sec = soTimeVal.tv_sec + 1;
-    soTimeSpec.tv_nsec = soTimeVal.tv_usec * 1000;
-  }
-
-	/* входим в критическую секцию */
-	iFnRes = pthread_mutex_timedlock (&g_tMutex, &soTimeSpec);
-	/* если во время ожидания возникла ошибка */
-	if (iFnRes) {
-		LOG_ERR_DESCR ("pthread_mutex_timedlock error accurred");
-		return -1;
-	}
 
 	int iInd = 0;
 	/* ищем соответствующий элемент */
 	for (; iInd < g_iPoolSize; ++ iInd) {
 		/* если наши искомый элемент */
 		if (&(g_pmsoPool[iInd].m_coDBConn) == p_pcoDBConn) {
+      pthread_mutex_unlock( &g_pmsoPool[iInd].m_mutexLock );
 			break;
 		}
 	}
@@ -383,15 +283,6 @@ int db_pool_release (otl_connect *p_pcoDBConn)
 		if (g_pcoLog) {
 			g_pcoLog->WriteLog ("dbpool: %s: error: unexpected error occurred: db coonector not found", __func__);
 		}
-	} else {
-		g_pmsoPool[iInd].m_bIsBusy = false;
-	}
-
-	/* освобождаем мьютекс */
-	iFnRes = pthread_mutex_unlock (&g_tMutex);
-	/* если во время ожидания возникла ошибка */
-	if (iFnRes) {
-		LOG_ERR_DESCR ("pthread_mutex_unlock error accurred");
 	}
 
 	/* увеличиваем счетчик семафора */

@@ -13,8 +13,9 @@ struct SStat;
 struct CTimeMeasurer;
 
 /* инициализация модуля статистики */
-int stat_init();
-int stat_fin();
+int  stat_init();
+void stat_fin();
+void stat_register_cb( void ( p_pCbFn )( char **p_ppszString ) );
 /* запуск и завершение подсчета метрик */
 /* фиксирует показания метрик по ветке */
 struct SStat * stat_get_branch (const char *p_pszObjName);
